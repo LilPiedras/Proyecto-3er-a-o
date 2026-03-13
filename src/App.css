@@ -5,6 +5,15 @@
   text-align: center;
 }
 
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
 .logo {
   height: 6em;
   padding: 1.5em;
