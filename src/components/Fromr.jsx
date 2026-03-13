@@ -1,16 +1,27 @@
 import { useNavigate } from "react-router-dom"
 
-export default function Fromc() {
+export default function Fromt() {
   const navigate = useNavigate()
   
   return (
     <div className="w-full max-w-md mx-auto p-6">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-white">BIENVENIDOS</h1>
-        <p className="text-gray-300 mt-2">Ingresa tus datos para iniciar sesión.</p>
+        <h1 className="text-3xl font-bold text-white">REGÍSTRATE</h1>
+        <p className="text-gray-300 mt-2">Ingresa tus datos para registrarte.</p>
       </div>
 
       <div className="mt-8 flex flex-col gap-6">
+        <div>
+          <label htmlFor="name" className="text-base font-medium text-white">Nombre Completo</label>
+          <input
+            id="name"
+            type="text"
+            className="text-white w-full border border-gray-200 rounded-xl p-4 mt-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
+            placeholder="Ingresa tu nombre"
+            required
+          />
+        </div>
+
         <div>
           <label htmlFor="email" className="text-base font-medium text-white">Correo Electronico</label>
           <input
@@ -28,19 +39,9 @@ export default function Fromc() {
             id="password"
             type="password"
             className="text-white w-full border border-gray-200 rounded-xl p-4 mt-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
-            placeholder="Ingrese su contraseña"
+            placeholder="Crea una contraseña"
             required
           />
-        </div>
-
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <input type="checkbox" id="remember-me" className="w-4 h-4 text-yellow-500 rounded focus:ring-yellow-500 border-gray-300" />
-            <label htmlFor="remember-me" className="ml-2 font-medium text-base text-gray-200 cursor-pointer">Recuerdame</label>
-          </div>
-          <button type="button" className="font-medium text-base text-yellow-300 hover:text-yellow-400 transition-colors">
-            Olvido de Contraseña?
-          </button>
         </div>
 
         <div className="flex flex-col gap-4 mt-4">
@@ -48,15 +49,15 @@ export default function Fromc() {
             type="submit"
             className="w-full py-4 rounded-xl bg-yellow-300 text-white text-lg font-bold transition-all duration-75 ease-in-out hover:scale-[1.02] hover:bg-yellow-400 active:scale-[0.98] active:bg-yellow-500 shadow-lg shadow-yellow-500/20"
           >
-            Ingresar
+            Registrarse
           </button>
           
           <button
             type="button"
-            onClick={() => navigate('/registro')}
+            onClick={() => navigate('/')}
             className="w-full py-4 rounded-xl border border-gray-200 text-white text-lg font-bold hover:bg-gray-800 transition-colors"
           >
-            Crear Cuenta
+            ¿Ya tienes cuenta? Iniciar Sesión
           </button>
         </div>
       </div>
