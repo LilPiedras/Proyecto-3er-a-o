@@ -3,8 +3,8 @@ import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaLink } from 'react-ic
 
 const Footer = () => {
   return (  
-    <footer className=" bg-black text-white shrink-0 mt-auto">
-      <div className="w-full h-1 mb-4 bg-white"></div>
+    <footer className=" bg-black text-white flex-shrink: 0; mt-auto">
+      <div className="flex w-full h-2 mb-4 bg-white"></div>
       <div className="border-tp border-yellow-300 text-center text-sm text-white/70"></div>
       <div className="mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 w-11/12 max-w-7xl">
         <div className="flex items-center">

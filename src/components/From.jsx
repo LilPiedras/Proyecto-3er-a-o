@@ -1,8 +1,41 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 export default function Fromc() {
   const navigate = useNavigate()
-  
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error al iniciar sesión")
+      }
+
+      // Aquí podrías guardar el usuario en localStorage o contexto
+      alert(`Bienvenido ${data.user.nombres || ""}`)
+      // navigate('/dashboard') // ruta futura si la creas
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="w-full max-w-md mx-auto p-6">
       <div className="text-center mb-6">
@@ -10,7 +43,7 @@ export default function Fromc() {
         <p className="text-gray-300 mt-2">Ingresa tus datos para iniciar sesión.</p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
         <div>
           <label htmlFor="email" className="text-base font-medium text-white">Correo Electronico</label>
           <input
@@ -19,6 +52,8 @@ export default function Fromc() {
             className="text-white w-full border border-gray-200 rounded-xl p-4 mt-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
             placeholder="Ingresa tu correo"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -30,6 +65,8 @@ export default function Fromc() {
             className="text-white w-full border border-gray-200 rounded-xl p-4 mt-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
             placeholder="Ingrese su contraseña"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
@@ -43,12 +80,17 @@ export default function Fromc() {
           </button>
         </div>
 
+        {error && (
+          <p className="text-red-400 text-sm">{error}</p>
+        )}
+
         <div className="flex flex-col gap-4 mt-4">
           <button
             type="submit"
-            className="w-full py-4 rounded-xl bg-yellow-300 text-white text-lg font-bold transition-all duration-75 ease-in-out hover:scale-[1.02] hover:bg-yellow-400 active:scale-[0.98] active:bg-yellow-500 shadow-lg shadow-yellow-500/20"
+            disabled={loading}
+            className="w-full py-4 rounded-xl bg-yellow-300 text-white text-lg font-bold transition-all duration-75 ease-in-out hover:scale-[1.02] hover:bg-yellow-400 active:scale-[0.98] active:bg-yellow-500 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Ingresar
+            {loading ? "Ingresando..." : "Ingresar"}
           </button>
           
           <button
@@ -59,7 +101,7 @@ export default function Fromc() {
             Crear Cuenta
           </button>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
