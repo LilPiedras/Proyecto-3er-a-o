@@ -1,16 +1,38 @@
-# React + Vite
+# Amada Fashion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Configuración e Instalación
 
-Currently, two official plugins are available:
+Sigue estos pasos para levantar el entorno local:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### backend
+debes entrar a la carpeta /backend y de ahi puedes crear el entorno virtual con:
+```bash
+python -m venv venv
+```
+Activa el entorno con
+```bash
+.\venv\Scripts\activate
+```
+una vez creada puedes instalar los paquetes utilizados con
+```bash
+pip install -r requirements.txt
+```
+si agregas un nuevo paquetes, actualiza la lista de paquetes con:
+```bash
+pip freeze > requirements.txt
+```
 
-## React Compiler
+### frontend
+ahora debes entrar a la carpeta frontend/ y luego instalar los paquetes con:
+```bash
+npm install
+```
+Nota: al agregar una nueva libreria con pip, este actualiza la lista de paquetes de package.json
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Iniciar
+puedes iniciar el servidor local con:
+```bash
+npm run dev:full
+```
+debes estar en la carpeta frontend/
