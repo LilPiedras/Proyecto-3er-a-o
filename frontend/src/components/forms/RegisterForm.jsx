@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-export default function Fromt() {
+export default function RegisterForm() {
   const navigate = useNavigate()
   const [name, setName] = useState("")
   const [lastname, setLastName] = useState("")

@@ -1,13 +1,12 @@
 @import "tailwindcss" ;
-@theme {
-  --background-image-hero: url('@/assets/img/Logo.png;');
+
+.main-home-div{
+    background:linear-gradient(#08003ab3, #08003ab3), url("./assets/homeBG.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
 }
 
-@theme {
-  --color-gold-light: #efca5d;
-  --color-gold-dark: #D4AF37;
-  --color-black-rich: #050505;
-}
 body {
   margin: 0;
   background-color: white;
