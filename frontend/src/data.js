@@ -9,14 +9,14 @@ const data = [
     name: "Adriana",
     img: foto5,  // ← Usas la variable importada
     age: "25",
-    des: "Estudiante joven apasionada..."
+    des: "Sueño con ser una diseñadora y gracias a la Academia puedo lograrlo debido a su buen contenido y los excelentes profesores que cuentan."
   },
   {
     id: 2,
     name: "Pepe",
     img: foto4,
     age: "22",
-    des: "Estudiante joven apasionada..."
+    des: "Quiero ser un diseñador de modas y pude entrar a la Academia Amada Fashion la cual tiene un excelente contenido pedagogico"
   },
   {
     id: 3,
