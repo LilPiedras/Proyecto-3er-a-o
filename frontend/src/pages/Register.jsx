@@ -1,9 +1,10 @@
-import Fromc from "./components/From"
-import Fromt from "./components/Fromr"; 
-import Footers from "./components/Footer"
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Fromc from "./components/froms/LoginForm"; // <-- Cambiado a LoginForm
+import Fromt from "./components/RegisterForm"; // <-- Cambiado a RegisterForm
+import Footers from "./components/layout/Footer"; // <-- Cambiado a su carpeta real
+import { Routes, Route } from "react-router-dom";
 
-function App2() {
+
+function register() {
   return (
     <BrowserRouter>
           <div className="min-h-screen flex flex-col">
@@ -18,7 +19,7 @@ function App2() {
               </div>
         <div className="hidden relative lg:flex lg:w-1/2 items-center justify-center bg-linear-to-tr from-gold-light via-gold-dark to-black-rich overflow-hidden">
           <div className="relative w-full h-full flex items-center justify-center">
-            <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full animate-bounce duration-10 shadow-xl"  />  
+            <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full animate-spin duration-10 shadow-xl"  />  
             <div>
             </div>
           </div>
@@ -33,4 +34,4 @@ function App2() {
   )
 }
 
-export default App2
+export default register

@@ -26,13 +26,17 @@ const Testimonials = () => {
 
   return (
     <>
-      <div className="main-testimonial-div lg:min-h-screen w-full flex flex-col justify-center items-center p-3 overflow-hidden" id="Testimonials">
+      <div className="main-testimonial-div lg:min-h-screen w-full flex flex-col justify-center items-center p-3 overflow-hidden bg-linear-to-tr from-yellow-400 via-yellow-300 to-black overflow-hidden"
+       id="Testimonials">
         <div className="headings mb-5">
-          <Motion.h1 className="text-xl font-Jost mb-2 text-center"
+          <Motion.h1 className="text-3xl font-Jost mb-4 text-center text-white"
           initial={{opacity:0,y:100}}
             whileInView={{opacity:1,y:0}}
             transition={{duration:0.9,ease:easeInOut, stiffness:60}}>Testimonios</Motion.h1>
-          <h1>¿Que dicen nuestros estudiantes?</h1>
+          <Motion.h1 className="text-2xl mb-5 text-white"
+          initial={{opacity:0,y:100}}
+            whileInView={{opacity:1,y:0}}
+            transition={{duration:0.8,ease:easeInOut, stiffness:60}}>¿Que dicen nuestros estudiantes?</Motion.h1>
         </div>
         
         <div className="carousel-div w-full relative">
@@ -52,7 +56,7 @@ const Testimonials = () => {
             itemClass="carousel-item-padding-40-px"
           >
             {data.map((items) => (
-              <div key={items.id} className="p-5 md:mr-4 rounded-2xl shadow-md bg-blue-400 relative">
+              <div key={items.id} className="p-5 md:mr-4 rounded-xl shadow-md bg-black relative text-white">
                 <div className="sideby-side flex gap-6 mb-3">
                   <img src={items.img} alt="" className="w-20 rounded-full" />
                   <div className="headings">
@@ -61,9 +65,7 @@ const Testimonials = () => {
                   </div>
                 </div>
                 <div className="para">
-                  <p className="font-Jost">Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                    Amet dignissimos officiis qui cupiditate veritatis doloremque, aut modi at totam rerum accusantium.  
-                    Sapiente a eos facere id commodi aliquid iusto iste.</p>
+                  <p className="font-Jost text-white">{items.des}</p>
                 </div>
               </div>
             ))}

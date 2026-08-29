@@ -17,13 +17,14 @@ const Home = () => {
         </Motion.h1>
 
         <Motion.p 
-          className="text-white font-Jost text-center mb-5 max-w-3xl"
+          className="text-white font-Jost text-center mb-5 max-w-5xl"
           initial={{ opacity: 0, y: 100 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: easeInOut, delay: 0.1 }}
+          transition={{ duration: 0.6, ease: easeInOut, delay: 0.3 }}
         >
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi eum assumenda ullam at pariatur quae blanditiis commodi ducimus voluptatibus quidem nemo, 
-          cum ab ipsam minima voluptate qui excepturi vel odit?
+         Academia Amada Fashion es una institución especializada en la formación integral dentro del diseño de modas y el modelaje. 
+         La organización tiene como objetivo fundamental capacitar a nuevas generaciones de talentos, 
+         brindando las herramientas técnicas, creativas y conceptuales necesarias para desarrollar profesionales altamente competitivos en la industria textil y de la moda.
         </Motion.p>
 
         <Motion.button 
