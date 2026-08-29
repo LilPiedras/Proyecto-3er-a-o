@@ -23,7 +23,7 @@ const AppRoutes = () => {
             </div>
             <div className="hidden relative lg:flex lg:w-1/2 items-center justify-center bg-linear-to-tr from-yellow-200 via-yellow-500 to-black overflow-hidden">
               <div className="relative w-full h-full flex items-center justify-center">
-                <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full animate-bounce shadow-xl" />
+                <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full  shadow-xl" />
               </div>
             </div>
           </div>
@@ -36,7 +36,7 @@ const AppRoutes = () => {
             </div>
             <div className="hidden relative lg:flex lg:w-1/2 items-center justify-center bg-linear-to-tr from-yellow-200 via-yellow-500 to-black overflow-hidden">
               <div className="relative w-full h-full flex items-center justify-center">
-                <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full animate-bounce shadow-xl" />
+                <div className="w-60 h-60 bg-[url('/img/Logo.png')] bg-cover rounded-full  shadow-xl" />
               </div>
             </div>
           </div>
