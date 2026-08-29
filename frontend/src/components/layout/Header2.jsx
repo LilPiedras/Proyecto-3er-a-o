@@ -24,12 +24,12 @@ const Header = () => {
 
         {/* Desktop Menu */}
         <ul className="hidden md:flex gap-8 text-[18px]">
-          <li><RouterLink to="/" className="cursor-pointer hover:text-yellow-400">Home</RouterLink></li>
-          <li><RouterLink to="/program" className="cursor-pointer hover:text-yellow-400 transition">Program</RouterLink></li>
-          <li><RouterLink to="/about" className="cursor-pointer hover:text-yellow-400">About</RouterLink></li>
-          <li><RouterLink to="/testimonials" className="cursor-pointer hover:text-yellow-400">Testimonials</RouterLink></li>
-          <li><RouterLink to="/contact" className="cursor-pointer hover:text-yellow-400">Contact</RouterLink></li>
-          <li><RouterLink to="/login" className="cursor-pointer hover:text-yellow-400">Login</RouterLink></li>
+          <li><RouterLink to="/" className="cursor-pointer hover:text-yellow-400">Inicio</RouterLink></li>
+          <li><RouterLink to="/program" className="cursor-pointer hover:text-yellow-400 transition">Programas</RouterLink></li>
+          <li><RouterLink to="/about" className="cursor-pointer hover:text-yellow-400">Sobre Nosotros</RouterLink></li>
+          <li><RouterLink to="/testimonials" className="cursor-pointer hover:text-yellow-400">Testimonios</RouterLink></li>
+          <li><RouterLink to="/contact" className="cursor-pointer hover:text-yellow-400">Soporte</RouterLink></li>
+          <li><RouterLink to="/login" className="cursor-pointer hover:text-yellow-400">Inicio de Sesión</RouterLink></li>
         </ul>
 
         {/* Mobile Hamburger */}
