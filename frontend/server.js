@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 5000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Configuración de conexión a PostgreSQL
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
@@ -45,7 +44,6 @@ app.post('/api/register', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Insertar según el esquema de tu base de datos de PostgreSQL
     await pool.query(
       `INSERT INTO usuario (ciuser, nombreusuario, apellusuario, teleusuario, correousuario, contrase, activo)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -70,7 +68,6 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Faltan datos.' })
     }
 
-    // Buscar en la tabla 'usuario' de Postgres
     const result = await pool.query(
       'SELECT ciuser, nombreusuario, apellusuario, correousuario, contrase FROM usuario WHERE correousuario = $1 AND activo = true',
       [email]
@@ -104,7 +101,6 @@ app.post('/api/login', async (req, res) => {
 
 async function startServer() {
   try {
-    // Probar conexión a Postgres
     await pool.query('SELECT NOW()')
     console.log('Conexión a la base de datos PostgreSQL exitosa.')
 
