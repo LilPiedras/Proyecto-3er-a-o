@@ -1,10 +1,11 @@
 import express from 'express'
 import cors from 'cors'
-import mysql from 'mysql2/promise'
+import pkg from 'pg'
 import bcrypt from 'bcryptjs'
-import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+
+const { Pool } = pkg
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -12,63 +13,48 @@ const PORT = process.env.PORT || 5000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const pool = mysql.createPool({
+// Configuración de conexión a PostgreSQL
+const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  waitForConnections: true,
-  connectionLimit: 10,
-  multipleStatements: true,
+  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '3690',
+  database: process.env.DB_NAME || 'aver',
 })
 
 app.use(cors())
 app.use(express.json())
 
-async function initDatabase() {
-  try {
-    const sqlPath = path.join(__dirname, '../database', 'init_schema.sql')
-    const sql = await fs.readFile(sqlPath, 'utf8')
-    await pool.query(sql)
-    console.log('Esquema de base de datos inicializado/cargado correctamente.')
-  } catch (error) {
-    console.error('Error al inicializar la base de datos:', error)
-  }
-}
-
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, lastname, phoneNumber, email, dni, address, password } = req.body
+    const { name, lastname, phoneNumber, email, dni, password } = req.body
 
-    if (!name || !lastname || !phoneNumber || !email || !dni || !address ||!password) {
+    if (!name || !lastname || !phoneNumber || !email || !dni || !password) {
       return res.status(400).json({ message: 'Faltan datos obligatorios.' })
     }
 
-    const [existing] = await pool.query(
-      'SELECT id FROM usuarios WHERE correo = ?',
-      [email],
+    // Comprobar si existe por correo
+    const existing = await pool.query(
+      'SELECT ciuser FROM usuario WHERE correousuario = $1 OR ciuser = $2',
+      [email, dni]
     )
 
-    if (existing.length > 0) {
-      return res.status(409).json({ message: 'El correo ya está registrado.' })
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: 'El correo o la cédula ya están registrados.' })
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const nombres = name
-    const apellidos = lastname
-    const telefono = phoneNumber
-    const cedula = dni
-    const direccion = address
-
-    const [result] = await pool.query(
-      `INSERT INTO usuarios (nombres, apellidos, telefono, correo, cedula, direccion, foto_usuario, password_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nombres, apellidos, telefono, email, cedula, direccion, null, passwordHash],
+    // Insertar según el esquema de tu base de datos de PostgreSQL
+    await pool.query(
+      `INSERT INTO usuario (ciuser, nombreusuario, apellusuario, teleusuario, correousuario, contrase, activo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [dni, name, lastname, phoneNumber, email, passwordHash, true]
     )
 
     return res.status(201).json({
       message: 'Usuario registrado correctamente.',
-      userId: result.insertId,
+      userId: dni,
     })
   } catch (error) {
     console.error(error)
@@ -84,17 +70,18 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Faltan datos.' })
     }
 
-    const [rows] = await pool.query(
-      'SELECT id, nombres, apellidos, correo, password_hash FROM usuarios WHERE correo = ?',
-      [email],
+    // Buscar en la tabla 'usuario' de Postgres
+    const result = await pool.query(
+      'SELECT ciuser, nombreusuario, apellusuario, correousuario, contrase FROM usuario WHERE correousuario = $1 AND activo = true',
+      [email]
     )
 
-    if (rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Credenciales inválidas.' })
     }
 
-    const user = rows[0]
-    const valid = await bcrypt.compare(password, user.password_hash)
+    const user = result.rows[0]
+    const valid = await bcrypt.compare(password, user.contrase)
 
     if (!valid) {
       return res.status(401).json({ message: 'Credenciales inválidas.' })
@@ -103,10 +90,10 @@ app.post('/api/login', async (req, res) => {
     return res.json({
       message: 'Inicio de sesión exitoso.',
       user: {
-        id: user.id,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
-        correo: user.correo,
+        id: user.ciuser,
+        nombres: user.nombreusuario,
+        apellidos: user.apellusuario,
+        correo: user.correousuario,
       },
     })
   } catch (error) {
@@ -116,14 +103,17 @@ app.post('/api/login', async (req, res) => {
 })
 
 async function startServer() {
-  await initDatabase()
+  try {
+    // Probar conexión a Postgres
+    await pool.query('SELECT NOW()')
+    console.log('Conexión a la base de datos PostgreSQL exitosa.')
 
-  app.listen(PORT, () => {
-    console.log(`Servidor backend escuchando en http://localhost:${PORT}`)
-  })
+    app.listen(PORT, () => {
+      console.log(`Servidor backend escuchando en http://localhost:${PORT}`)
+    })
+  } catch (err) {
+    console.error('Error al conectar con la base de datos:', err)
+  }
 }
 
-startServer().catch((err) => {
-  console.error('No se pudo iniciar el servidor:', err)
-})
-
+startServer()
