@@ -10,6 +10,7 @@ export default function RegisterForm() {
   const [dni, setDni] = useState("")
   const [address, setAddress] = useState("")
   const [password, setPassword] = useState("")
+  const [idrol, setIdrol] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -19,20 +20,34 @@ export default function RegisterForm() {
     setLoading(true)
 
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("/api/auth/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, lastname, phoneNumber, email, dni, address, password }),
+        body: JSON.stringify({
+          ciuser: String(dni).trim(),
+          nombreusuario: name.trim(),
+          apellusuario: lastname.trim(),
+          contrase: password,
+          correousuario: email.trim(),
+          teleusuario: phoneNumber.trim() || null,
+          idrol: Number(idrol),
+        }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.message || "Error al registrarse")
+        const msg =
+          typeof data.detail === "string"
+            ? data.detail
+            : Array.isArray(data.detail)
+              ? data.detail.map((d) => d.msg).join(", ")
+              : data.message || "Error al registrarse"
+        throw new Error(msg)
       }
 
       alert("Registro exitoso, ahora inicia sesión.")
-      navigate("/")
+      navigate("/login")
     } catch (err) {
       setError(err.message)
     } finally {

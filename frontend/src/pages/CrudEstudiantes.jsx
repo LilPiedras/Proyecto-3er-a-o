@@ -8,7 +8,6 @@ const CrudEstudiantes = () => {
   const [estudiantes, setEstudiantes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Formulario
   const [nacionalidad, setNacionalidad] = useState('V');
   const [ciestuNum, setCiestuNum] = useState('');
   const [nombreestu, setNombreestu] = useState('');
@@ -16,11 +15,9 @@ const CrudEstudiantes = () => {
   const [teleestu, setTeleestu] = useState('');
   const [correoestu, setCorreoestu] = useState('');
 
-  // 1 = crear, 2 = editar
   const [operation, setOperation] = useState(1);
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // cédula original al editar (por si cambia el formato en UI)
   const [ciestuOriginal, setCiestuOriginal] = useState('');
 
   const cargarEstudiantes = async () => {
@@ -129,7 +126,6 @@ const CrudEstudiantes = () => {
     if (operation === 1) {
       enviarSolicitud('POST', parametros);
     } else {
-      // En editar la cédula no se cambia: va en la URL
       const { ciestu: _omit, ...bodyUpdate } = parametros;
       enviarSolicitud('PUT', bodyUpdate, ciestuOriginal || ciestu);
     }

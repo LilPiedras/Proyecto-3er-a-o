@@ -14,21 +14,27 @@ export default function LoginForm() {
     setLoading(true)
 
     try {
-      const res = await fetch("/api/login", {
+      const body = new URLSearchParams()
+      body.append("username", email)
+      body.append("password", password)
+
+      const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.message || "Error al iniciar sesión")
+        throw new Error(data.detail || "Error al iniciar sesión")
       }
 
-      // Aquí podrías guardar el usuario en localStorage o contexto
-      alert(`Bienvenido ${data.user.nombres || ""}`)
-      // navigate('/dashboard') // ruta futura si la creas
+      localStorage.setItem("access_token", data.access_token)
+      localStorage.setItem("refresh_token", data.refresh_token)
+
+      alert("Inicio de sesión exitoso")
+      navigate("/crudestudiantes")
     } catch (err) {
       setError(err.message)
     } finally {
@@ -92,7 +98,7 @@ export default function LoginForm() {
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
-          
+
           <button
             type="button"
             onClick={() => navigate('/registro')}
