@@ -1,0 +1,10 @@
+Aqui los usuarios para el sistema:
+
+usuario 1: Nombre Fedora, correo: Fedora123@gmail.com, contraseña: Mbappe01 rol: Director
+
+usuario 2:  "ciuser": "V-30122345",
+  "nombreusuario": "Reinaldo",
+  "apellusuario": "Medina",
+  "teleusuario": "+58 412-3456311",
+  "correousuario": "Rchavalin@gmail.com",
+  "contrase": "HolandaChavales"
