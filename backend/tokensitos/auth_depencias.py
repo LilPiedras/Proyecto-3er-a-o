@@ -56,6 +56,10 @@ class VerificarRoles:
         if user is None or not user.activo:
             raise exception_credenciales
             
+<<<<<<< HEAD
+=======
+        # Validamos k sus kredenciales de login estén activas en la tabla puente
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
         if not user.login_data or not user.login_data.activo:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -68,4 +72,8 @@ class VerificarRoles:
                 detail="No tienes los permisos necesarios para acceder a esta sección."
             )
             
+<<<<<<< HEAD
         return user
+=======
+        return user 
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c

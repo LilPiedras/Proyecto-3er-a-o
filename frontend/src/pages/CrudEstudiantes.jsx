@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+<<<<<<< HEAD
 import { TiPencil, TiTrash } from "react-icons/ti";
+=======
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -15,6 +18,10 @@ const CrudEstudiantes = () => {
   const [apelliestu, setApelliestu] = useState('');
   const [teleestu, setTeleestu] = useState('');
   const [correoestu, setCorreoestu] = useState('');
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
   const [operation, setOperation] = useState(1);
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,6 +234,7 @@ const CrudEstudiantes = () => {
                           <td>{e.teleestu || '—'}</td>
                           <td>{e.correoestu || '—'}</td>
                           <td>
+<<<<<<< HEAD
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() =>
@@ -252,6 +260,29 @@ const CrudEstudiantes = () => {
                                 <TiTrash className="text-xl" />
                               </button>
                             </div>
+=======
+                            <button
+                              onClick={() =>
+                                openModal(
+                                  2,
+                                  e.ciestu,
+                                  e.nombreestu,
+                                  e.apelliestu,
+                                  e.teleestu,
+                                  e.correoestu
+                                )
+                              }
+                              className="bg-yellow-400 text-black px-3 py-1 rounded mr-2 hover:bg-yellow-300"
+                            >
+                              <i className="fa-solid fa-edit"></i>
+                            </button>
+                            <button
+                              onClick={() => deleteEstudiante(e.ciestu, e.nombreestu)}
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
                           </td>
                         </tr>
                       ))

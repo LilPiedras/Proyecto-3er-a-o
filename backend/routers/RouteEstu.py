@@ -20,6 +20,7 @@ def get_db():
     finally:
         db.close()
 
+<<<<<<< HEAD
 # Permitir lectura a Docentes(4), Coordinadores(3), Subdirectores(2) y Director(1)
 @estudiante_router.get("/{ciestu}", response_model=EstudianteSalida)
 def obtener_estudiante(
@@ -72,3 +73,28 @@ def delete_estudiante_logico(
     current_user: Usuario = Depends(VerificarRoles([1,2]))
 ):
     return estudiante_service.eliminar_estudiante(ciestu, db)
+=======
+@estudiante_router.get("/{ciestu}", response_model=EstudianteSalida)
+def obtener_estudiante(ciestu: str, db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1])) ):
+    return estudiante_service.obtener_estudiante_por_id(ciestu, db)
+
+@estudiante_router.get("/", response_model=List[EstudianteSalida], status_code=status.HTTP_200_OK)
+def listar_estudiantes(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return estudiante_service.listar_estudiantes(db)
+
+@estudiante_router.post("/", response_model=EstuEntrada, status_code=status.HTTP_200_OK)
+def crear_empleado(estudiante: EstuEntrada, db:Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return estudiante_service.crear_estudiante(estudiante, db)
+
+@estudiante_router.put("/{ciestu}", response_model=EstudianteSalida)
+def update_estudiante_completo(ciestu: str, estu_updata: EstudianteActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return estudiante_service.actualizar_estudiante_completo(ciestu, estu_updata, db, )
+
+@estudiante_router.patch("/{ciestu}", response_model=EstudianteSalida)
+def update_estudiante_parcial(ciestu: str, estu_updata: EstudianteActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return estudiante_service.actualizar_estudiante_parcial(ciestu, estu_updata, db)
+
+@estudiante_router.delete("/{ciestu}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_estudiante_logico(ciestu: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return estudiante_service.eliminar_estudiante(ciestu, db)
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c

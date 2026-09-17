@@ -13,12 +13,17 @@ from tokensitos.tokesificador import (
     crear_access_token,
     crear_refresh_token,
     decodificar_refresh_token,
+<<<<<<< HEAD
+=======
+    decodificar_access_token,
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
     REFRESH_TOKEN_EXPIRE_DAYS
 )
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
+<<<<<<< HEAD
 # Schemas de Pydantic
 class UsuarioResponse(BaseModel):
     ciuser: str
@@ -26,11 +31,16 @@ class UsuarioResponse(BaseModel):
     correousuario: str
     idrol: int
 
+=======
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
 class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+<<<<<<< HEAD
     usuario: UsuarioResponse
+=======
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
 
 class RefreshRequest(BaseModel):
     refresh_token: str
@@ -50,6 +60,7 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+<<<<<<< HEAD
     # 1. Buscar al usuario por correo
     usuario_datos = db.query(Usuario).filter(
         Usuario.correousuario == form_data.username
@@ -57,12 +68,22 @@ def login(
 
     # Validar credenciales
     if not usuario_datos or not verificar_password(form_data.password, usuario_datos.contrase):
+=======
+    user_bridge = db.query(UserLogin).join(
+        Usuario, UserLogin.ciuser == Usuario.ciuser
+    ).filter(
+        Usuario.correousuario == form_data.username
+    ).first()
+
+    if not user_bridge:
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Correo o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+<<<<<<< HEAD
     # 2. Verificar relación con la tabla de roles/login
     user_bridge = db.query(UserLogin).filter(
         UserLogin.ciuser == usuario_datos.ciuser
@@ -85,6 +106,23 @@ def login(
     access_token = crear_access_token(data={"sub": correo_actual})
     refresh_token = crear_refresh_token(data={"sub": correo_actual})
     
+=======
+    usuario_datos = db.query(Usuario).filter(Usuario.ciuser == user_bridge.ciuser).first()
+
+    if not usuario_datos or not verificar_password(form_data.password, usuario_datos.contrase):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Correo o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    if not user_bridge.activo:
+        raise HTTPException(status_code=400, detail="Usuario inactivo")
+
+    correo_actual = usuario_datos.correousuario
+    access_token = crear_access_token(data={"sub": correo_actual})
+    refresh_token = crear_refresh_token(data={"sub": correo_actual})
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
     db_refresh = RefreshToken(
         token=refresh_token,
         usuario_log=user_bridge.ciuser_log, 
@@ -97,6 +135,7 @@ def login(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
+<<<<<<< HEAD
         "token_type": "bearer",
         "usuario": {
             "ciuser": usuario_datos.ciuser,
@@ -106,6 +145,12 @@ def login(
         }
     }
 
+=======
+        "token_type": "bearer"
+    }
+
+
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
 @router.post("/registro", status_code=201)
 def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     existe = db.query(Usuario).filter(Usuario.correousuario == usuario.correousuario).first()
@@ -167,8 +212,11 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
 
     if not user_bridge or not user_bridge.activo:
         raise credentials_exception
+<<<<<<< HEAD
 
     usuario_datos = db.query(Usuario).filter(Usuario.ciuser == user_bridge.ciuser).first()
+=======
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
         
     db_token.activo = False
     db.commit()
@@ -188,6 +236,7 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
     return {
         "access_token": new_access,
         "refresh_token": new_refresh,
+<<<<<<< HEAD
         "token_type": "bearer",
         "usuario": {
             "ciuser": usuario_datos.ciuser,
@@ -195,6 +244,9 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
             "correousuario": usuario_datos.correousuario,
             "idrol": user_bridge.idrol
         }
+=======
+        "token_type": "bearer"
+>>>>>>> 2306ea622727522274ae7a431c6d3ef18695715c
     }
 
 
