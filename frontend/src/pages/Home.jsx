@@ -7,7 +7,7 @@ const Home = () => {
       <div className="main-child w-full flex flex-col justify-center items-center">
         
         <Motion.h1 
-          className="md:text-3xl text-2xl font-Jost text-white mb-3 text-center"
+          className="home-hero-copy md:text-3xl text-2xl font-Jost text-white mb-3 text-center"
           initial={{ opacity: 0, y: 100 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: easeInOut }}
@@ -17,7 +17,7 @@ const Home = () => {
         </Motion.h1>
 
         <Motion.p 
-          className="text-white font-Jost text-center mb-5 max-w-5xl"
+          className="home-hero-copy text-white font-Jost text-center mb-5 max-w-5xl"
           initial={{ opacity: 0, y: 100 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: easeInOut, delay: 0.3 }}
@@ -33,7 +33,7 @@ const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: easeInOut, delay: 0.2 }}
         >
-          Explore More
+          Explora mas
         </Motion.button>
 
       </div>
