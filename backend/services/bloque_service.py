@@ -22,9 +22,9 @@ def listar_bloques_horarios(db: Session):
 def crear_bloque(bloque_data: BloqueEntrada, db: Session):
     try:
         bloque = Bloque(
-            dia=bloque_data.dia,
             horainicio=bloque_data.horainicio,
-            horafin=bloque_data.horafin
+            horafin=bloque_data.horafin,
+            activo=True
         )
         db.add(bloque)
         db.commit()

@@ -86,6 +86,21 @@ const Header = () => {
                 </RouterLink>
               </li>
               <li>
+                <RouterLink to="/crudbloque" className="cursor-pointer hover:text-yellow-400">
+                  Bloques
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/crudhorario" className="cursor-pointer hover:text-yellow-400">
+                  Horarios
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/crudseccion" className="cursor-pointer hover:text-yellow-400">
+                  Secciones
+                </RouterLink>
+              </li>
+              <li>
                 <button
                   onClick={handleLogout}
                   className="bg-yellow-400 text-black px-4 py-1 rounded-md font-semibold hover:bg-yellow-500 transition cursor-pointer"
@@ -252,6 +267,15 @@ const Header = () => {
                 </RouterLink>
                 <RouterLink to="/crudcarrera" onClick={() => setToggle(false)}>
                   Carrera
+                </RouterLink>
+                <RouterLink to="/crudbloque" onClick={() => setToggle(false)}>
+                  Bloques
+                </RouterLink>
+                <RouterLink to="/crudhorario" onClick={() => setToggle(false)}>
+                  Horarios
+                </RouterLink>
+                <RouterLink to="/crudseccion" onClick={() => setToggle(false)}>
+                  Secciones
                 </RouterLink>
                 <button
                   onClick={handleLogout}
