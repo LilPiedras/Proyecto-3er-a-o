@@ -39,3 +39,22 @@ def actualizar_seccion_parcial(idsecc: int, secci: SeccionActualizar, db: Sessio
     db.commit()
     db.refresh(db_secc)
     return db_secc
+
+def eliminar_seccion(idsecc: int, db: Session):
+    db_secc = db.query(Seccion).filter(Seccion.idsecc == idsecc).first()
+    if not db_secc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sección no encontrada"
+        )
+
+    try:
+        db.delete(db_secc)
+        db.commit()
+        return None
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar la sección porque está en uso"
+        )

@@ -1,14 +1,15 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
-from datetime import date
 
 class SeccionSalida(BaseModel):
-    nomsecc : str
+    idsecc: int
+    nomsecc: str
+
+    class Config:
+        from_attributes = True
 
 class SeccionEntrada(BaseModel):
-    nomsecc : str
+    nomsecc: str
 
 class SeccionActualizar(BaseModel):
-    nomsecc: Optional[str] | None = None
-
-
+    nomsecc: Optional[str] = None
