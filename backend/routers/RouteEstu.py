@@ -44,7 +44,8 @@ def crear_estudiante(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([3, 2, 1]))
 ):
-    return estudiante_service.crear_estudiante(estudiante, db)
+    # Se agregó current_user.ciuser
+    return estudiante_service.crear_estudiante(estudiante, current_user.ciuser, db)
 
 # Ediciones limitadas a Coordinadores(3), Subdirectores(2) y Director(1)
 @estudiante_router.put("/{ciestu}", response_model=EstudianteSalida)
@@ -54,7 +55,8 @@ def update_estudiante_completo(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([3, 2, 1]))
 ):
-    return estudiante_service.actualizar_estudiante_completo(ciestu, estu_updata, db)
+    # Se agregó current_user.ciuser
+    return estudiante_service.actualizar_estudiante_completo(ciestu, estu_updata, current_user.ciuser, db)
 
 @estudiante_router.patch("/{ciestu}", response_model=EstudianteSalida)
 def update_estudiante_parcial(
@@ -63,7 +65,8 @@ def update_estudiante_parcial(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([3, 2, 1]))
 ):
-    return estudiante_service.actualizar_estudiante_parcial(ciestu, estu_updata, db)
+    # Se agregó current_user.ciuser
+    return estudiante_service.actualizar_estudiante_parcial(ciestu, estu_updata, current_user.ciuser, db)
 
 # Eliminación lógica exclusiva del Director(1) y Subdirector(2)
 @estudiante_router.delete("/{ciestu}", status_code=status.HTTP_204_NO_CONTENT)
@@ -72,4 +75,5 @@ def delete_estudiante_logico(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([1, 2]))
 ):
-    return estudiante_service.eliminar_estudiante(ciestu, db)
+    # Se agregó current_user.ciuser
+    return estudiante_service.eliminar_estudiante(ciestu, current_user.ciuser, db)

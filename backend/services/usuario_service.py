@@ -4,7 +4,7 @@ from Schemas.usuario_schema import UsuarioEntrada, UsuarioUpdata
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 from tokensitos.tokesificador import hashear_password 
-from services.auditoria_service import registrar_auditoria_txt 
+from sqlalchemy import text # Agregado para enviar el ID al trigger de PostgreSQL
 
 def obtener_usuario_por_id(ciuser: str, db: Session):
     usuario = db.query(Usuario).filter(Usuario.ciuser == ciuser, Usuario.activo == True).first()
@@ -36,10 +36,9 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
     )
     db.add(nuevo_usuario)
     
-    # BYPASS AUDITORIA capturar los datos hacia txt
-    datos_nuevos_dict = {col.name: getattr(nuevo_usuario, col.name) for col in nuevo_usuario.__table__.columns}
-    registrar_auditoria_txt(db, admin_id, nuevo_usuario.ciuser, 'INSERT', None, datos_nuevos_dict)
-
+    # Le pasamos a PostgreSQL el ID del administrador antes del commit para el Trigger
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    
     db.commit()
     db.refresh(nuevo_usuario)
     return nuevo_usuario
@@ -50,8 +49,6 @@ def actualizar_usuario_completo(ciuser: str, usuario_updata: UsuarioUpdata, admi
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    datos_viejos_dict = {col.name: getattr(db_usuario, col.name) for col in db_usuario.__table__.columns}
-
     update_data = usuario_updata.model_dump(exclude_unset=True)
     if "contrase" in update_data and update_data["contrase"]:
         update_data["contrase"] = hashear_password(update_data["contrase"])
@@ -59,11 +56,8 @@ def actualizar_usuario_completo(ciuser: str, usuario_updata: UsuarioUpdata, admi
     for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
-    #Capturar los datos nuevos después del cambio
-    datos_nuevos_dict = {col.name: getattr(db_usuario, col.name) for col in db_usuario.__table__.columns}
-
-    # BYPASS DE LA AUDITORIA
-    registrar_auditoria_txt(db, admin_id, ciuser, 'UPDATE', datos_viejos_dict, datos_nuevos_dict)
+    # Inyección del admin_id para el Trigger
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
 
     db.commit()
     db.refresh(db_usuario)
@@ -75,9 +69,6 @@ def actualizar_usuario_parcial(ciuser: str, usuario_updata: UsuarioUpdata, admin
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # MAS DE LO MISMO
-    datos_viejos_dict = {col.name: getattr(db_usuario, col.name) for col in db_usuario.__table__.columns}
-
     update_data = usuario_updata.model_dump(exclude_unset=True)
     if "contrase" in update_data and update_data["contrase"]:
         update_data["contrase"] = hashear_password(update_data["contrase"])
@@ -85,28 +76,26 @@ def actualizar_usuario_parcial(ciuser: str, usuario_updata: UsuarioUpdata, admin
     for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
-    datos_nuevos_dict = {col.name: getattr(db_usuario, col.name) for col in db_usuario.__table__.columns}
-
-    registrar_auditoria_txt(db, admin_id, ciuser, 'UPDATE', datos_viejos_dict, datos_nuevos_dict)
+    # Inyección del admin_id para el Trigger
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
 
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
+
 
 def eliminar_usuario(ciuser: str, admin_id: str, db: Session):
     db_usuario = db.query(Usuario).filter(Usuario.ciuser == ciuser, Usuario.activo == True).first()
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # MAS DE LO MISMO X2
-    datos_viejos_dict = {col.name: getattr(db_usuario, col.name) for col in db_usuario.__table__.columns}
-
     db_usuario.activo = False
     db_login = db.query(UserLogin).filter(UserLogin.ciuser == ciuser, UserLogin.activo == True).first()
     if db_login:
         db_login.activo = False
         
-    registrar_auditoria_txt(db, admin_id, ciuser, 'DELETE', datos_viejos_dict, None)
+    # Inyección del admin_id para el Trigger (quedará registrado como UPDATE por cambiar activo a False)
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
 
     db.commit()
     return None
