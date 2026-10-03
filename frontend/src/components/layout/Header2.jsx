@@ -86,6 +86,11 @@ const Header = () => {
                 </RouterLink>
               </li>
               <li>
+                <RouterLink to="/crudmensualidad" className="cursor-pointer hover:text-yellow-400">
+                  Mensualidades
+                </RouterLink>
+              </li>
+              <li>
                 <RouterLink to="/crudhorarios">
                   Horarios
                 </RouterLink>
@@ -272,6 +277,9 @@ const Header = () => {
                 </RouterLink>
                 <RouterLink to="/crudcarrera" onClick={() => setToggle(false)}>
                   Carrera
+                </RouterLink>
+                <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>
+                  Mensualidades
                 </RouterLink>
                 <RouterLink to="/crudhorarios" onClick={() => setToggle(false)}>
                   Horarios
