@@ -44,8 +44,12 @@ def listar_mensualidad(db: Session = Depends(get_db), current_user: Usuario = De
 
 @mensualidad_route.post("/", response_model=MensualidadSalida, status_code=status.HTTP_201_CREATED)
 def crear_mensualidad(mensualidad: MensualidadEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    return mensualidad_service.crear_mensualidad(mensualidad, db)
+    return mensualidad_service.crear_mensualidad(mensualidad, current_user.ciuser, db)
 
 @mensualidad_route.patch("/{idmensualidad}", response_model=MensualidadSalida)
 def update_mensualidad(idmensualidad: int, mensualidad_up: MensualidadActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return mensualidad_service.actualizar_mensualidad_parcial(idmensualidad, mensualidad_up, db)
+
+@mensualidad_route.delete("/{idmensualidad}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_mensualidad(idmensualidad: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    mensualidad_service.eliminar_mensualidad(idmensualidad, db)
