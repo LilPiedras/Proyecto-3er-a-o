@@ -24,6 +24,7 @@ class Mensualidad(Base):
     fecha_corte: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     estudiantes_asignados: Mapped[list["Mensualidad_estu"]] = relationship("Mensualidad_estu", back_populates="mensualidad")
 

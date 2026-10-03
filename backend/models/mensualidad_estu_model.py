@@ -7,6 +7,7 @@ from models.base import Base
 
 # Esto le enseña a Pylance qué es "Mensualidad" solo durante el análisis de código:
 if TYPE_CHECKING:
+    from models.estudiante_model import Estudiante
     from models.mensualidad_model import Mensualidad
 
 class Mensualidad_estu(Base):
@@ -24,6 +25,7 @@ class Mensualidad_estu(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     mensualidad: Mapped["Mensualidad"] = relationship("Mensualidad", back_populates="estudiantes_asignados")
+    datos_estudiante: Mapped["Estudiante"] = relationship("Estudiante")
 
     def __repr__(self) -> str:
         return f"<Mensualidad_estu id={self.idmensualidad_estu} estudiante='{self.estudiante}' estado='{self.estado}'>"
