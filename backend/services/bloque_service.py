@@ -13,18 +13,14 @@ def obtener_bloque_por_id(idbloque: int, db: Session):
 
 
 def listar_bloques_horarios(db: Session):
-    bloques = db.query(Bloque).filter(Bloque.activo == True).all()
-    if not bloques:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de bloques vacía")
-    return bloques
-
+    return db.query(Bloque).filter(Bloque.activo == True).all()
 
 def crear_bloque(bloque_data: BloqueEntrada, db: Session):
     try:
         bloque = Bloque(
-            dia=bloque_data.dia,
             horainicio=bloque_data.horainicio,
-            horafin=bloque_data.horafin
+            horafin=bloque_data.horafin,
+            activo=True
         )
         db.add(bloque)
         db.commit()
@@ -32,10 +28,7 @@ def crear_bloque(bloque_data: BloqueEntrada, db: Session):
         return bloque
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error al crear el bloque de horario"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error al crear el bloque de horario")
 
 
 def actualizar_horario_completo(idbloque: int, bloque_data: BloqueEntrada, db: Session):

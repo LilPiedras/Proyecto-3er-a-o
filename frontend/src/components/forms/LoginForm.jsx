@@ -30,8 +30,15 @@ export default function LoginForm() {
         throw new Error(data.detail || "Error al iniciar sesión")
       }
 
+      // Guardar tokens
       localStorage.setItem("access_token", data.access_token)
       localStorage.setItem("refresh_token", data.refresh_token)
+
+      // Guardar el rol (ajusta la propiedad según lo que responda tu FastAPI)
+      const rolEncontrado = data.idrol || data.rol || data.usuario?.idrol || data.user?.idrol;
+      if (rolEncontrado !== undefined) {
+        localStorage.setItem("idrol", rolEncontrado);
+      }
 
       alert("Inicio de sesión exitoso")
       navigate("/crudestudiantes")

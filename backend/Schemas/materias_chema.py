@@ -1,16 +1,18 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
-from datetime import date
 
 class MateriasSalida(BaseModel):
-    nombremateria : str
-    docente : Optional[str] | None = None
+    idmateria: int          
+    nombremateria: str
+    docente: Optional[str] | None = None
+
+    class Config:
+        from_attributes = True
 
 class MateriasEntrada(BaseModel):
-    nombremateria : str
-    docente : Optional[str] | None = None
+    nombremateria: str
+    docente: Optional[str] = "Sin asignar" 
 
 class MateriasActualizar(BaseModel):
-    nombremateria : Optional[str] | None = None
-    docente : Optional[str] | None = None
- 
+    nombremateria: Optional[str] = None
+    docente: Optional[str] = None

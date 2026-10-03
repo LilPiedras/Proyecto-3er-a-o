@@ -33,13 +33,13 @@ def crear_horario(horario: HorarioEntrada, db: Session = Depends(get_db), curren
     return horario_service.crear_horario(horario, db)
 
 @horario_route.put("/{idhorario}", response_model=HorarioSalida)
-def update_horario_completo(idhorario: int, horario_updata: HorarioActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4, 2]))):
+def update_horario_completo(idhorario: int, horario_updata: HorarioActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     return horario_service.actualizar_horario_completo(idhorario, horario_updata, db)
 
 @horario_route.patch("/{idhorario}", response_model=HorarioSalida)
-def update_horario_parcial(idhorario: int, horario_up: HorarioActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4, 2]))):
+def update_horario_parcial(idhorario: int, horario_up: HorarioActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     return horario_service.actualizar_horario_parcial(idhorario, horario_up, db)
 
 @horario_route.delete("/{idhorario}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_horario_logico(idhorario: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4, 2]))):
+def delete_horario_logico(idhorario: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     return horario_service.eliminar_horario(idhorario, db)

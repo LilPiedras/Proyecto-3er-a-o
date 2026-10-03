@@ -10,6 +10,10 @@ import About from "../pages/About";
 import CrudDocentes from "../pages/CrudDocentes";
 import CrudEstudiantes from "../pages/CrudEstudiantes";
 import CrudCarrera from "../pages/CrudCarrera";
+import CrudHorarios from "../pages/CrudHorarios";
+import CrudSeccion from "../pages/CrudSeccion";
+import CrudOferta from "../pages/CrudOferta";
+import CrudModuloMateria from "../pages/CrudMateriamodulo";
 const AppRoutes = () => {
   return (
     <main className="flex-1 pt-28 md:pt-24">
@@ -23,6 +27,11 @@ const AppRoutes = () => {
         <Route path="cruddocentes" element={<CrudDocentes/>}/>
         <Route path="/crudestudiantes" element={<CrudEstudiantes/>}/>
         <Route path="/crudcarrera" element={<CrudCarrera/>}></Route>
+        <Route path="/crudhorarios" element={<CrudHorarios />} />
+        <Route path="/crudseccion" element={<CrudSeccion />} />
+        <Route path="/crudoferta" element={<CrudOferta />} />
+        <Route path="/crudmodulomateria" element={<CrudModuloMateria />} />
+
 
         <Route path="/login" element={
           <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">

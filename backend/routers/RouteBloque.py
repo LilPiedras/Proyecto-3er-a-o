@@ -24,8 +24,8 @@ def get_db():
 def obtener_curso(idbloque: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4,2,1]))):
     return bloque_service.obtener_bloque_por_id(idbloque, db)
 
-@bloque_route.get("/", response_model=List[BloqueEntrada], status_code=status.HTTP_200_OK)
-def listar_bloque(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4,2,1]))):
+@bloque_route.get("/", response_model=List[BloqueSalida], status_code=status.HTTP_200_OK)
+def listar_bloque(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4, 3, 2, 1]))):
     return bloque_service.listar_bloques_horarios(db)
 
 @bloque_route.post("/", response_model=BloqueEntrada, status_code=status.HTTP_200_OK)

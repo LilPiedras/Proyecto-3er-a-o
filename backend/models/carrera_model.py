@@ -6,7 +6,7 @@ class Carrera(Base):
     __tablename__ = "carrera"
 
     idcarrera: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
-    nombrecarrera: Mapped[str] = mapped_column(String(20), nullable=False)
+    nombrecarrera: Mapped[str] = mapped_column(String(90), nullable=False)
     descripcion: Mapped[str] = mapped_column(String(100), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 

@@ -30,6 +30,7 @@ from models.user_login_model import UserLogin
 from models.usuario_model import Usuario
 from models.rol_model import Rol
 from models.auditoria_model import Auditoria
+from models.plan_evaluacion_model import PlanEvaluacion
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,7 +57,9 @@ from routers.RouteModulo_Materia import modulo_materia_route
 from routers.RouteCarreraModulo import modulo_carrera_route
 from routers.RouteUsuarioLogin import usuariolog_router
 from routers.auditoria_router import auditoria_router
+from routers.RoutePlan_evaluacion import plan_evaluacion_router
 from analitics.kpi import router as analitics_router 
+
 
 
 app = FastAPI()
@@ -84,6 +87,7 @@ app.include_router(modulo_carrera_route)
 app.include_router(usuariolog_router)
 app.include_router(auditoria_router)
 app.include_router(analitics_router)
+app.include_router(plan_evaluacion_router)
 
 @app.get("/")
 def index():

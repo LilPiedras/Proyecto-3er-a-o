@@ -1,19 +1,19 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import time
 
 class BloqueEntrada(BaseModel):
-    dia: str
-    horainicio: time
-    horafin: time
+    horainicio: str
+    horafin: str
 
 class BloqueSalida(BaseModel):
     idbloque: int
-    dia: str
-    horainicio: time
-    horafin: time
+    horainicio: str
+    horafin: str
+    activo: bool | None = None
+
+    class Config:
+        from_attributes = True
 
 class BloqueActualizar(BaseModel):
-    dia: Optional[str] = None
-    horainicio: Optional[time] = None
-    horafin: Optional[time] = None
+    horainicio: Optional[str] = None
+    horafin: Optional[str] = None

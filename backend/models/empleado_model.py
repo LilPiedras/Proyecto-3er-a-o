@@ -13,6 +13,7 @@ class Empleado(Base):
     fechacontra: Mapped[date] = mapped_column(Date, nullable=False)
     telefempleado: Mapped[Optional[str]] = mapped_column(String(200))
     correoempleado: Mapped[Optional[str]] = mapped_column(String(200))
+    cargo: Mapped[Optional[str]] = mapped_column(String(40))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     #def __repr__(self) -> str:
     #  return f"<Empleado id={self.idempleado} nombre={self.nombreempleado!r}>"

@@ -86,6 +86,26 @@ const Header = () => {
                 </RouterLink>
               </li>
               <li>
+                <RouterLink to="/crudhorarios">
+                  Horarios
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/crudseccion" className="cursor-pointer hover:text-yellow-400">
+                  Secciones
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/crudoferta" className="cursor-pointer hover:text-yellow-400">
+                  Oferta Academica
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/crudmodulomateria" className="cursor-pointer hover:text-yellow-400">
+                  Modulo Materia
+                </RouterLink>
+              </li>
+              <li>
                 <button
                   onClick={handleLogout}
                   className="bg-yellow-400 text-black px-4 py-1 rounded-md font-semibold hover:bg-yellow-500 transition cursor-pointer"
@@ -252,6 +272,18 @@ const Header = () => {
                 </RouterLink>
                 <RouterLink to="/crudcarrera" onClick={() => setToggle(false)}>
                   Carrera
+                </RouterLink>
+                <RouterLink to="/crudhorarios" onClick={() => setToggle(false)}>
+                  Horarios
+                </RouterLink>
+                <RouterLink to="/crudseccion" onClick={() => setToggle(false)}>
+                  Secciones
+                </RouterLink>
+                <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>
+                  Oferta Academica
+                </RouterLink>
+                <RouterLink to="/crudmodulomateria" onClick={() => setToggle(false)}>
+                  Modulo Materias
                 </RouterLink>
                 <button
                   onClick={handleLogout}

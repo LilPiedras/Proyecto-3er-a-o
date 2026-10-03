@@ -1,5 +1,5 @@
 from models.empleado_model import *
-from Schemas.empleado_schema import EmpleadoEntrada, EmpleadoUpdate
+from Schemas.empleado_schema import *
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 from sqlalchemy import text # Agregado para el Trigger
@@ -21,6 +21,7 @@ def crear_empleado(empleado: EmpleadoEntrada, escritor_id: str, db:Session):
                      nombreempleado = empleado.nombreempleado,
                      apellidoempleado = empleado.apellidoempleado,
                      fechacontra= empleado.fechacontra,
+                     cargo = empleado.cargo,
                      telefempleado = empleado.telefempleado,
                      correoempleado = empleado.correoempleado)
     db.add(empleado)
@@ -30,12 +31,13 @@ def crear_empleado(empleado: EmpleadoEntrada, escritor_id: str, db:Session):
     db.refresh(empleado)
     return empleado
 
-def actualizar_empleado_completo(ciempleado: str, emple_update: EmpleadoEntrada, escritor_id: str, db: Session):
+def actualizar_empleado_completo(ciempleado: str, emple_update: EmpleadoUpdate, escritor_id: str, db: Session):
     db_empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado).first()
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
 
-    for key, value in emple_update.model_dump(exclude_unset=True).items():
+    update_data = emple_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
         setattr(db_empleado, key, value)
 
     db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))

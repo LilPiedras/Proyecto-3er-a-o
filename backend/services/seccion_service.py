@@ -6,11 +6,7 @@ from fastapi import status, HTTPException
 
 
 def listar_secciones(db: Session):
-    secciones = db.query(Seccion).all()
-    if not secciones:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de secciones vacía")
-    return secciones
-
+    return db.query(Seccion).all()
 
 def crear_seccion(secc: SeccionEntrada, db: Session):
     try:
@@ -26,7 +22,6 @@ def crear_seccion(secc: SeccionEntrada, db: Session):
             detail="Error al crear la sección"
         )
 
-
 def actualizar_seccion_parcial(idsecc: int, secci: SeccionActualizar, db: Session):
     db_secc = db.query(Seccion).filter(Seccion.idsecc == idsecc).first()
     if not db_secc:
@@ -39,3 +34,15 @@ def actualizar_seccion_parcial(idsecc: int, secci: SeccionActualizar, db: Sessio
     db.commit()
     db.refresh(db_secc)
     return db_secc
+
+def eliminar_seccion(idsecc: int, db: Session):
+    db_secc = db.query(Seccion).filter(Seccion.idsecc == idsecc).first()
+    if not db_secc:
+        raise HTTPException(status_code=404, detail="Sección no encontrada")
+    try:
+        db.delete(db_secc)
+        db.commit()
+        return None
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="No se puede eliminar la sección porque está en uso")

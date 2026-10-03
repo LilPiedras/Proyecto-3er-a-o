@@ -9,6 +9,7 @@ class Horario(Base):
     bloque: Mapped[int] = mapped_column(Integer, ForeignKey("bloque.idbloque", ondelete="SET NULL"), nullable=False)
     dia: Mapped[str] = mapped_column(String (30), nullable=False)
     salon: Mapped[str] = mapped_column(String(30), nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     def __repr__(self) -> str:
         return f"<Horario id={self.idhorario}>"

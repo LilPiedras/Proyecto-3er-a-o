@@ -20,7 +20,7 @@ def get_db():
     finally:
         db.close()
 
-@modulo_route.get("/{idmodulo}", response_model=ModuloSalida)
+@modulo_route.get("/{idmodulo}", response_model=List[ModuloSalida])
 def obtener_mati(idmodulo: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4,2,1]))):
     return modulo_service.obtener_modulo_por_id(idmodulo, db)
 

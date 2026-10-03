@@ -13,10 +13,7 @@ def obtener_horario_por_id(idhorario: int, db: Session):
 
 
 def listar_horarios(db: Session):
-    horarios = db.query(Horario).filter(Horario.activo == True).all()
-    if not horarios:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de horarios vacía")
-    return horarios
+    return db.query(Horario).filter(Horario.activo == True).all()
 
 
 def crear_horario(horario_data: HorarioEntrada, db: Session):
@@ -24,7 +21,8 @@ def crear_horario(horario_data: HorarioEntrada, db: Session):
         horario = Horario(
             bloque=horario_data.bloque,
             dia=horario_data.dia,
-            salon=horario_data.salon
+            salon=horario_data.salon,
+            activo=True
         )
         db.add(horario)
         db.commit()

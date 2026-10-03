@@ -1,6 +1,6 @@
 from database.connection import SessionLocal
-from models.carrera_model import *
-from Schemas.carrera_schema import *
+from models.carrera_model import Carrera
+from Schemas.carrera_schema import CarreraEntrada, CarreraUpdata
 from services import carrera_service
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -21,17 +21,20 @@ def get_db():
         db.close()
 
 
-@carrera_route.get("/", response_model=List[CarreraEntrada], status_code=status.HTTP_200_OK)
+@carrera_route.get("/", status_code=status.HTTP_200_OK)
 def listar_carreras(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([4,3,2,1]))):
     return carrera_service.listar_carrera(db)
+
 
 @carrera_route.post("/", response_model=CarreraEntrada, status_code=status.HTTP_201_CREATED)
 def crear_carrera(carrera: CarreraEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return carrera_service.crear_carrera(carrera, db)
 
+
 @carrera_route.patch("/{idcarrera}", response_model=CarreraUpdata)
 def update_modulo(idcarrera: int, materiamo: CarreraUpdata, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return carrera_service.actualizar_carrera_parcial(idcarrera, materiamo, db)
+
 
 @carrera_route.delete("/{idcarrera}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(idcarrera: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):

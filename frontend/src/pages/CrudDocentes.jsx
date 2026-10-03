@@ -14,6 +14,7 @@ const CrudDocentes = () => {
   const [apellido, setApellido] = useState('');
   const [telefono, setTelefono] = useState('');
   const [correo, setCorreo] = useState('');
+  const [cargo, setCargo] = useState('');
   const [operation, setOperation] = useState(1);
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,16 +27,12 @@ const CrudDocentes = () => {
       setDocentes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
-      if (error.response?.status === 404) {
-        setDocentes([]);
-      } else {
-        const detail = error.response?.data?.detail;
-        show_alert(
-          typeof detail === 'string' ? detail : 'Error al cargar docentes',
-          'error'
-        );
-        setDocentes([]);
-      }
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'Error al cargar docentes',
+        'error'
+      );
+      setDocentes([]);
     } finally {
       setLoading(false);
     }
@@ -52,6 +49,7 @@ const CrudDocentes = () => {
     setApellido('');
     setTelefono('');
     setCorreo('');
+    setCargo('');
     setCiempleadoOriginal('');
   };
 
@@ -61,7 +59,8 @@ const CrudDocentes = () => {
     nom = '',
     ape = '',
     tel = '',
-    mail = ''
+    mail = '',
+    car = ''
   ) => {
     limpiarFormulario();
     setOperation(op);
@@ -84,6 +83,7 @@ const CrudDocentes = () => {
       setApellido(ape || '');
       setTelefono(tel || '');
       setCorreo(mail || '');
+      setCargo(car || '');
     }
 
     setIsModalOpen(true);
@@ -112,6 +112,10 @@ const CrudDocentes = () => {
       show_alert('Escribe una dirección de correo válida', 'warning');
       return;
     }
+    if (cargo.trim() === '') {
+      show_alert('Escribe el cargo del docente', 'warning');
+      return;
+    }
 
     const parametros = {
       ciempleado,
@@ -119,6 +123,7 @@ const CrudDocentes = () => {
       apellidoempleado: apellido.trim(),
       telefempleado: telefono.trim() || null,
       correoempleado: correo.trim() || null,
+      cargo: cargo.trim(),
     };
 
     if (operation === 1) {
@@ -151,12 +156,21 @@ const CrudDocentes = () => {
       limpiarFormulario();
       await cargarDocentes();
     } catch (error) {
-      console.error(error);
+      console.error('Error detallado del backend:', error.response?.data);
+      
       const detail = error.response?.data?.detail;
-      show_alert(
-        typeof detail === 'string' ? detail : 'Error en la operación',
-        'error'
-      );
+      let mensajeError = 'Error en la operación';
+
+      if (typeof detail === 'string') {
+        mensajeError = detail;
+      } else if (Array.isArray(detail)) {
+        // Formatea el error 422 de FastAPI indicando exactamente qué campo falló
+        mensajeError = detail
+          .map((err) => `${err.loc[err.loc.length - 1]}: ${err.msg}`)
+          .join(' | ');
+      }
+
+      show_alert(mensajeError, 'error');
     }
   };
 
@@ -209,6 +223,7 @@ const CrudDocentes = () => {
                       <th>APELLIDO</th>
                       <th>TELÉFONO</th>
                       <th>CORREO ELECTRÓNICO</th>
+                      <th>CARGO</th>
                       <th>ACCIONES</th>
                     </tr>
                   </thead>
@@ -222,6 +237,7 @@ const CrudDocentes = () => {
                           <td>{d.apellidoempleado || d.apellido}</td>
                           <td>{d.telefempleado || d.telefono || '—'}</td>
                           <td>{d.correoempleado || d.correo || '—'}</td>
+                          <td>{d.cargo || '—'}</td>
                           <td>
                             <button
                               onClick={() =>
@@ -231,7 +247,8 @@ const CrudDocentes = () => {
                                   d.nombreempleado || d.nombre,
                                   d.apellidoempleado || d.apellido,
                                   d.telefempleado || d.telefono,
-                                  d.correoempleado || d.correo
+                                  d.correoempleado || d.correo,
+                                  d.cargo
                                 )
                               }
                               className="bg-yellow-400 text-black px-3 py-1 rounded mr-2 hover:bg-yellow-300"
@@ -249,7 +266,7 @@ const CrudDocentes = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center p-4 text-gray-400">
+                        <td colSpan="8" className="text-center p-4 text-gray-400">
                           No hay datos para mostrar
                         </td>
                       </tr>
@@ -341,6 +358,17 @@ const CrudDocentes = () => {
                   placeholder="correo@ejemplo.com"
                   value={correo}
                   onChange={(e) => setCorreo(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">Cargo</label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  placeholder="Ej. Docente, Coordinador"
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
                 />
               </div>
 

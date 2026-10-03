@@ -6,6 +6,10 @@ class HorarioSalida(BaseModel):
     dia: str
     bloque: int
     salon: str
+    activo: bool | None = None
+
+    class Config:
+        from_attributes = True
 
 class HorarioEntrada(BaseModel):
     dia: str

@@ -31,3 +31,7 @@ def crear_secciones(secc: SeccionEntrada, db:Session = Depends(get_db), current_
 @seccion_router.patch("/{idsecc}", response_model=SeccionSalida)
 def update_seccion_parcial(idsecc: int, secc_updata: SeccionActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return seccion_service.actualizar_seccion_parcial(idsecc, secc_updata, db)
+
+@seccion_router.delete("/{idsecc}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_seccion(idsecc: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+    return seccion_service.eliminar_seccion(idsecc, db)

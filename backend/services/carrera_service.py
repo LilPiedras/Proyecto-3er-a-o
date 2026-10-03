@@ -1,34 +1,34 @@
-from models.carrera_model import *
-from Schemas.carrera_schema import  *
+from models.carrera_model import Carrera
+from Schemas.carrera_schema import CarreraEntrada, CarreraUpdata
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 
-def obtener_carrera_por_id(idcarrera:int, db:Session):
+def obtener_carrera_por_id(idcarrera: int, db: Session):
     carri = db.query(Carrera).filter(Carrera.idcarrera == idcarrera, Carrera.activo == True).first()
     if carri is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El estudiante no fue encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La carrera no fue encontrada")
     return carri
 
 def listar_carrera(db: Session):
     carri = db.query(Carrera).filter(Carrera.activo == True).all()
-    if not carri:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de horariosvacia")
     return carri
 
-def crear_bloque(carri: CarreraEntrada, db:Session):
-    carri = Carrera(nombrecarrera  = carri.nombrecarrera,
-                     descripcion = carri.descripcion)
-    db.add(carri)
+def crear_carrera(carri: CarreraEntrada, db: Session):
+    nueva_carrera = Carrera(
+        nombrecarrera = carri.nombrecarrera,
+        descripcion = carri.descripcion
+    )
+    db.add(nueva_carrera)
     db.commit()
-    db.refresh(carri)
-    return carri
+    db.refresh(nueva_carrera)
+    return nueva_carrera
 
-def actualizar_carrera_parcial(idcarrera: int, carrera_up: CarreraUpdata, db: Session):
-    db_car = db.query(Carrera).filter(Carrera.idcarrera == idcarrera).first()
+def actualizar_carrera_parcial(idcarrera: int, carrera_update: CarreraUpdata, db: Session):
+    db_car = db.query(Carrera).filter(Carrera.idcarrera == idcarrera, Carrera.activo == True).first()
     if not db_car:
-        raise HTTPException(status_code=404, detail="La carrera no pudo ser encontrada")
+        raise HTTPException(status_code=404, detail="Carrera no encontrada")
 
-    update_data = carrera_up.model_dump(exclude_unset=True)
+    update_data = carrera_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_car, key, value)
 
@@ -37,7 +37,7 @@ def actualizar_carrera_parcial(idcarrera: int, carrera_up: CarreraUpdata, db: Se
     return db_car
 
 def eliminar_carrera(idcarrera: int, db: Session):
-    db_car = db.query(Carrera).filter(Carrera.idcarrera == idcarrera, Carrera.activo==True).first()
+    db_car = db.query(Carrera).filter(Carrera.idcarrera == idcarrera, Carrera.activo == True).first()
     if not db_car:
         raise HTTPException(status_code=404, detail="La carrera no fue encontrada o no existe")
 

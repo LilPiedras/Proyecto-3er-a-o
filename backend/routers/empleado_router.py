@@ -28,14 +28,12 @@ def obtener_empleado(ciempleado: str, db: Session = Depends(get_db), current_use
 def listar_empleados(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return empleado_service.listar_empleados(db)
 
-@empleado_router.post("/", response_model=EmpleadoEntrada, status_code=status.HTTP_200_OK)
-def crear_empleado(empleado: EmpleadoEntrada, db:Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    # Se agregó current_user.ciuser
+@empleado_router.post("/", response_model=EmpleadoSalida, status_code=status.HTTP_200_OK)
+def crear_empleado(empleado: EmpleadoEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return empleado_service.crear_empleado(empleado, current_user.ciuser, db)
 
 @empleado_router.put("/{ciempleado}", response_model=EmpleadoSalida)
-def update_empleado_completo(ciempleado: str, emple_update: EmpleadoEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    # Se agregó current_user.ciuser
+def update_empleado_completo(ciempleado: str, emple_update: EmpleadoUpdate, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return empleado_service.actualizar_empleado_completo(ciempleado, emple_update, current_user.ciuser, db)
 
 @empleado_router.patch("/{ciempleado}", response_model=EmpleadoSalida)
