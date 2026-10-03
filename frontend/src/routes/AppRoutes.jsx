@@ -14,6 +14,7 @@ import CrudHorarios from "../pages/CrudHorarios";
 import CrudSeccion from "../pages/CrudSeccion";
 import CrudOferta from "../pages/CrudOferta";
 import CrudModuloMateria from "../pages/CrudMateriamodulo";
+import CrudMensualidad from "../pages/CrudMensualidad";
 const AppRoutes = () => {
   return (
     <main className="flex-1 pt-28 md:pt-24">
@@ -31,6 +32,7 @@ const AppRoutes = () => {
         <Route path="/crudseccion" element={<CrudSeccion />} />
         <Route path="/crudoferta" element={<CrudOferta />} />
         <Route path="/crudmodulomateria" element={<CrudModuloMateria />} />
+  <Route path="/crudmensualidad" element={<CrudMensualidad />} />
 
 
         <Route path="/login" element={
