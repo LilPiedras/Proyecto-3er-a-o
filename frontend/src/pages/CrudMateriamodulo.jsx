@@ -21,14 +21,10 @@ const CrudModuloMateria = () => {
       const resMaterias = await api.get('/materia/');
       
       let resRelaciones = { data: [] };
-      const rutasRelaciones = ['/Materias Modulo/', '/api/Materias Modulo/', '/materias-modulo/'];
-      for (const ruta of rutasRelaciones) {
-        try {
-          resRelaciones = await api.get(ruta);
-          if (resRelaciones && resRelaciones.data) break;
-        } catch (e) {
-          // Intenta con la siguiente ruta
-        }
+      try {
+        resRelaciones = await api.get('/materias-modulo/');
+      } catch (e) {
+        console.warn("No se pudo cargar la tabla intermedia o está vacía.");
       }
 
       setModulos(Array.isArray(resModulos.data) ? resModulos.data : []);
@@ -36,6 +32,7 @@ const CrudModuloMateria = () => {
       setRelaciones(Array.isArray(resRelaciones.data) ? resRelaciones.data : []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+      show_alert('Error al obtener datos del servidor', 'error');
     } finally {
       setCargando(false);
     }
@@ -52,12 +49,17 @@ const CrudModuloMateria = () => {
       inputPlaceholder: 'Ej. Módulo 1...',
       showCancelButton: true,
       confirmButtonText: 'Guardar',
-      confirmButtonColor: '#facc15'
+      confirmButtonColor: '#facc15',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'El nombre del módulo no puede estar vacío';
+        }
+      }
     });
 
     if (nombre) {
       try {
-        await api.post('/modulo/', { nombremodulo: nombre, activo: true });
+        await api.post('/modulo/', { nombremodulo: nombre.trim(), activo: true });
         show_alert('Módulo creado', 'success');
         cargarDatos();
       } catch (error) {
@@ -67,22 +69,27 @@ const CrudModuloMateria = () => {
   };
 
   const editarModulo = async () => {
-    const moduloActual = modulos.find(m => (m.idmodulo || m.id)?.toString() === idModuloSeleccionado?.toString());
+    const moduloActual = modulos.find(m => (m.idmodulo ?? m.id)?.toString() === idModuloSeleccionado?.toString());
     if (!moduloActual) return show_alert('Selecciona un módulo válido', 'error');
 
     const { value: nuevoNombre } = await MySwal.fire({
       title: 'Editar Módulo',
       input: 'text',
-      inputValue: moduloActual.nombremodulo || moduloActual.nombre,
+      inputValue: moduloActual.nombremodulo || moduloActual.nombre || '',
       showCancelButton: true,
       confirmButtonText: 'Actualizar',
-      confirmButtonColor: '#3b82f6'
+      confirmButtonColor: '#3b82f6',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'El nombre no puede estar vacío';
+        }
+      }
     });
 
     if (nuevoNombre) {
       try {
-        const idTarget = moduloActual.idmodulo || moduloActual.id;
-        await api.put(`/modulo/${idTarget}`, { nombremodulo: nuevoNombre });
+        const idTarget = moduloActual.idmodulo ?? moduloActual.id;
+        await api.put(`/modulo/${idTarget}`, { nombremodulo: nuevoNombre.trim() });
         show_alert('Módulo actualizado', 'success');
         cargarDatos();
       } catch (error) {
@@ -124,10 +131,15 @@ const CrudModuloMateria = () => {
       showCancelButton: true,
       confirmButtonText: 'Guardar',
       confirmButtonColor: '#facc15',
-      preConfirm: () => [
-        document.getElementById('swal-mat1').value, 
-        document.getElementById('swal-mat2').value
-      ]
+      preConfirm: () => {
+        const nombre = document.getElementById('swal-mat1').value.trim();
+        const docente = document.getElementById('swal-mat2').value.trim();
+        if (!nombre) {
+          Swal.showValidationMessage('El nombre de la materia es obligatorio');
+          return false;
+        }
+        return [nombre, docente];
+      }
     });
 
     if (formValues && formValues[0]) {
@@ -146,22 +158,31 @@ const CrudModuloMateria = () => {
   };
 
   const editarMateria = async (mat) => {
-    const idMat = mat?.idmateria || mat?.id;
+    const idMat = mat?.idmateria ?? mat?.id;
     if (!idMat) return;
     
     const { value: formValues } = await MySwal.fire({
       title: 'Editar Materia',
       html:
-        `<input id="swal-mat1" class="swal2-input" placeholder="Nombre" value="${mat.nombremateria || mat.nombre || ''}">` +
-        `<input id="swal-mat2" class="swal2-input" placeholder="Docente" value="${mat.docente || ''}">`,
+        `<input id="swal-mat1" class="swal2-input" placeholder="Nombre">` +
+        `<input id="swal-mat2" class="swal2-input" placeholder="Docente">`,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Actualizar',
       confirmButtonColor: '#3b82f6',
-      preConfirm: () => [
-        document.getElementById('swal-mat1').value, 
-        document.getElementById('swal-mat2').value
-      ]
+      didOpen: () => {
+        document.getElementById('swal-mat1').value = mat.nombremateria || mat.nombre || '';
+        document.getElementById('swal-mat2').value = mat.docente || '';
+      },
+      preConfirm: () => {
+        const nombre = document.getElementById('swal-mat1').value.trim();
+        const docente = document.getElementById('swal-mat2').value.trim();
+        if (!nombre) {
+          Swal.showValidationMessage('El nombre de la materia es obligatorio');
+          return false;
+        }
+        return [nombre, docente];
+      }
     });
 
     if (formValues && formValues[0]) {
@@ -202,61 +223,38 @@ const CrudModuloMateria = () => {
   const asignarMateriaAModulo = async (idmateria) => {
     if (!idModuloSeleccionado) return show_alert('Selecciona un módulo', 'warning');
     
+    // Se elimina idmatemo: 0 para que la base de datos maneje el autoincremento
     const datosAEnviar = {
-      idmatemo: 0,
-      idmodulo: parseInt(idModuloSeleccionado),
-      idmateria: parseInt(idmateria)
+      idmodulo: parseInt(idModuloSeleccionado, 10),
+      idmateria: parseInt(idmateria, 10)
     };
 
-    const rutasPosibles = ['/Materias Modulo/', '/api/Materias Modulo/'];
-    let exito = false;
-
-    for (const ruta of rutasPosibles) {
-      try {
-        await api.post(ruta, datosAEnviar);
-        exito = true;
-        break;
-      } catch (error) {
-        console.warn(`Falló con la ruta ${ruta}:`, error.response?.data);
-      }
-    }
-
-    if (exito) {
+    try {
+      await api.post('/materias-modulo/', datosAEnviar);
       show_alert('Materia vinculada', 'success');
       cargarDatos();
-    } else {
+    } catch (error) {
+      console.error("Error al vincular:", error.response?.data);
       show_alert('Error al vincular materia', 'error');
     }
   };
 
   const desvincularMateria = async (idmatemo) => {
-    const rutasPosibles = [`/Materias Modulo/${idmatemo}`, `/api/Materias Modulo/${idmatemo}`];
-    let exito = false;
-
-    for (const ruta of rutasPosibles) {
-      try {
-        await api.delete(ruta);
-        exito = true;
-        break;
-      } catch (error) {
-        // Intenta la siguiente
-      }
-    }
-
-    if (exito) {
+    try {
+      await api.delete(`/materias-modulo/${idmatemo}`);
       show_alert('Materia removida', 'success');
       cargarDatos();
-    } else {
+    } catch (error) {
       show_alert('Error al remover', 'error');
     }
   };
 
   const relacionesDelModulo = relaciones.filter(r => 
-    (r?.idmodulo || r?.id_modulo)?.toString() === idModuloSeleccionado?.toString()
+    (r?.idmodulo ?? r?.id_modulo)?.toString() === idModuloSeleccionado?.toString()
   );
   
   const idsMateriasDelModulo = relacionesDelModulo.map(r => 
-    (r?.idmateria || r?.id_materia)?.toString()
+    (r?.idmateria ?? r?.id_materia)?.toString()
   );
 
   return (
@@ -283,7 +281,7 @@ const CrudModuloMateria = () => {
               >
                 <option value="">-- Selecciona un Módulo --</option>
                 {modulos.map((m) => {
-                  const idVal = m.idmodulo || m.id;
+                  const idVal = m.idmodulo ?? m.id;
                   const nombreVal = m.nombremodulo || m.nombre;
                   return (
                     <option key={idVal} value={idVal}>
@@ -310,7 +308,7 @@ const CrudModuloMateria = () => {
 
             <div className="max-h-64 overflow-y-auto bg-gray-800 rounded border border-gray-700 p-2 space-y-2">
               {materias.map((mat) => {
-                const idMat = mat.idmateria || mat.id;
+                const idMat = mat.idmateria ?? mat.id;
                 const estaAsignada = idsMateriasDelModulo.includes(idMat?.toString());
 
                 return (
@@ -347,9 +345,9 @@ const CrudModuloMateria = () => {
               <ul className="space-y-2">
                 {relacionesDelModulo.length > 0 ? (
                   relacionesDelModulo.map((rel) => {
-                    const idMateriaRel = rel.idmateria || rel.id_materia;
-                    const matInfo = materias.find(m => (m.idmateria || m.id)?.toString() === idMateriaRel?.toString());
-                    const idRelacion = rel.idmatemo || rel.id;
+                    const idMateriaRel = rel.idmateria ?? rel.id_materia;
+                    const matInfo = materias.find(m => (m.idmateria ?? m.id)?.toString() === idMateriaRel?.toString());
+                    const idRelacion = rel.idmatemo ?? rel.id;
                     
                     return (
                       <li key={idRelacion} className="bg-gray-800 p-3 rounded border border-gray-600 flex justify-between items-center">
