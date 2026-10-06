@@ -59,6 +59,7 @@ from routers.RouteUsuarioLogin import usuariolog_router
 from routers.auditoria_router import auditoria_router
 from routers.RoutePlan_evaluacion import plan_evaluacion_router
 from analitics.kpi import router as analitics_router 
+from routers.horarios_oferta import hrouter
 
 
 
@@ -88,7 +89,7 @@ app.include_router(usuariolog_router)
 app.include_router(auditoria_router)
 app.include_router(analitics_router)
 app.include_router(plan_evaluacion_router)
-
+app.include_router(hrouter)
 @app.get("/")
 def index():
     return "bienvenido joven"
