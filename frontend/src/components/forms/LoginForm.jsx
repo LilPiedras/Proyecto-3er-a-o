@@ -5,6 +5,7 @@ export default function LoginForm() {
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -72,15 +73,26 @@ export default function LoginForm() {
 
         <div>
           <label htmlFor="password" className="text-base font-medium text-white">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            className="text-white w-full border border-gray-200 rounded-xl p-4 mt-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
-            placeholder="Ingrese su contraseña"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative mt-2">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              className="text-white w-full border border-gray-200 rounded-xl p-4 pr-20 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all"
+              placeholder="Ingrese su contraseña"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-4 font-semibold text-yellow-300 hover:text-yellow-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+            >
+              {showPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
         </div>
 
         <div className="flex justify-between items-center">
