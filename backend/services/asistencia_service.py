@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.asistencia_model import Asistencias
@@ -13,7 +14,11 @@ from models.materias_modulo_model import Materias_Modulo
 from models.oferta_seccion_model import Oferta_seccion
 from models.seccion_model import Seccion
 from models.usuario_model import Usuario
-from Schemas.asistencia_schema import AsistenciaActualizar, AsistenciaEntrada
+from Schemas.asistencia_schema import (
+    AsistenciaActualizar,
+    AsistenciaEntrada,
+    AsistenciaLoteEntrada,
+)
 
 
 def _verificar_materia(idmateria: int, usuario: Usuario, db: Session) -> Materias:
@@ -201,6 +206,72 @@ def guardar_asistencia(asistencia_in: AsistenciaEntrada, usuario: Usuario, db: S
     db.commit()
     db.refresh(asistencia)
     return asistencia
+
+
+def confirmar_asistencia_lote(
+    lote: AsistenciaLoteEntrada,
+    usuario: Usuario,
+    db: Session,
+):
+    _verificar_materia(lote.idmateria, usuario, db)
+    estudiantes = [
+        fila[0]
+        for fila in (
+            db.query(Estudiante.ciestu)
+            .join(Oferta_seccion, Oferta_seccion.estudiante == Estudiante.ciestu)
+            .join(Carrera_Modulo, Carrera_Modulo.idcarremo == Oferta_seccion.idcarremo)
+            .join(Materias_Modulo, Materias_Modulo.idmatemo == Carrera_Modulo.idmatemo)
+            .filter(
+                Oferta_seccion.idsecc == lote.idsecc,
+                Materias_Modulo.idmateria == lote.idmateria,
+                Estudiante.activo.is_(True),
+            )
+            .distinct()
+            .all()
+        )
+    ]
+    if not estudiantes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay estudiantes inscritos en esta sección y materia",
+        )
+
+    marcas_solicitadas = {marca.asisestu: marca.verificar for marca in lote.asistencias}
+    if len(marcas_solicitadas) != len(lote.asistencias) or set(marcas_solicitadas) != set(estudiantes):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La lista de estudiantes cambió. Recarga la asistencia e inténtalo de nuevo.",
+        )
+
+    registros = db.query(Asistencias).filter(
+        Asistencias.idmateria == lote.idmateria,
+        Asistencias.fecha == lote.fecha,
+        Asistencias.asisestu.in_(estudiantes),
+    ).all()
+    registros_por_estudiante = {registro.asisestu: registro for registro in registros}
+
+    for ci_estudiante in estudiantes:
+        registro = registros_por_estudiante.get(ci_estudiante)
+        if registro is None:
+            db.add(Asistencias(
+                asisestu=ci_estudiante,
+                idmateria=lote.idmateria,
+                fecha=lote.fecha,
+                verificar=marcas_solicitadas[ci_estudiante],
+            ))
+        else:
+            registro.verificar = marcas_solicitadas[ci_estudiante]
+
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se pudieron guardar todas las asistencias; vuelve a cargar la lista e inténtalo de nuevo",
+        ) from error
+
+    return {"actualizadas": len(estudiantes)}
 
 
 def actualizar_asistencia(
