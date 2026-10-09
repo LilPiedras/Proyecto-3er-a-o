@@ -21,13 +21,13 @@ def get_db():
         db.close()
 
 @oferta_router.get("/", response_model=List[OfertaSalida], status_code=status.HTTP_200_OK)
-def listar_ofertas_disponibles(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_ofertas_disponibles(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4]))):
     return oferta_seccion_service.listar_ofertas(db)
 
-@oferta_router.post("/", response_model=OfertaEntrada, status_code=status.HTTP_200_OK)
-def crear_oferta(ofertin: OfertaEntrada, db:Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+@oferta_router.post("/", response_model=OfertaSalida, status_code=status.HTTP_201_CREATED)
+def crear_oferta(ofertin: OfertaEntrada, db:Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return oferta_seccion_service.crear_oferta(ofertin, db)
 
 @oferta_router.delete("/{idseccmo}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_oferta(idseccmo: int, db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
-    return oferta_seccion_service.eliminar_curso(idseccmo, db)
+    return oferta_seccion_service.eliminar_oferta(idseccmo, db)
