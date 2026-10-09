@@ -1,45 +1,88 @@
-"""
-from database.connection import SessionLocal
-from models.asistencia_model import *
-from Schemas.asistencia_schema import *
-from services import ser
-from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, status
+from datetime import date
 from typing import List
 
-bloque_route = APIRouter(
-    prefix="/bloque",
-    tags=["Bloques"]
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.orm import Session
+
+from database.connection import get_db
+from models.usuario_model import Usuario
+from Schemas.asistencia_schema import (
+    AsistenciaActualizar,
+    AsistenciaEntrada,
+    AsistenciaEstudianteSalida,
+    AsistenciaMateriaSalida,
+    AsistenciaSeccionSalida,
+    AsistenciaSalida,
 )
+from services import asistencia_service
+from tokensitos.auth_depencias import VerificarRoles
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+asistencia_router = APIRouter(prefix="/asistencias", tags=["Asistencias"])
+roles_asistencia = VerificarRoles([1, 2, 3, 4])
 
-@bloque_route.get("/{idbloque}", response_model=BloqueSalida)
-def obtener_curso(idbloque: int, db: Session = Depends(get_db)):
-    return bloque_service.obtener_bloque_por_id(idbloque, db)
 
-@bloque_route.get("/", response_model=List[BloqueEntrada], status_code=status.HTTP_200_OK)
-def listar_bloque(db: Session = Depends(get_db)):
-    return bloque_service.listar_bloques_horarios(db)
+@asistencia_router.get("/materias", response_model=List[AsistenciaMateriaSalida])
+def obtener_materias_asistencia(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.listar_materias(current_user, db)
 
-@bloque_route.post("/", response_model=BloqueEntrada, status_code=status.HTTP_200_OK)
-def crear_bloque(bloque: BloqueEntrada, db:Session = Depends(get_db)):
-    return bloque_service.crear_bloque(bloque, db)
 
-@bloque_service.put("/{idbloque}", response_model=BloqueSalida)
-def updata_bloquecito(idbloque: int, toy_agumon_updata: BloqueEntrada, db: Session = Depends(get_db)):
-    return bloque_service.actualizar_horario_completo(idbloque, toy_agumon_updata, db)
+@asistencia_router.get("/secciones", response_model=List[AsistenciaSeccionSalida])
+def obtener_secciones_asistencia(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.listar_secciones(current_user, db)
 
-@bloque_route.patch("/{idbloque}", response_model=BloqueSalida)
-def updata_bloquecito(idbloque: int, toy_agumon_updata: BloqueActualizar, db: Session = Depends(get_db)):
-    return bloque_service.actualizar_curso_parcial(idbloque, toy_agumon_updata, db)
 
-@bloque_route.delete("/{idbloque}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_bloque(idbloque: int, db: Session = Depends(get_db)):
-    return bloque_service.eliminar_bloque(idbloque, db)
-"""
+@asistencia_router.get("/secciones/{idsecc}/materias", response_model=List[AsistenciaMateriaSalida])
+def obtener_materias_por_seccion(
+    idsecc: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.listar_materias_por_seccion(idsecc, current_user, db)
+
+
+@asistencia_router.get("/", response_model=List[AsistenciaEstudianteSalida])
+def listar_asistencia(
+    idmateria: int,
+    fecha: date,
+    idsecc: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.listar_asistencia_por_materia(
+        idmateria, fecha, current_user, db, idsecc
+    )
+
+
+@asistencia_router.post("/", response_model=AsistenciaSalida)
+def guardar_asistencia(
+    asistencia: AsistenciaEntrada,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.guardar_asistencia(asistencia, current_user, db)
+
+
+@asistencia_router.patch("/{idasis}", response_model=AsistenciaSalida)
+def actualizar_asistencia(
+    idasis: int,
+    cambios: AsistenciaActualizar,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.actualizar_asistencia(idasis, cambios, current_user, db)
+
+
+@asistencia_router.delete("/{idasis}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_asistencia(
+    idasis: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    asistencia_service.eliminar_asistencia(idasis, current_user, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
