@@ -25,6 +25,7 @@ const CrudAsistencia = () => {
   const [cargandoMaterias, setCargandoMaterias] = useState(true);
   const [cargandoLista, setCargandoLista] = useState(false);
   const [guardando, setGuardando] = useState('');
+  const [confirmandoAsistencia, setConfirmandoAsistencia] = useState(false);
   const [errorAcceso, setErrorAcceso] = useState('');
   const [actualizacion, setActualizacion] = useState(0);
 
@@ -124,6 +125,38 @@ const CrudAsistencia = () => {
     }
   };
 
+  const todosPresentes = estudiantes.length > 0 && estudiantes.every(
+    (alumno) => Boolean(marcas[alumno.asisestu])
+  );
+
+  const alternarTodosPresentes = () => {
+    if (!estudiantes.length) return;
+    const marcarPresente = !todosPresentes;
+    setMarcas(Object.fromEntries(estudiantes.map((alumno) => [alumno.asisestu, marcarPresente])));
+  };
+
+  const confirmarAsistencia = async () => {
+    if (!estudiantes.length || !idmateria || !idsecc || !fecha) return;
+    setConfirmandoAsistencia(true);
+    try {
+      const { data } = await api.post('/asistencias/lote', {
+        idmateria: Number(idmateria),
+        idsecc: Number(idsecc),
+        fecha,
+        asistencias: estudiantes.map((alumno) => ({
+          asisestu: alumno.asisestu,
+          verificar: Boolean(marcas[alumno.asisestu]),
+        })),
+      });
+      show_alert(`${data.actualizadas} asistencias confirmadas`, 'success');
+      setActualizacion((valor) => valor + 1);
+    } catch (error) {
+      show_alert(detalleError(error, 'No se pudieron confirmar las asistencias'), 'error');
+    } finally {
+      setConfirmandoAsistencia(false);
+    }
+  };
+
   const eliminar = async (alumno) => {
     if (!alumno.idasis || !window.confirm(`¿Eliminar la asistencia de ${alumno.nombreestu} ${alumno.apelliestu}?`)) return;
     setGuardando(alumno.asisestu);
@@ -191,6 +224,25 @@ const CrudAsistencia = () => {
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-gray-800">
+              <div className="flex flex-wrap justify-end gap-2 border-b border-gray-800 bg-gray-950 p-3">
+                <button
+                  type="button"
+                  onClick={alternarTodosPresentes}
+                  disabled={!estudiantes.length || cargandoLista || confirmandoAsistencia || Boolean(guardando)}
+                  className="rounded bg-emerald-500 px-4 py-2 font-semibold text-black hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <i className={`fa-solid ${todosPresentes ? 'fa-square-minus' : 'fa-check-double'} mr-2`} aria-hidden="true" />
+                  {todosPresentes ? 'Desmarcar todos' : 'Marcar todos presentes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarAsistencia}
+                  disabled={!estudiantes.length || cargandoLista || confirmandoAsistencia || Boolean(guardando)}
+                  className="rounded bg-yellow-400 px-4 py-2 font-semibold text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {confirmandoAsistencia ? 'Confirmando...' : 'Confirmar asistencia'}
+                </button>
+              </div>
               <table className="w-full min-w-[640px] border-collapse text-left">
                 <thead className="bg-gray-900 text-sm text-yellow-300">
                   <tr>
@@ -214,6 +266,7 @@ const CrudAsistencia = () => {
                             type="checkbox"
                             checked={Boolean(marcas[alumno.asisestu])}
                             onChange={(event) => setMarcas((actual) => ({ ...actual, [alumno.asisestu]: event.target.checked }))}
+                            disabled={confirmandoAsistencia || Boolean(guardando)}
                             className="h-5 w-5 accent-emerald-400"
                             aria-label={`Asistencia de ${alumno.nombreestu} ${alumno.apelliestu}`}
                           />
@@ -221,14 +274,20 @@ const CrudAsistencia = () => {
                         </label>
                       </td>
                       <td className="p-3">
-                        {alumno.idasis ? <span className="text-emerald-300">Registrada</span> : <span className="text-gray-400">Sin registrar</span>}
+                        {Boolean(alumno.verificar) !== Boolean(marcas[alumno.asisestu]) ? (
+                          <span className="text-amber-300">Pendiente de confirmar</span>
+                        ) : alumno.idasis ? (
+                          <span className="text-emerald-300">Registrada</span>
+                        ) : (
+                          <span className="text-gray-400">Sin registrar</span>
+                        )}
                       </td>
                       <td className="p-3">
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => guardar(alumno)}
-                            disabled={guardando === alumno.asisestu}
+                            disabled={guardando === alumno.asisestu || confirmandoAsistencia}
                             className="rounded bg-yellow-400 px-3 py-2 font-semibold text-black hover:bg-yellow-300 disabled:opacity-50"
                           >
                             {guardando === alumno.asisestu ? 'Guardando...' : alumno.idasis ? 'Actualizar' : 'Registrar'}
@@ -237,7 +296,7 @@ const CrudAsistencia = () => {
                             <button
                               type="button"
                               onClick={() => eliminar(alumno)}
-                              disabled={guardando === alumno.asisestu}
+                              disabled={guardando === alumno.asisestu || confirmandoAsistencia}
                               className="rounded bg-red-700 px-3 py-2 hover:bg-red-600 disabled:opacity-50"
                               aria-label={`Eliminar asistencia de ${alumno.nombreestu} ${alumno.apelliestu}`}
                             >
