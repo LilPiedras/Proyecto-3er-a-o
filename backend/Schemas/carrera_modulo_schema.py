@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import date
 
 class CarreraModuloSalida(BaseModel):
+    idcarremo: int
     idmatemo : int
     idcarrera: int
 

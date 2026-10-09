@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import date
 
@@ -11,12 +11,13 @@ class MateriaModuloEntrada(BaseModel):
         from_attributes = True
 
 class MateriaModuloSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     idmatemo: int
     idmateria : int
     idmodulo : int
-
-    class Config:
-        from_attributes = True
+    nombremateria: str
+    nombremodulo: str
 
 class MateriaModuloActualizar(BaseModel):
     idmateria: Optional[int] | None = None
