@@ -14,6 +14,8 @@ const CrudMensualidad = () => {
   const [monedas, setMonedas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
+  const [catalogoModal, setCatalogoModal] = useState(null);
+  const [catalogoForm, setCatalogoForm] = useState({ nombre: '', montototal: '', registro: '' });
   const [operation, setOperation] = useState('create');
   const [selectedId, setSelectedId] = useState(null);
   const [form, setForm] = useState({
@@ -97,6 +99,51 @@ const CrudMensualidad = () => {
   };
 
   const cerrarModal = () => setModal(false);
+
+  const abrirCatalogo = (tipo) => {
+    setCatalogoForm({ nombre: '', montototal: '', registro: '' });
+    setCatalogoModal(tipo);
+  };
+
+  const guardarCatalogo = async (event) => {
+    event.preventDefault();
+    if (!catalogoForm.nombre.trim() || !catalogoForm.registro.trim()) {
+      show_alert('Completa el nombre y el registro', 'warning');
+      return;
+    }
+
+    let payload;
+    let url;
+    if (catalogoModal === 'metodo') {
+      url = '/metodo-pago/';
+      payload = {
+        metodousado: catalogoForm.nombre.trim(),
+        registro: catalogoForm.registro.trim(),
+      };
+    } else {
+      const montototal = Number(catalogoForm.montototal);
+      if (!Number.isInteger(montototal) || montototal < 0) {
+        show_alert('El monto total debe ser un número entero igual o mayor que cero', 'warning');
+        return;
+      }
+      url = '/moneda-pago/';
+      payload = {
+        tipomoneda: catalogoForm.nombre.trim(),
+        montototal,
+        registro: catalogoForm.registro.trim(),
+      };
+    }
+
+    try {
+      await api.post(url, payload);
+      show_alert(catalogoModal === 'metodo' ? 'Método de pago añadido' : 'Moneda de pago añadida', 'success');
+      setCatalogoModal(null);
+      await cargarDatos();
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo añadir la opción de pago', 'error');
+    }
+  };
 
   const actualizarCampo = (event) => {
     const { name, value, type, checked } = event.target;
@@ -183,6 +230,23 @@ const CrudMensualidad = () => {
           </button>
         </div>
 
+        <div className="mb-6 flex flex-wrap gap-3 border-b border-gray-800 pb-5">
+          <button
+            type="button"
+            onClick={() => abrirCatalogo('metodo')}
+            className="rounded border border-yellow-500 px-4 py-2 font-semibold text-yellow-300 transition hover:bg-yellow-400 hover:text-black"
+          >
+            <i className="fa-solid fa-credit-card mr-2" aria-hidden="true" />Añadir método de pago
+          </button>
+          <button
+            type="button"
+            onClick={() => abrirCatalogo('moneda')}
+            className="rounded border border-yellow-500 px-4 py-2 font-semibold text-yellow-300 transition hover:bg-yellow-400 hover:text-black"
+          >
+            <i className="fa-solid fa-coins mr-2" aria-hidden="true" />Añadir moneda de pago
+          </button>
+        </div>
+
         {(!metodos.length || !monedas.length || !estudiantes.length) && !loading && (
           <p className="mb-4 rounded border border-yellow-700 bg-yellow-950/40 p-3 text-sm text-yellow-200">
             Para registrar mensualidades deben existir estudiantes activos, métodos de pago y monedas configurados.
@@ -241,6 +305,59 @@ const CrudMensualidad = () => {
           </table>
         </div>
       </div>
+
+      {catalogoModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-900 p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xl font-bold">
+                {catalogoModal === 'metodo' ? 'Añadir método de pago' : 'Añadir moneda de pago'}
+              </h2>
+              <button type="button" onClick={() => setCatalogoModal(null)} aria-label="Cerrar" className="text-xl text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <form onSubmit={guardarCatalogo} className="grid gap-4">
+              <label className="text-sm">
+                {catalogoModal === 'metodo' ? 'Nombre del método' : 'Nombre de la moneda'}
+                <input
+                  value={catalogoForm.nombre}
+                  onChange={(event) => setCatalogoForm((actual) => ({ ...actual, nombre: event.target.value }))}
+                  maxLength={catalogoModal === 'metodo' ? 20 : 40}
+                  required
+                  className={inputClass}
+                  placeholder={catalogoModal === 'metodo' ? 'Ej. Transferencia' : 'Ej. Euros'}
+                />
+              </label>
+              {catalogoModal === 'moneda' && (
+                <label className="text-sm">Monto total de referencia
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={catalogoForm.montototal}
+                    onChange={(event) => setCatalogoForm((actual) => ({ ...actual, montototal: event.target.value }))}
+                    required
+                    className={inputClass}
+                  />
+                </label>
+              )}
+              <label className="text-sm">Registro
+                <input
+                  value={catalogoForm.registro}
+                  onChange={(event) => setCatalogoForm((actual) => ({ ...actual, registro: event.target.value }))}
+                  maxLength={catalogoModal === 'metodo' ? 20 : 100}
+                  required
+                  className={inputClass}
+                  placeholder="Dato de registro"
+                />
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setCatalogoModal(null)} className="rounded bg-gray-700 px-4 py-2 hover:bg-gray-600">Cancelar</button>
+                <button type="submit" className="rounded bg-yellow-400 px-4 py-2 font-bold text-black hover:bg-yellow-300">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/80 p-4">
