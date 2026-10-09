@@ -39,6 +39,8 @@ from routers.empleado_router import empleado_router
 from routers.RouteUsuario import usuario_router
 from routers.RouteRol import rol_route
 from routers.RouteNota import notas_route
+from routers.RouteNota import notas_route
+from routers.RouteAsistencia import asistencia_router
 from routers.RouteBloque import bloque_route
 from routers.RouteCM import curso_m_route
 from routers.RouteMonte import mensualidad_route
@@ -53,13 +55,13 @@ from routers.routeModulo import modulo_route
 from tokensitos.auth_router import router as auth_router
 from routers.RouteCarrera import carrera_route
 from routers.RouteOferta import oferta_router
+from routers.oferta_seccion_router import oferta_router as oferta_seccion_router
 from routers.RouteModulo_Materia import modulo_materia_route
 from routers.RouteCarreraModulo import modulo_carrera_route
 from routers.RouteUsuarioLogin import usuariolog_router
 from routers.auditoria_router import auditoria_router
 from routers.RoutePlan_evaluacion import plan_evaluacion_router
 from analitics.kpi import router as analitics_router 
-from routers.horarios_oferta import hrouter
 
 
 
@@ -69,6 +71,7 @@ app.include_router(empleado_router)
 app.include_router(usuario_router)
 app.include_router(rol_route)
 app.include_router(notas_route)
+app.include_router(asistencia_router)
 app.include_router(bloque_route)
 app.include_router(curso_m_route)
 app.include_router(materia_route)
@@ -83,13 +86,14 @@ app.include_router(modulo_route)
 app.include_router(auth_router)
 app.include_router(carrera_route)
 app.include_router(oferta_router)
+app.include_router(oferta_seccion_router)
 app.include_router(modulo_materia_route)
 app.include_router(modulo_carrera_route)
 app.include_router(usuariolog_router)
 app.include_router(auditoria_router)
 app.include_router(analitics_router)
 app.include_router(plan_evaluacion_router)
-app.include_router(hrouter)
+
 @app.get("/")
 def index():
     return "bienvenido joven"
