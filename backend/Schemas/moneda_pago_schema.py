@@ -1,8 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import date
 
 class MonedaPagoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    idmoneda: int
     tipomoneda : str
     montototal : int
     registro : str
