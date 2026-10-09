@@ -10,6 +10,8 @@ from Schemas.asistencia_schema import (
     AsistenciaActualizar,
     AsistenciaEntrada,
     AsistenciaEstudianteSalida,
+    AsistenciaLoteEntrada,
+    AsistenciaLoteSalida,
     AsistenciaMateriaSalida,
     AsistenciaSeccionSalida,
     AsistenciaSalida,
@@ -57,6 +59,15 @@ def listar_asistencia(
     return asistencia_service.listar_asistencia_por_materia(
         idmateria, fecha, current_user, db, idsecc
     )
+
+
+@asistencia_router.post("/lote", response_model=AsistenciaLoteSalida)
+def confirmar_asistencia_lote(
+    lote: AsistenciaLoteEntrada,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_asistencia),
+):
+    return asistencia_service.confirmar_asistencia_lote(lote, current_user, db)
 
 
 @asistencia_router.post("/", response_model=AsistenciaSalida)
