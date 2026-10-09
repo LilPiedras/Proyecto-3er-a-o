@@ -11,9 +11,9 @@ class CarreraSalida(BaseModel):
         from_attributes = True
        
 class CarreraEntrada(BaseModel):
-    nombrecarrera : str
+    nombrecarrera : str = Field(max_length=90)
     descripcion : str
 
 class CarreraUpdata(BaseModel):
-    nombrecarrera : Optional[str] | None = None
+    nombrecarrera : Optional[str] | None = Field(default=None, max_length=90)
     descripcion : Optional[str] | None = None
