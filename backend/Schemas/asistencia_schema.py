@@ -28,6 +28,19 @@ class AsistenciaSeccionSalida(BaseModel):
     idsecc: int
     nomsecc: str
 
+class AsistenciaLoteSalida(BaseModel):
+    actualizadas: int
+
+class AsistenciaMarcaEntrada(BaseModel):
+    asisestu: str
+    verificar: bool
+
+class AsistenciaLoteEntrada(BaseModel):
+    idmateria: int
+    idsecc: int
+    fecha: date
+    asistencias: list[AsistenciaMarcaEntrada]
+
 class AsistenciaEstudianteSalida(BaseModel):
     idasis: Optional[int] = None
     asisestu: str
