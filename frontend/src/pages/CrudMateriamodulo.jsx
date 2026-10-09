@@ -20,19 +20,13 @@ const CrudModuloMateria = () => {
       const resModulos = await api.get('/modulo/');
       const resMaterias = await api.get('/materia/');
       
-      let resRelaciones = { data: [] };
-      try {
-        resRelaciones = await api.get('/materias-modulo/');
-      } catch (e) {
-        console.warn("No se pudo cargar la tabla intermedia o está vacía.");
-      }
+      const resRelaciones = await api.get('/modulo_materia/');
 
       setModulos(Array.isArray(resModulos.data) ? resModulos.data : []);
       setMaterias(Array.isArray(resMaterias.data) ? resMaterias.data : []);
       setRelaciones(Array.isArray(resRelaciones.data) ? resRelaciones.data : []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
-      show_alert('Error al obtener datos del servidor', 'error');
     } finally {
       setCargando(false);
     }
@@ -49,17 +43,12 @@ const CrudModuloMateria = () => {
       inputPlaceholder: 'Ej. Módulo 1...',
       showCancelButton: true,
       confirmButtonText: 'Guardar',
-      confirmButtonColor: '#facc15',
-      inputValidator: (value) => {
-        if (!value || !value.trim()) {
-          return 'El nombre del módulo no puede estar vacío';
-        }
-      }
+      confirmButtonColor: '#facc15'
     });
 
     if (nombre) {
       try {
-        await api.post('/modulo/', { nombremodulo: nombre.trim(), activo: true });
+        await api.post('/modulo/', { nombremodulo: nombre, activo: true });
         show_alert('Módulo creado', 'success');
         cargarDatos();
       } catch (error) {
@@ -69,27 +58,22 @@ const CrudModuloMateria = () => {
   };
 
   const editarModulo = async () => {
-    const moduloActual = modulos.find(m => (m.idmodulo ?? m.id)?.toString() === idModuloSeleccionado?.toString());
+    const moduloActual = modulos.find(m => (m.idmodulo || m.id)?.toString() === idModuloSeleccionado?.toString());
     if (!moduloActual) return show_alert('Selecciona un módulo válido', 'error');
 
     const { value: nuevoNombre } = await MySwal.fire({
       title: 'Editar Módulo',
       input: 'text',
-      inputValue: moduloActual.nombremodulo || moduloActual.nombre || '',
+      inputValue: moduloActual.nombremodulo || moduloActual.nombre,
       showCancelButton: true,
       confirmButtonText: 'Actualizar',
-      confirmButtonColor: '#3b82f6',
-      inputValidator: (value) => {
-        if (!value || !value.trim()) {
-          return 'El nombre no puede estar vacío';
-        }
-      }
+      confirmButtonColor: '#3b82f6'
     });
 
     if (nuevoNombre) {
       try {
-        const idTarget = moduloActual.idmodulo ?? moduloActual.id;
-        await api.put(`/modulo/${idTarget}`, { nombremodulo: nuevoNombre.trim() });
+        const idTarget = moduloActual.idmodulo || moduloActual.id;
+        await api.put(`/modulo/${idTarget}`, { nombremodulo: nuevoNombre });
         show_alert('Módulo actualizado', 'success');
         cargarDatos();
       } catch (error) {
@@ -131,15 +115,10 @@ const CrudModuloMateria = () => {
       showCancelButton: true,
       confirmButtonText: 'Guardar',
       confirmButtonColor: '#facc15',
-      preConfirm: () => {
-        const nombre = document.getElementById('swal-mat1').value.trim();
-        const docente = document.getElementById('swal-mat2').value.trim();
-        if (!nombre) {
-          Swal.showValidationMessage('El nombre de la materia es obligatorio');
-          return false;
-        }
-        return [nombre, docente];
-      }
+      preConfirm: () => [
+        document.getElementById('swal-mat1').value, 
+        document.getElementById('swal-mat2').value
+      ]
     });
 
     if (formValues && formValues[0]) {
@@ -158,31 +137,22 @@ const CrudModuloMateria = () => {
   };
 
   const editarMateria = async (mat) => {
-    const idMat = mat?.idmateria ?? mat?.id;
+    const idMat = mat?.idmateria || mat?.id;
     if (!idMat) return;
     
     const { value: formValues } = await MySwal.fire({
       title: 'Editar Materia',
       html:
-        `<input id="swal-mat1" class="swal2-input" placeholder="Nombre">` +
-        `<input id="swal-mat2" class="swal2-input" placeholder="Docente">`,
+        `<input id="swal-mat1" class="swal2-input" placeholder="Nombre" value="${mat.nombremateria || mat.nombre || ''}">` +
+        `<input id="swal-mat2" class="swal2-input" placeholder="Docente" value="${mat.docente || ''}">`,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Actualizar',
       confirmButtonColor: '#3b82f6',
-      didOpen: () => {
-        document.getElementById('swal-mat1').value = mat.nombremateria || mat.nombre || '';
-        document.getElementById('swal-mat2').value = mat.docente || '';
-      },
-      preConfirm: () => {
-        const nombre = document.getElementById('swal-mat1').value.trim();
-        const docente = document.getElementById('swal-mat2').value.trim();
-        if (!nombre) {
-          Swal.showValidationMessage('El nombre de la materia es obligatorio');
-          return false;
-        }
-        return [nombre, docente];
-      }
+      preConfirm: () => [
+        document.getElementById('swal-mat1').value, 
+        document.getElementById('swal-mat2').value
+      ]
     });
 
     if (formValues && formValues[0]) {
@@ -222,39 +192,44 @@ const CrudModuloMateria = () => {
 
   const asignarMateriaAModulo = async (idmateria) => {
     if (!idModuloSeleccionado) return show_alert('Selecciona un módulo', 'warning');
-    
-    // Se elimina idmatemo: 0 para que la base de datos maneje el autoincremento
+
+    const idModulo = Number(idModuloSeleccionado);
+    const idMateria = Number(idmateria);
+    if (!Number.isInteger(idModulo) || !Number.isInteger(idMateria)) {
+      return show_alert('No se pudieron identificar el módulo y la materia. Recarga la página e inténtalo de nuevo.', 'error');
+    }
+
     const datosAEnviar = {
-      idmodulo: parseInt(idModuloSeleccionado, 10),
-      idmateria: parseInt(idmateria, 10)
+      idmodulo: idModulo,
+      idmateria: idMateria,
     };
 
     try {
-      await api.post('/materias-modulo/', datosAEnviar);
+      await api.post('/modulo_materia/', datosAEnviar);
       show_alert('Materia vinculada', 'success');
       cargarDatos();
     } catch (error) {
-      console.error("Error al vincular:", error.response?.data);
       show_alert('Error al vincular materia', 'error');
     }
   };
 
   const desvincularMateria = async (idmatemo) => {
     try {
-      await api.delete(`/materias-modulo/${idmatemo}`);
+      await api.delete(`/modulo_materia/${idmatemo}`);
       show_alert('Materia removida', 'success');
-      cargarDatos();
+      await cargarDatos();
     } catch (error) {
-      show_alert('Error al remover', 'error');
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'Error al remover la materia del módulo', 'error');
     }
   };
 
-  const relacionesDelModulo = relaciones.filter(r => 
-    (r?.idmodulo ?? r?.id_modulo)?.toString() === idModuloSeleccionado?.toString()
+  const relacionesDelModulo = relaciones.filter(r =>
+    (r?.idmodulo || r?.id_modulo)?.toString() === idModuloSeleccionado?.toString()
   );
   
   const idsMateriasDelModulo = relacionesDelModulo.map(r => 
-    (r?.idmateria ?? r?.id_materia)?.toString()
+    (r?.idmateria || r?.id_materia)?.toString()
   );
 
   return (
@@ -281,7 +256,7 @@ const CrudModuloMateria = () => {
               >
                 <option value="">-- Selecciona un Módulo --</option>
                 {modulos.map((m) => {
-                  const idVal = m.idmodulo ?? m.id;
+                  const idVal = m.idmodulo || m.id;
                   const nombreVal = m.nombremodulo || m.nombre;
                   return (
                     <option key={idVal} value={idVal}>
@@ -308,7 +283,7 @@ const CrudModuloMateria = () => {
 
             <div className="max-h-64 overflow-y-auto bg-gray-800 rounded border border-gray-700 p-2 space-y-2">
               {materias.map((mat) => {
-                const idMat = mat.idmateria ?? mat.id;
+                const idMat = mat.idmateria || mat.id;
                 const estaAsignada = idsMateriasDelModulo.includes(idMat?.toString());
 
                 return (
@@ -337,39 +312,55 @@ const CrudModuloMateria = () => {
 
           {/* COLUMNA DERECHA */}
           <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 shadow-lg">
-            <h3 className="text-xl font-bold text-yellow-400 mb-4">Materias dentro del Módulo</h3>
-            
-            {!idModuloSeleccionado ? (
-              <p className="text-gray-500 text-center mt-10">Selecciona un módulo en la izquierda.</p>
+            <h3 className="text-xl font-bold text-yellow-400 mb-4">
+              Todas las materias y módulos ({relaciones.length})
+            </h3>
+
+            {cargando ? (
+              <p className="text-gray-400 text-center py-6">Cargando relaciones...</p>
+            ) : relaciones.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[420px] border-collapse text-left">
+                  <thead className="bg-gray-800 text-xs text-yellow-300">
+                    <tr>
+                      <th className="p-3">MÓDULO</th>
+                      <th className="p-3">MATERIA</th>
+                      <th className="p-3">ACCIÓN</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {relaciones.map((rel) => {
+                      const idMateriaRel = rel.idmateria || rel.id_materia;
+                      const idModuloRel = rel.idmodulo || rel.id_modulo;
+                      const matInfo = materias.find((mat) => (mat.idmateria || mat.id)?.toString() === idMateriaRel?.toString());
+                      const moduloInfo = modulos.find((modulo) => (modulo.idmodulo || modulo.id)?.toString() === idModuloRel?.toString());
+                      const idRelacion = rel.idmatemo || rel.id;
+
+                      return (
+                        <tr key={idRelacion} className="border-t border-gray-700">
+                          <td className="p-3">{rel.nombremodulo || moduloInfo?.nombremodulo || moduloInfo?.nombre || `Módulo ${idModuloRel}`}</td>
+                          <td className="p-3">
+                            <div className="font-semibold">{rel.nombremateria || matInfo?.nombremateria || matInfo?.nombre || `Materia ${idMateriaRel}`}</div>
+                            <div className="text-xs text-gray-400">Docente: {matInfo?.docente || 'Sin asignar'}</div>
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => desvincularMateria(idRelacion)}
+                              className="rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-500"
+                              aria-label={`Quitar ${rel.nombremateria || matInfo?.nombremateria || 'materia'} del módulo`}
+                            >
+                              <i className="fa-solid fa-xmark mr-1" aria-hidden="true" />Quitar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <ul className="space-y-2">
-                {relacionesDelModulo.length > 0 ? (
-                  relacionesDelModulo.map((rel) => {
-                    const idMateriaRel = rel.idmateria ?? rel.id_materia;
-                    const matInfo = materias.find(m => (m.idmateria ?? m.id)?.toString() === idMateriaRel?.toString());
-                    const idRelacion = rel.idmatemo ?? rel.id;
-                    
-                    return (
-                      <li key={idRelacion} className="bg-gray-800 p-3 rounded border border-gray-600 flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-white block text-sm">
-                             {matInfo?.nombremateria || matInfo?.nombre || 'Materia'}
-                          </span>
-                          <span className="text-gray-400 text-xs">Docente: {matInfo?.docente || 'Sin asignar'}</span>
-                        </div>
-                        <button 
-                          onClick={() => desvincularMateria(idRelacion)}
-                          className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
-                        >
-                          <i className="fa-solid fa-xmark"></i> Quitar
-                        </button>
-                      </li>
-                    );
-                  })
-                ) : (
-                  <p className="text-gray-500 text-center mt-4">Este módulo está vacío.</p>
-                )}
-              </ul>
+              <p className="text-gray-500 text-center py-6">No hay materias vinculadas a módulos.</p>
             )}
           </div>
 

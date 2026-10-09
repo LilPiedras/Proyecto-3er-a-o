@@ -4,9 +4,23 @@ import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
+const MySwal = withReactContent(Swal);
+
 const CrudSeccion = () => {
   const [secciones, setSecciones] = useState([]);
+  const [ofertas, setOfertas] = useState([]);
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [carrerasModulos, setCarrerasModulos] = useState([]);
+  const [materiasModulos, setMateriasModulos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sectionStudents, setSectionStudents] = useState([]);
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [isStudentsModalOpen, setIsStudentsModalOpen] = useState(false);
+  const [studentForm, setStudentForm] = useState({
+    estudiante: '',
+    idcarremo: '',
+    horario: ''
+  });
 
   const [idsecc, setIdsecc] = useState('');
   const [nomsecc, setNomsecc] = useState('');
@@ -18,22 +32,126 @@ const CrudSeccion = () => {
   const cargarSecciones = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/seccion/');
-      setSecciones(Array.isArray(data) ? data : []);
+      const [seccionesRes, ofertasRes, estudiantesRes, carrerasModulosRes, materiasModulosRes] = await Promise.all([
+        api.get('/seccion/'),
+        api.get('/Oferta/'),
+        api.get('/estudiantes/'),
+        api.get('/Carrera_Modulo/'),
+        api.get('/modulo_materia/')
+      ]);
+
+      setSecciones(Array.isArray(seccionesRes.data) ? seccionesRes.data : []);
+      setOfertas(Array.isArray(ofertasRes.data) ? ofertasRes.data : []);
+      setEstudiantes(Array.isArray(estudiantesRes.data) ? estudiantesRes.data : []);
+      setCarrerasModulos(Array.isArray(carrerasModulosRes.data) ? carrerasModulosRes.data : []);
+      setMateriasModulos(Array.isArray(materiasModulosRes.data) ? materiasModulosRes.data : []);
     } catch (error) {
       console.error(error);
-      if (error.response?.status === 404) {
-        setSecciones([]);
-      } else {
-        const detail = error.response?.data?.detail;
-        show_alert(
-          typeof detail === 'string' ? detail : 'Error al cargar secciones',
-          'error'
-        );
-        setSecciones([]);
-      }
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'Error al cargar secciones y estudiantes',
+        'error'
+      );
+      setSecciones([]);
+      setOfertas([]);
+      setEstudiantes([]);
+      setCarrerasModulos([]);
+      setMateriasModulos([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openStudentsModal = (seccion) => {
+    setSelectedSection(seccion);
+    const lista = ofertas
+      .filter((oferta) => Number(oferta.idsecc) === Number(seccion.idsecc))
+      .map((oferta) => {
+        const estudiante = estudiantes.find((item) => item.ciestu === oferta.estudiante);
+        return {
+          ...oferta,
+          nombreCompleto: estudiante
+            ? `${estudiante.nombreestu ?? ''} ${estudiante.apelliestu ?? ''}`.trim()
+            : '(sin estudiante)',
+          estudianteData: estudiante ?? null
+        };
+      });
+
+    setSectionStudents(lista);
+    setStudentForm({
+      estudiante: '',
+      idcarremo: carrerasModulos[0]?.idcarremo ?? '',
+      horario: ''
+    });
+    setIsStudentsModalOpen(true);
+  };
+
+  const closeStudentsModal = () => {
+    setSelectedSection(null);
+    setSectionStudents([]);
+    setIsStudentsModalOpen(false);
+    setStudentForm({ estudiante: '', idcarremo: '', horario: '' });
+  };
+
+  const eliminarEstudianteDeSeccion = async (oferta) => {
+    try {
+      await api.delete(`/Oferta/${oferta.idseccmo}`);
+      show_alert('Estudiante eliminado de la sección', 'success');
+      await cargarSecciones();
+      if (selectedSection) {
+        openStudentsModal(selectedSection);
+      }
+    } catch (error) {
+      console.error(error);
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'No se pudo eliminar al estudiante de la sección',
+        'error'
+      );
+    }
+  };
+
+  const guardarEstudianteEnSeccion = async () => {
+    if (!selectedSection) {
+      show_alert('Selecciona una sección primero', 'warning');
+      return;
+    }
+
+    if (!studentForm.estudiante) {
+      show_alert('Selecciona un estudiante', 'warning');
+      return;
+    }
+
+    if (!studentForm.idcarremo) {
+      show_alert('Selecciona la materia / enlace académico', 'warning');
+      return;
+    }
+
+    const idcarremo = Number(studentForm.idcarremo);
+    if (!Number.isInteger(idcarremo) || idcarremo <= 0) {
+      show_alert('La materia seleccionada no tiene un enlace académico válido', 'warning');
+      return;
+    }
+
+    try {
+      const payload = {
+        idcarremo,
+        idsecc: Number(selectedSection.idsecc),
+        estudiante: studentForm.estudiante,
+        horario: studentForm.horario ? Number(studentForm.horario) : null
+      };
+
+      await api.post('/Oferta/', payload);
+      show_alert('Estudiante agregado a la sección', 'success');
+      closeStudentsModal();
+      await cargarSecciones();
+    } catch (error) {
+      console.error(error);
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'No se pudo agregar al estudiante a la sección',
+        'error'
+      );
     }
   };
 
@@ -112,7 +230,6 @@ const CrudSeccion = () => {
   };
 
   const deleteSeccion = (item) => {
-    const MySwal = withReactContent(Swal);
     MySwal.fire({
       title: `¿Seguro de eliminar la sección "${item.nomsecc}"?`,
       text: 'No se podrá dar marcha atrás',
@@ -165,6 +282,13 @@ const CrudSeccion = () => {
                       <td>{index + 1}</td>
                       <td>{s.nomsecc}</td>
                       <td>
+                        <button
+                          type="button"
+                          onClick={() => openStudentsModal(s)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded mr-2 hover:bg-blue-500"
+                        >
+                          <i className="fa-solid fa-users"></i>
+                        </button>
                         <button
                           type="button"
                           onClick={() => openModal(2, s)}
@@ -236,6 +360,124 @@ const CrudSeccion = () => {
                 >
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isStudentsModalOpen && selectedSection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-5xl p-6 text-white max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                Estudiantes de la sección: {selectedSection.nomsecc}
+              </h3>
+              <button
+                type="button"
+                onClick={closeStudentsModal}
+                className="text-gray-400 hover:text-white font-bold text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-lg font-semibold mb-3 text-yellow-400">Agregar estudiante</h4>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm mb-1">Materia / carrera-modulo</label>
+                    <select
+                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      value={studentForm.idcarremo}
+                      onChange={(e) => setStudentForm({ ...studentForm, idcarremo: e.target.value })}
+                    >
+                      <option value="">Seleccione una materia</option>
+                      {carrerasModulos.map((item) => (
+                        (() => {
+                          const relacion = materiasModulos.find(
+                            (materiaModulo) => Number(materiaModulo.idmatemo) === Number(item.idmatemo)
+                          );
+                          const nombreModulo = relacion?.nombremodulo || `Módulo ${item.idmatemo}`;
+                          const nombreMateria = relacion?.nombremateria || `Materia ${item.idmatemo}`;
+
+                          return (
+                            <option key={item.idcarremo} value={item.idcarremo}>
+                              {nombreMateria} · {nombreModulo}
+                            </option>
+                          );
+                        })()
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1">Estudiante</label>
+                    <select
+                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      value={studentForm.estudiante}
+                      onChange={(e) => setStudentForm({ ...studentForm, estudiante: e.target.value })}
+                    >
+                      <option value="">Seleccione estudiante</option>
+                      {estudiantes
+                        .filter((est) => !sectionStudents.some((inscrito) => inscrito.estudiante === est.ciestu))
+                        .map((est) => (
+                          <option key={est.ciestu} value={est.ciestu}>
+                            {est.ciestu} · {est.nombreestu} {est.apelliestu}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1">Horario (opcional)</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      value={studentForm.horario}
+                      onChange={(e) => setStudentForm({ ...studentForm, horario: e.target.value })}
+                      placeholder="Id del horario"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={guardarEstudianteEnSeccion}
+                    className="w-full bg-yellow-400 text-black font-bold py-2 rounded hover:bg-yellow-300"
+                  >
+                    Guardar estudiante
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-lg font-semibold mb-3 text-yellow-400">Lista de estudiantes</h4>
+                <div className="space-y-2">
+                  {sectionStudents.length > 0 ? (
+                    sectionStudents.map((inscrito) => (
+                      <div
+                        key={inscrito.idseccmo}
+                        className="flex items-center justify-between gap-3 bg-gray-700 rounded p-3"
+                      >
+                        <div>
+                          <div className="font-semibold">{inscrito.nombreCompleto}</div>
+                          <div className="text-xs text-gray-300">CI: {inscrito.estudiante}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => eliminarEstudianteDeSeccion(inscrito)}
+                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
+                        >
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-400">No hay estudiantes inscritos en esta sección.</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
