@@ -1,4 +1,6 @@
 from datetime import date
+from datetime import date
+from typing import Optional
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base import Base
@@ -8,7 +10,7 @@ class Asistencias(Base):
 
     idasis: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     asisestu: Mapped[str] = mapped_column(String(30), ForeignKey("estudiante.ciestu", ondelete="CASCADE"), nullable=False)
-    idmateria: Mapped[int] = mapped_column(Integer, ForeignKey("materia.idmateria", ondelete="CASCADE"), nullable=False)
+    idmateria: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("materia.idmateria", ondelete="SET NULL"), nullable=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
     verificar: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
