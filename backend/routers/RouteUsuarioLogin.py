@@ -31,3 +31,7 @@ def update_usuario_parcial(ciuser_log: int, usuario_updata: Login_UserActualizar
 @usuariolog_router.delete("/{ciuser_log}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_usuario_logico(ciuser_log: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return usuario_login_service.eliminar_curso(ciuser_log, db)
+
+@usuariolog_router.get("/usuario/{ciuser}", response_model=List[Login_UserSalida])
+def roles_de_usuario(ciuser: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return usuario_login_service.listar_roles_usuario(ciuser, db)

@@ -16,7 +16,7 @@ class Usuario(Base):
     contrase: Mapped[str] = mapped_column(String(100), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    login_data = relationship("UserLogin", back_populates="usuario", uselist=False)
+    logins = relationship("UserLogin", back_populates="usuario", uselist=True)
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.ciuser} nombre={self.nombreusuario!r}>"

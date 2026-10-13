@@ -1,79 +1,70 @@
 from fastapi import HTTPException, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from models.oferta_seccion_model import Oferta_seccion
-from Schemas.oferta_seccion_schema import OfertaActualizar, OfertaEntrada
+from models.plan_evaluacion_model import PlanEvaluacion
+from models.materias_model import Materias
+from Schemas.plan_evaluacion_schema import PlanEvaluacionEntrada
 
+def crear_plan_evaluacion(eval_in: PlanEvaluacionEntrada, ci_usuario: str, db: Session):
+    materia = db.query(Materias).filter(Materias.idmateria == eval_in.idmateria,Materias.activo.is_(True)).first()
 
-def listar_ofertas(db: Session):
-    secmo = db.query(Oferta_seccion).filter(Oferta_seccion.activo.is_(True)).all()
-    if not secmo:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sin ofertas inscritas")
-    return secmo
-
-
-def crear_oferta(seccmo: OfertaEntrada, db: Session):
-    try:
-        nueva_oferta = Oferta_seccion(
-            idcarremo=seccmo.idcarremo,
-            idsecc=seccmo.idsecc,
-            estudiante=seccmo.estudiante,
-            horario=seccmo.horario,
-            activo=True
-        )
-        db.add(nueva_oferta)
-        db.commit()
-        db.refresh(nueva_oferta)
-        return nueva_oferta
-    except IntegrityError as e:
-        db.rollback()
-        error_msg = str(e.orig)
-        if "unq_estudiante_seccion" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="El estudiante ya se encuentra inscrito en esta sección."
-            )
+    if not materia:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error de integridad al registrar la oferta/inscripción."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La materia indicada no existe o está inactiva"
         )
 
+    nuevo = PlanEvaluacion(
+        idmateria=eval_in.idmateria,
+        idsecc=eval_in.idsecc,
+        titulo=eval_in.titulo,
+        porcentaje=eval_in.porcentaje
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return nuevo
 
-def actualizar_oferta_parcial(idseccmo: int, oferta_update: OfertaActualizar, db: Session):
-    db_oferta = db.query(Oferta_seccion).filter(
-        Oferta_seccion.idseccmo == idseccmo,
-        Oferta_seccion.activo.is_(True)
-    ).first()
+def listar_evaluaciones_por_materia(idmateria: int, db: Session):
+    evaluaciones = db.query(PlanEvaluacion).filter(PlanEvaluacion.idmateria == idmateria).all()
 
-    if not db_oferta:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La oferta no fue encontrada")
-
-    update_data = oferta_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_oferta, key, value)
-
-    try:
-        db.commit()
-        db.refresh(db_oferta)
-        return db_oferta
-    except IntegrityError:
-        db.rollback()
+    if not evaluaciones:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se pudo actualizar la oferta por violación de restricciones"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay planes de evaluación para esta materia"
+        )
+    return evaluaciones
+
+
+def listar_todas_evaluaciones(db: Session):
+    evaluaciones = db.query(PlanEvaluacion).all()
+    if not evaluaciones:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay planes de evaluación registrados"
+        )
+    return evaluaciones
+
+
+def obtener_evaluacion_por_id(idevaluacion: int, db: Session):
+    evaluacion = db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == idevaluacion).first()
+
+    if not evaluacion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plan de evaluación no encontrado"
+        )
+    return evaluacion
+
+def eliminar_evaluacion(idevaluacion: int, db: Session):
+    evaluacion = db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == idevaluacion).first()
+
+    if not evaluacion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plan de evaluación no encontrado"
         )
 
-
-def eliminar_oferta(idseccmo: int, db: Session):
-    db_oferta = db.query(Oferta_seccion).filter(
-        Oferta_seccion.idseccmo == idseccmo,
-        Oferta_seccion.activo.is_(True)
-    ).first()
-
-    if not db_oferta:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La oferta no fue encontrada")
-
-    db_oferta.activo = False
+    db.delete(evaluacion)
     db.commit()
     return None

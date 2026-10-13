@@ -1,5 +1,6 @@
 from models.oferta_seccion_model import Oferta_seccion
 from Schemas.oferta_seccion_schema import OfertaEntrada, OfertaActualizar
+from models.estudiante_model import Estudiante
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
@@ -36,15 +37,14 @@ def listar_ofertas(db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sin ofertas inscritas")
     return secmo
 
-
-# 2. FUNCIÓN DE CREACIÓN / INSCRIPCIÓN 
 def crear_oferta(seccmo: OfertaEntrada, db: Session):
     try:
         nueva_oferta = Oferta_seccion(
-            idcarremo=seccmo.idcarremo,
+            idcarrera=seccmo.idcarrera,
             idsecc=seccmo.idsecc,
-            estudiante=seccmo.estudiante, # Null si lo crea el director, cédula si se inscribe el estudiante
-            horario=seccmo.horario
+            estudiante=seccmo.estudiante,
+            horario=seccmo.horario,
+            idcarremo=seccmo.idcarremo
         )
         db.add(nueva_oferta)
         db.commit()
@@ -52,15 +52,27 @@ def crear_oferta(seccmo: OfertaEntrada, db: Session):
         return nueva_oferta
     except IntegrityError as e:
         db.rollback()
-        error_msg = str(e.orig)
-        if "unq_estudiante_seccion" in error_msg:
+        error_msg = str(e.orig).lower()
+
+        if "foreign key" in error_msg or "violates foreign key constraint" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error de clave foránea: revisa que existan idcarrera, idsecc, horario, estudiante o idcarremo."
+            )
+        if "unique" in error_msg or "duplicate" in error_msg:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="El estudiante ya se encuentra inscrito en esta sección."
+                detail=f"Ya existe un registro igual."
             )
+        if "not-null" in error_msg or "null value" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Falta un campo obligatorio."
+            )
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error de integridad al registrar la oferta/inscripción."
+            detail=f"Error de integridad: {str(e.orig)}"
         )
 
 
@@ -116,3 +128,36 @@ def eliminar_oferta(idseccmo: int, db: Session):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="No se puede eliminar la oferta porque está en uso")
+
+def asignar_estudiante_a_oferta(idseccmo: int, ciestu: str, db: Session):
+    oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
+    if not oferta:
+        raise HTTPException(status_code=404, detail="La oferta académica no existe")
+
+    estudiante = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo.is_(True)).first()
+    if not estudiante:
+        raise HTTPException(status_code=404, detail="El estudiante no existe o está inactivo")
+
+    if oferta.estudiante is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Esta oferta ya tiene asignado al estudiante {oferta.estudiante}"
+        )
+
+    oferta.estudiante = ciestu
+    db.commit()
+    db.refresh(oferta)
+    return oferta
+
+def desasignar_estudiante(idseccmo: int, db: Session):
+    oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
+    if not oferta:
+        raise HTTPException(status_code=404, detail="La oferta no existe")
+
+    if oferta.estudiante is None:
+        raise HTTPException(status_code=400, detail="Esta oferta no tiene estudiante asignado")
+
+    oferta.estudiante = None
+    db.commit()
+    db.refresh(oferta)
+    return oferta

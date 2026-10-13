@@ -103,3 +103,7 @@ def delete_notas_logico(
     current_user: Usuario = Depends(VerificarRoles([1, 2]))
 ):
     return notas_service.eliminar_nota(idnota, db)
+
+@notas_route.get("/docente/{ci_docente}/estudiantes", status_code=status.HTTP_200_OK)
+def estudiantes_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+    return notas_service.listar_estudiantes_del_docente(ci_docente, db)

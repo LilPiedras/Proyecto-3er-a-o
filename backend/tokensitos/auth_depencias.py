@@ -2,16 +2,15 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
+
 from database.connection import get_db
 from models.usuario_model import Usuario
+from models.user_login_model import UserLogin
 from tokensitos.tokesificador import decodificar_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login") 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> Usuario:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Usuario:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Token inválido o expirado",
@@ -28,9 +27,8 @@ def get_current_user(
     user = db.query(Usuario).filter(Usuario.correousuario == correo).first()
     if user is None or not user.activo:
         raise credentials_exception
-        
-    return user
 
+    return user
 
 class VerificarRoles:
     def __init__(self, roles_permitidos: list[int]):
@@ -42,7 +40,7 @@ class VerificarRoles:
             detail="Token inválido o expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
         try:
             payload = decodificar_access_token(token)
             correo: str = payload.get("sub")
@@ -52,20 +50,25 @@ class VerificarRoles:
             raise exception_credenciales
 
         user = db.query(Usuario).filter(Usuario.correousuario == correo).first()
-        
+
         if user is None or not user.activo:
             raise exception_credenciales
-            
-        if not user.login_data or not user.login_data.activo:
+
+        roles_activos = db.query(UserLogin).filter(UserLogin.ciuser == user.ciuser, UserLogin.activo.is_(True)).all()
+
+        if not roles_activos:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="El acceso de este usuario se encuentra inactivo."
             )
 
-        if user.login_data.idrol not in self.roles_permitidos:
+        ids_roles = [r.idrol for r in roles_activos]
+
+        if not any(rol in self.roles_permitidos for rol in ids_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tienes los permisos necesarios para acceder a esta sección."
             )
-            
+
+        user.roles_activos = ids_roles
         return user
