@@ -19,7 +19,6 @@ const CrudCursos = () => {
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Función robusta para obtener dinámicamente el ID
   const obtenerIdCurso = (curso) => {
     if (!curso) return null;
     

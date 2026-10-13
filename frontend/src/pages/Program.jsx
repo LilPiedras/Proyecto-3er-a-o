@@ -22,7 +22,7 @@ const Program = () => {
       >
         <div className="headings mb-3 lg:pt-0 pt-3">
           <Motion.h1 
-            className="font-Jost text-3xl xl:text-4xl mb-3 text-center text-white"
+            className="font-Jost text-4xl xl:text-5xl mb-5 text-center text-white"
             initial={{ opacity: 0, y: 100 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: easeInOut, stiffness: 60 }}
@@ -30,7 +30,7 @@ const Program = () => {
             Nuestros programas
           </Motion.h1>
           <Motion.h1 
-            className="font-semibold text-2xl mb-3 text-center text-white"
+            className="font-semibold text-3xl mb-3 text-center text-white"
             initial={{ opacity: 0, y: 100 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: easeInOut, stiffness: 60 }}

@@ -29,21 +29,21 @@ const About = () => {
                 Acerca de nuestra Academia
               </Motion.h1>
               
-              <Motion.h2 className="text-2xl text-yellow-100 font-semibold"
+              <Motion.h2 className="text-3xl text-yellow-100 font-semibold"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:1.1,ease:easeInOut, stiffness:60}}>
                 Formando profesionales desde 2022
               </Motion.h2>
               
-              <Motion.p className="text-white leading-relaxed text-xl"
+              <Motion.p className="text-white leading-relaxed text-2xl"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:1.4,ease:easeInOut, stiffness:60}}>
                 Nuestra Misión y Vision
               </Motion.p>
               
-              <Motion.p className="text-white leading-relaxed"
+              <Motion.p className="text-white text-xl leading-relaxed"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:1.6,ease:easeInOut, stiffness:60}}>
@@ -51,7 +51,7 @@ const About = () => {
 
               </Motion.p>
               
-              <Motion.p className="text-white leading-relaxed"
+              <Motion.p className="text-white text-xl leading-relaxed"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:1.8,ease:easeInOut, stiffness:60}}>

@@ -29,11 +29,11 @@ const Testimonials = () => {
       <div className="main-testimonial-div lg:min-h-screen w-full flex flex-col justify-center items-center p-3 overflow-hidden bg-linear-to-tr from-yellow-400 via-yellow-300 to-black overflow-hidden"
        id="Testimonials">
         <div className="headings mb-5">
-          <Motion.h1 className="text-3xl font-Jost mb-4 text-center text-white"
+          <Motion.h1 className="text-4xl font-bold mb-4 text-center text-white"
           initial={{opacity:0,y:100}}
             whileInView={{opacity:1,y:0}}
             transition={{duration:0.9,ease:easeInOut, stiffness:60}}>Testimonios</Motion.h1>
-          <Motion.h1 className="text-2xl mb-5 text-white"
+          <Motion.h1 className="text-3xl mb-5 text-white"
           initial={{opacity:0,y:100}}
             whileInView={{opacity:1,y:0}}
             transition={{duration:0.8,ease:easeInOut, stiffness:60}}>¿Que dicen nuestros estudiantes?</Motion.h1>
@@ -60,12 +60,12 @@ const Testimonials = () => {
                 <div className="sideby-side flex gap-6 mb-3">
                   <img src={items.img} alt="" className="w-20 rounded-full" />
                   <div className="headings">
-                    <h1 className="text-xl font-semibold font-Inter mb-1">{items.name}</h1>
-                    <h1 className="font-Jost">{items.age}</h1>
+                    <h1 className="text-2xl font-semibold font-Inter mb-1">{items.name}</h1>
+                    <h1 className="font-Jost text-xl">{items.age}</h1>
                   </div>
                 </div>
                 <div className="para">
-                  <p className="font-Jost text-white">{items.des}</p>
+                  <p className="font-Jost text-xl text-white">{items.des}</p>
                 </div>
               </div>
             ))}

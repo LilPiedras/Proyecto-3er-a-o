@@ -10,7 +10,6 @@ const CrudOferta = () => {
   const [rolUsuario, setRolUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  // Estados para listas de los Selects
   const [materias, setMaterias] = useState([]);
   const [docentes, setDocentes] = useState([]);
   const [modulos, setModulos] = useState([]);
@@ -116,7 +115,7 @@ const CrudOferta = () => {
     }
 
     try {
-      // Se envía objeto JSON formateado para empatar con Pydantic en FastAPI
+
       const payload = {
         idmateria: parseInt(idMateria, 10),
         ciempleado: String(ciEmpleado),
