@@ -15,6 +15,10 @@ import CrudSeccion from "../pages/CrudSeccion";
 import CrudOferta from "../pages/CrudOferta";
 import CrudModuloMateria from "../pages/CrudMateriamodulo";
 import CrudMensualidad from "../pages/CrudMensualidad";
+import Perfil from "../pages/Perfil_page";
+import CursosDisponibles from "../pages/CursosDisponibles";
+import SeleccionarRol from "../components/SeleccionarRol"; // 👈 1. Importación del componente puente
+
 const AppRoutes = () => {
   return (
     <main className="flex-1 pt-28 md:pt-24">
@@ -32,8 +36,12 @@ const AppRoutes = () => {
         <Route path="/crudseccion" element={<CrudSeccion />} />
         <Route path="/crudoferta" element={<CrudOferta />} />
         <Route path="/crudmodulomateria" element={<CrudModuloMateria />} />
-  <Route path="/crudmensualidad" element={<CrudMensualidad />} />
+        <Route path="/crudmensualidad" element={<CrudMensualidad />} />
+        <Route path="/cursosdisponibles" element={<CursosDisponibles />} />
+        <Route path="/perfil" element={<Perfil />} />
 
+        {/* 👈 2. Ruta puente declarada correctamente */}
+        <Route path="/seleccionar-rol" element={<SeleccionarRol />} />
 
         <Route path="/login" element={
           <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">
