@@ -20,12 +20,14 @@ from tokensitos.tokesificador import (
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-# Schemas de Pydantic
+# Schemas de Pydantic actualizados
 class UsuarioResponse(BaseModel):
     ciuser: str
     nombreusuario: str
     correousuario: str
     idrol: int
+    roles: list[int]          # 👈 Lista con todos los roles que tiene en usuario_login
+    requiere_puente: bool     # 👈 Bandera que indica si debe pasar por el puente (si tiene > 1 rol)
 
 class Token(BaseModel):
     access_token: str
@@ -64,22 +66,23 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 2. Verificar relación con la tabla de roles/login
-    user_bridge = db.query(UserLogin).filter(
-        UserLogin.ciuser == usuario_datos.ciuser
-    ).first()
+    # 2. Consultar TODOS los registros activos en usuario_login para este ciuser
+    user_bridges = db.query(UserLogin).filter(
+        UserLogin.ciuser == usuario_datos.ciuser,
+        UserLogin.activo == True
+    ).all()
 
-    if not user_bridge:
+    if not user_bridges:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes asignado roles"
+            detail="No tienes asignado roles activos"
         )
 
-    if not user_bridge.activo:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El acceso de este usuario se encuentra inactivo."
-        )
+    # Extraemos todos los idrol asociados a su cédula en una lista (ej: [4, 5])
+    lista_roles = [bridge.idrol for bridge in user_bridges]
+    
+    # Validamos si tiene 2 o más roles registrados con el mismo ciuser
+    tiene_multiples_roles = len(lista_roles) > 1
 
     # 3. Generación de tokens
     correo_actual = usuario_datos.correousuario
@@ -88,7 +91,7 @@ def login(
     
     db_refresh = RefreshToken(
         token=refresh_token,
-        usuario_log=user_bridge.ciuser_log, 
+        usuario_log=user_bridges[0].ciuser_log, 
         expira=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
         activo=True
     )
@@ -103,7 +106,9 @@ def login(
             "ciuser": usuario_datos.ciuser,
             "nombreusuario": usuario_datos.nombreusuario,
             "correousuario": usuario_datos.correousuario,
-            "idrol": user_bridge.idrol
+            "idrol": lista_roles[0],                # Rol por defecto
+            "roles": lista_roles,                   # Lista completa de roles
+            "requiere_puente": tiene_multiples_roles # 👈 El backend dictamina si va al puente
         }
     }
 
@@ -171,6 +176,10 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
         raise credentials_exception
 
     usuario_datos = db.query(Usuario).filter(Usuario.ciuser == user_bridge.ciuser).first()
+    
+    # Consultar todos sus roles actuales
+    user_bridges = db.query(UserLogin).filter(UserLogin.ciuser == usuario_datos.ciuser, UserLogin.activo == True).all()
+    lista_roles = [b.idrol for b in user_bridges]
         
     db_token.activo = False
     db.commit()
@@ -195,7 +204,9 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
             "ciuser": usuario_datos.ciuser,
             "nombreusuario": usuario_datos.nombreusuario,
             "correousuario": usuario_datos.correousuario,
-            "idrol": user_bridge.idrol
+            "idrol": user_bridge.idrol,
+            "roles": lista_roles,
+            "requiere_puente": len(lista_roles) > 1
         }
     }
 
