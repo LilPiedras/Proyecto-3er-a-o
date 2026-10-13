@@ -31,18 +31,28 @@ export default function LoginForm() {
         throw new Error(data.detail || "Error al iniciar sesión")
       }
 
-      // Guardar tokens
       localStorage.setItem("access_token", data.access_token)
       localStorage.setItem("refresh_token", data.refresh_token)
+      const rolesUsuario = data.usuario?.roles || [data.usuario?.idrol || 5];
+      const requierePuente = data.usuario?.requiere_puente ?? (rolesUsuario.length > 1);
+      localStorage.setItem("user_roles", JSON.stringify(rolesUsuario));
 
-      // Guardar el rol (ajusta la propiedad según lo que responda tu FastAPI)
-      const rolEncontrado = data.idrol || data.rol || data.usuario?.idrol || data.user?.idrol;
-      if (rolEncontrado !== undefined) {
-        localStorage.setItem("idrol", rolEncontrado);
+      if (requierePuente) {
+        navigate("/seleccionar-rol");
+      } else {
+        // Si tiene un solo rol, lo guardamos y redirigimos de inmediato
+        const rolUnico = rolesUsuario[0] || data.usuario?.idrol;
+        localStorage.setItem("idrol", rolUnico);
+        
+        if (rolUnico === 4) {
+          navigate("/crudcursos");
+        } else if (rolUnico === 5) {
+          navigate("/cursosdisponibles");
+        } else {
+          navigate("/crudestudiantes");
+        }
       }
 
-      alert("Inicio de sesión exitoso")
-      navigate("/crudestudiantes")
     } catch (err) {
       setError(err.message)
     } finally {
@@ -113,7 +123,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-yellow-300 text-white text-lg font-bold transition-all duration-75 ease-in-out hover:scale-[1.02] hover:bg-yellow-400 active:scale-[0.98] active:bg-yellow-500 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 rounded-xl bg-yellow-300 text-black text-lg font-bold transition-all duration-75 ease-in-out hover:scale-[1.02] hover:bg-yellow-400 active:scale-[0.98] active:bg-yellow-500 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
@@ -121,7 +131,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => navigate('/registro')}
-            className="w-full py-4 rounded-xl border border-gray-200 text-white text-lg font-bold hover:bg-gray-800 transition-colors"
+            className="w-full py-4 rounded-xl border border-gray-200 text-white text-lg font-bold hover:bg-gray-800 transition-colors cursor-pointer"
           >
             Crear Cuenta
           </button>
