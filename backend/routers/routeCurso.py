@@ -23,7 +23,7 @@ def get_db():
 @curso_route.get("/", response_model=List[CursoSalida], status_code=status.HTTP_200_OK)
 def listar_cursos(
     db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(VerificarRoles([4, 3, 2, 1]))
+    current_user: Usuario = Depends(VerificarRoles([5 ,4, 3, 2, 1]))
 ):
     return curso_service.listar_curso(db)
 

@@ -33,7 +33,7 @@ def obtener_estudiante(
 @estudiante_router.get("/", response_model=List[EstudianteSalida], status_code=status.HTTP_200_OK)
 def listar_estudiantes(
     db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(VerificarRoles([4, 3, 2, 1]))
+    current_user: Usuario = Depends(VerificarRoles([5,4, 3, 2, 1]))
 ):
     return estudiante_service.listar_estudiantes(db)
 
