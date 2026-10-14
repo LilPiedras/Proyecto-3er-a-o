@@ -20,20 +20,18 @@ def get_db():
     finally:
         db.close()
 
-# Crear una evaluación para una materia (Solo Docentes / Admin)
+@plan_evaluacion_router.get("/", response_model=List[PlanEvaluacionSalida])
+def listar_todos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
+    return evaluacion_service.listar_todas_evaluaciones(db)
+
 @plan_evaluacion_router.post("/", response_model=PlanEvaluacionSalida, status_code=status.HTTP_201_CREATED)
-def crear_evaluacion(
-    eval_in: PlanEvaluacionEntrada,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1, 2]))
-):
+def crear_evaluacion(eval_in: PlanEvaluacionEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
     return evaluacion_service.crear_plan_evaluacion(eval_in, current_user.ciuser, db)
 
-# Obtener todas las evaluaciones de una materia
-@plan_evaluacion_router.get("/materia/{idmateria}", response_model=List[PlanEvaluacionSalida], status_code=status.HTTP_200_OK)
-def obtener_evaluaciones_materia(
-    idmateria: int,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))
-):
+@plan_evaluacion_router.get("/materia/{idmateria}", response_model=List[PlanEvaluacionSalida])
+def obtener_evaluaciones_materia(idmateria: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return evaluacion_service.listar_evaluaciones_por_materia(idmateria, db)
+
+@plan_evaluacion_router.delete("/{idevaluacion}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_evaluacion(idevaluacion: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+    return evaluacion_service.eliminar_evaluacion(idevaluacion, db)

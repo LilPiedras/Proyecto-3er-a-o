@@ -118,6 +118,11 @@ const Header = () => {
                       Oferta Academica
                     </RouterLink>
                   </li>
+                  <li>
+                    <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
+                      Mis Notas
+                    </RouterLink>
+                  </li>
                 </>
               )}
 
@@ -137,6 +142,11 @@ const Header = () => {
                   <li>
                     <RouterLink to="/crudhorarios" className="cursor-pointer hover:text-yellow-400">
                       Horarios
+                    </RouterLink>
+                  </li>
+                  <li>
+                    <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
+                      Notas
                     </RouterLink>
                   </li>
                 </>
@@ -176,6 +186,12 @@ const Header = () => {
                         </RouterLink>
                         <RouterLink to="/crudseccion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Secciones
+                        </RouterLink>
+                        <RouterLink to="/crudnotas" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Notas
+                        </RouterLink>
+                        <RouterLink to="/crudplanevaluacion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Plan de Evaluación
                         </RouterLink>
                       </div>
                     )}

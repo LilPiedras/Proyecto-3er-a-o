@@ -17,7 +17,10 @@ import CrudModuloMateria from "../pages/CrudMateriamodulo";
 import CrudMensualidad from "../pages/CrudMensualidad";
 import Perfil from "../pages/Perfil_page";
 import CursosDisponibles from "../pages/CursosDisponibles";
-import SeleccionarRol from "../components/SeleccionarRol"; // 👈 1. Importación del componente puente
+import SeleccionarRol from "../components/SeleccionarRol";
+import CrudPlanEvaluacion from "../pages/CrudPlanEvaluacion";
+import CrudNotas from "../pages/CrudNotas";
+
 
 const AppRoutes = () => {
   return (
@@ -36,6 +39,8 @@ const AppRoutes = () => {
         <Route path="/crudseccion" element={<CrudSeccion />} />
         <Route path="/crudoferta" element={<CrudOferta />} />
         <Route path="/crudmodulomateria" element={<CrudModuloMateria />} />
+        <Route path="/crudplanevaluacion" element={<CrudPlanEvaluacion />} />
+        <Route path="/crudnotas" element={<CrudNotas />} />
         <Route path="/crudmensualidad" element={<CrudMensualidad />} />
         <Route path="/cursosdisponibles" element={<CursosDisponibles />} />
         <Route path="/perfil" element={<Perfil />} />

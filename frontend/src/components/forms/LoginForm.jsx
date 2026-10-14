@@ -33,6 +33,11 @@ export default function LoginForm() {
 
       localStorage.setItem("access_token", data.access_token)
       localStorage.setItem("refresh_token", data.refresh_token)
+
+      if (data.usuario?.ciuser) {
+        localStorage.setItem("ciuser", data.usuario.ciuser);
+      }
+
       const rolesUsuario = data.usuario?.roles || [data.usuario?.idrol || 5];
       const requierePuente = data.usuario?.requiere_puente ?? (rolesUsuario.length > 1);
       localStorage.setItem("user_roles", JSON.stringify(rolesUsuario));
