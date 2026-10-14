@@ -37,13 +37,7 @@ def listar_evaluaciones_por_materia(idmateria: int, db: Session):
 
 
 def listar_todas_evaluaciones(db: Session):
-    evaluaciones = db.query(PlanEvaluacion).all()
-    if not evaluaciones:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No hay planes de evaluación registrados"
-        )
-    return evaluaciones
+    return db.query(PlanEvaluacion).all()
 
 
 def obtener_evaluacion_por_id(idevaluacion: int, db: Session):
