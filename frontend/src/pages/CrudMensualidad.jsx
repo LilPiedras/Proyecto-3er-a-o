@@ -65,8 +65,8 @@ const CrudMensualidad = () => {
   const limpiarFormulario = () => {
     setSelectedId(null);
     setForm({
-      metodopago: metodos[0]?.idmetodopago ?? '',
-      monedapago: monedas[0]?.idmoneda ?? '',
+      metodopago: metodos.find((metodo) => Number(metodo.idmetodopago) === Number(form.metodopago))?.idmetodopago ?? metodos[0]?.idmetodopago ?? '',
+      monedapago: monedas.find((moneda) => Number(moneda.idmoneda) === Number(form.monedapago))?.idmoneda ?? monedas[0]?.idmoneda ?? '',
       monto: '',
       verificacion: false,
       periodo: '',
@@ -161,6 +161,76 @@ const CrudMensualidad = () => {
     }
   };
 
+  const crearMetodoPago = async () => {
+    const result = await Swal.fire({
+      title: 'Añadir método de pago',
+      html: '<input id="metodo-nombre" class="swal2-input" placeholder="Nombre del método"><input id="metodo-registro" class="swal2-input" placeholder="Registro">',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar método',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const metodousado = Swal.getPopup().querySelector('#metodo-nombre').value.trim();
+        const registro = Swal.getPopup().querySelector('#metodo-registro').value.trim();
+        if (!metodousado || !registro) {
+          Swal.showValidationMessage('Completa el nombre del método y el registro');
+          return false;
+        }
+        return { metodousado, registro };
+      },
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post('/metodo-pago/', result.value);
+      const { data } = await api.get('/metodo-pago/');
+      const lista = Array.isArray(data) ? data : [];
+      setMetodos(lista);
+      const nuevoMetodo = lista.reduce((ultimo, metodo) => metodo.idmetodopago > (ultimo?.idmetodopago ?? 0) ? metodo : ultimo, null);
+      if (nuevoMetodo) setForm((actual) => ({ ...actual, metodopago: nuevoMetodo.idmetodopago }));
+      show_alert('Método de pago añadido correctamente', 'exito');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo añadir el método de pago', 'error');
+    }
+  };
+
+  const crearMonedaPago = async () => {
+    const result = await Swal.fire({
+      title: 'Añadir moneda de pago',
+      html: '<input id="moneda-nombre" class="swal2-input" placeholder="Nombre de la moneda"><input id="moneda-total" class="swal2-input" type="number" min="0" step="1" placeholder="Monto total"><input id="moneda-registro" class="swal2-input" placeholder="Registro">',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar moneda',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const tipomoneda = Swal.getPopup().querySelector('#moneda-nombre').value.trim();
+        const montototalValue = Swal.getPopup().querySelector('#moneda-total').value.trim();
+        const montototal = Number(montototalValue);
+        const registro = Swal.getPopup().querySelector('#moneda-registro').value.trim();
+        if (!tipomoneda || !montototalValue || !registro || !Number.isInteger(montototal) || montototal < 0) {
+          Swal.showValidationMessage('Completa los datos e indica un monto total válido');
+          return false;
+        }
+        return { tipomoneda, montototal, registro };
+      },
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post('/moneda-pago/', result.value);
+      const { data } = await api.get('/moneda-pago/');
+      const lista = Array.isArray(data) ? data : [];
+      setMonedas(lista);
+      const nuevaMoneda = lista.reduce((ultima, moneda) => moneda.idmoneda > (ultima?.idmoneda ?? 0) ? moneda : ultima, null);
+      if (nuevaMoneda) setForm((actual) => ({ ...actual, monedapago: nuevaMoneda.idmoneda }));
+      show_alert('Moneda de pago añadida correctamente', 'exito');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo añadir la moneda de pago', 'error');
+    }
+  };
+
   const obtenerNombreMetodo = (id) => metodos.find((metodo) => metodo.idmetodopago === id)?.metodousado ?? `ID ${id}`;
   const obtenerNombreMoneda = (id) => monedas.find((moneda) => moneda.idmoneda === id)?.tipomoneda ?? `ID ${id}`;
   const inputClass = 'w-full rounded border border-gray-700 bg-gray-800 p-2 text-white disabled:opacity-70';
@@ -173,14 +243,22 @@ const CrudMensualidad = () => {
             <h1 className="text-3xl font-bold text-yellow-400">Gestión de mensualidades</h1>
             <p className="mt-1 text-sm text-gray-400">Administra periodos, importes y formas de pago.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => abrirModal('create')}
-            disabled={!metodos.length || !monedas.length || !estudiantes.length}
-            className="rounded bg-yellow-400 px-5 py-2 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <i className="fa-solid fa-circle-plus mr-2" aria-hidden="true" />Añadir mensualidad
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={crearMetodoPago} className="rounded border border-gray-300 bg-white px-4 py-2 font-semibold text-black transition hover:bg-gray-200">
+              <i className="fa-solid fa-credit-card mr-2" aria-hidden="true" />Añadir método
+            </button>
+            <button type="button" onClick={crearMonedaPago} className="rounded border border-gray-300 bg-white px-4 py-2 font-semibold text-black transition hover:bg-gray-200">
+              <i className="fa-solid fa-coins mr-2" aria-hidden="true" />Añadir moneda
+            </button>
+            <button
+              type="button"
+              onClick={() => abrirModal('create')}
+              disabled={!metodos.length || !monedas.length || !estudiantes.length}
+              className="rounded bg-yellow-400 px-5 py-2 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <i className="fa-solid fa-circle-plus mr-2" aria-hidden="true" />Añadir mensualidad
+            </button>
+          </div>
         </div>
 
         {(!metodos.length || !monedas.length || !estudiantes.length) && !loading && (
