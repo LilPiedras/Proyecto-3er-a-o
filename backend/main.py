@@ -1,6 +1,10 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from database.connection import engine
 from models.base import Base
+from services.pago_vencimientos_scheduler import revisar_vencimientos_diariamente
 
 from models.seccion_model import Seccion
 from models.asistencia_model import Asistencias
@@ -31,6 +35,9 @@ from models.usuario_model import Usuario
 from models.rol_model import Rol
 from models.auditoria_model import Auditoria
 from models.plan_evaluacion_model import PlanEvaluacion
+from models.inscripcion_model import Inscripcion
+from models.detalle_inscripcion_model import Detalle_Inscripcion
+from models.periodo_model import Periodo
 
 Base.metadata.create_all(bind=engine)
 
@@ -62,10 +69,31 @@ from routers.RouteUsuarioLogin import usuariolog_router
 from routers.auditoria_router import auditoria_router
 from routers.RoutePlan_evaluacion import plan_evaluacion_router
 from analitics.kpi import router as analitics_router 
+from routers.horarios_oferta import hrouter # O como se llame tu archivo de horarios_oferta
+from routers.RouteIncscipcion import inscripcion_alias_router, inscripcion_router
+from routers.RouteDetalles import detalle_router
+from routers.periodo_router import periodo_router
+from routers.perfil import perfil_router
+
+# Abajo donde agregas los app.include_router(...) añade:
 
 
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tarea_vencimientos = asyncio.create_task(revisar_vencimientos_diariamente())
+    try:
+        yield
+    finally:
+        tarea_vencimientos.cancel()
+        try:
+            await tarea_vencimientos
+        except asyncio.CancelledError:
+            pass
+
+
+app = FastAPI(lifespan=lifespan)
 app.include_router(estudiante_router)
 app.include_router(empleado_router)
 app.include_router(usuario_router)
@@ -93,9 +121,13 @@ app.include_router(usuariolog_router)
 app.include_router(auditoria_router)
 app.include_router(analitics_router)
 app.include_router(plan_evaluacion_router)
+app.include_router(hrouter)
+app.include_router(periodo_router)
+app.include_router(detalle_router)
+app.include_router(inscripcion_router)
+app.include_router(inscripcion_alias_router)
+app.include_router(perfil_router)
 
 @app.get("/")
 def index():
     return "bienvenido joven"
-
-

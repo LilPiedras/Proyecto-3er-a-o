@@ -123,6 +123,12 @@ const Header = () => {
                       Mis Notas
                     </RouterLink>
                   </li>
+                  <li>
+                      <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Mi Inscripcion
+                    </RouterLink>
+                  </li>
+                  
                 </>
               )}
 
@@ -192,6 +198,9 @@ const Header = () => {
                         </RouterLink>
                         <RouterLink to="/crudplanevaluacion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Plan de Evaluación
+                        </RouterLink>
+                        <RouterLink to="/crudinscripciones" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Inscripciones
                         </RouterLink>
                       </div>
                     )}

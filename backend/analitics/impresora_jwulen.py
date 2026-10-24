@@ -30,14 +30,16 @@ def get_kpi_payload():
 
         series = conn.execute(text("""
             SELECT
-                me.periodo,
+                periodo_academico.nombre AS periodo,
                 SUM(m.monto) AS total_recaudado,
                 COUNT(*) AS total_pagos
             FROM mensualidad_estu me
             LEFT JOIN mensualidad m
                 ON m.idmensualidad = me.idmensualidad
-            GROUP BY me.periodo
-            ORDER BY me.periodo
+            JOIN periodo_academico
+                ON periodo_academico.id = me.periodo_id
+            GROUP BY periodo_academico.nombre
+            ORDER BY periodo_academico.nombre
         """)).mappings().all()
 
         alertas = conn.execute(text("""

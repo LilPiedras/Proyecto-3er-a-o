@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from models.base import Base
 
 # Formato: postgresql://usuario:contraseña@host:puerto/nombre_bd
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:3690@localhost:5432/academia"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:3690@localhost:5432/academic1"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

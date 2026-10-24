@@ -10,9 +10,11 @@ const estados = ['pendiente', 'pagado', 'vencido', 'completado'];
 const CrudMensualidad = () => {
   const [mensualidades, setMensualidades] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
+  const [periodos, setPeriodos] = useState([]);
   const [metodos, setMetodos] = useState([]);
   const [monedas, setMonedas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checkingExpirations, setCheckingExpirations] = useState(false);
   const [modal, setModal] = useState(false);
   const [operation, setOperation] = useState('create');
   const [selectedId, setSelectedId] = useState(null);
@@ -21,10 +23,12 @@ const CrudMensualidad = () => {
     monedapago: '',
     monto: '',
     verificacion: false,
-    periodo: '',
+    periodo_id: '',
     fecha_corte: '',
     estudiante: '',
     estado: 'pendiente',
+    factura: '',
+    fechapago: '',
   });
 
   const cargarDatos = async () => {
@@ -40,16 +44,18 @@ const CrudMensualidad = () => {
     };
 
     try {
-      const [lista, listaMetodos, listaMonedas, listaEstudiantes] = await Promise.all([
+      const [lista, listaMetodos, listaMonedas, listaEstudiantes, listaPeriodos] = await Promise.all([
         cargarLista('/mensualidad/'),
         cargarLista('/metodo-pago/'),
         cargarLista('/moneda-pago/'),
         cargarLista('/estudiantes/'),
+        cargarLista('/periodo/'),
       ]);
       setMensualidades(lista);
       setMetodos(listaMetodos);
       setMonedas(listaMonedas);
       setEstudiantes(listaEstudiantes);
+      setPeriodos(listaPeriodos);
     } catch (error) {
       const detail = error.response?.data?.detail;
       show_alert(typeof detail === 'string' ? detail : 'No se pudieron cargar las mensualidades y sus catálogos', 'error');
@@ -65,14 +71,16 @@ const CrudMensualidad = () => {
   const limpiarFormulario = () => {
     setSelectedId(null);
     setForm({
-      metodopago: metodos[0]?.idmetodopago ?? '',
-      monedapago: monedas[0]?.idmoneda ?? '',
+      metodopago: metodos.find((metodo) => Number(metodo.idmetodopago) === Number(form.metodopago))?.idmetodopago ?? metodos[0]?.idmetodopago ?? '',
+      monedapago: monedas.find((moneda) => Number(moneda.idmoneda) === Number(form.monedapago))?.idmoneda ?? monedas[0]?.idmoneda ?? '',
       monto: '',
       verificacion: false,
-      periodo: '',
+      periodo_id: periodos[0]?.id ?? '',
       fecha_corte: '',
       estudiante: estudiantes[0]?.ciestu ?? '',
       estado: 'pendiente',
+      factura: '',
+      fechapago: '',
     });
   };
 
@@ -85,10 +93,12 @@ const CrudMensualidad = () => {
         monedapago: mensualidad.monedapago ?? '',
         monto: mensualidad.monto ?? '',
         verificacion: Boolean(mensualidad.verificacion),
-        periodo: mensualidad.periodo ?? '',
+        periodo_id: mensualidad.periodo_id ?? '',
         fecha_corte: mensualidad.fecha_corte ?? '',
         estudiante: mensualidad.estudiantes_asignados?.[0]?.estudiante ?? '',
-        estado: mensualidad.estado ?? 'pendiente',
+        estado: mensualidad.estudiantes_asignados?.[0]?.estado ?? mensualidad.estado ?? 'pendiente',
+        factura: mensualidad.estudiantes_asignados?.[0]?.factura ?? '',
+        fechapago: mensualidad.estudiantes_asignados?.[0]?.fechapago ?? '',
       });
     } else {
       limpiarFormulario();
@@ -105,8 +115,13 @@ const CrudMensualidad = () => {
 
   const guardar = async (event) => {
     event.preventDefault();
-    if (!form.metodopago || !form.monedapago || !form.periodo.trim() || !form.fecha_corte || (operation === 'create' && !form.estudiante)) {
+    const pagoRegistrado = ['pagado', 'completado'].includes(form.estado);
+    if (!form.metodopago || !form.monedapago || !form.periodo_id || !form.fecha_corte || (operation === 'create' && !form.estudiante)) {
       show_alert('Completa el estudiante, método, moneda, periodo y fecha de corte', 'warning');
+      return;
+    }
+    if (pagoRegistrado && (!form.factura.trim() || !form.fechapago)) {
+      show_alert('Para registrar el pago, indica la referencia del comprobante y la fecha de pago', 'warning');
       return;
     }
     if (!Number.isFinite(Number(form.monto)) || Number(form.monto) <= 0) {
@@ -119,9 +134,13 @@ const CrudMensualidad = () => {
       monedapago: Number(form.monedapago),
       monto: Number(form.monto),
       verificacion: form.verificacion,
-      periodo: form.periodo.trim(),
+      periodo_id: Number(form.periodo_id),
       fecha_corte: form.fecha_corte,
-      estado: form.estado,
+      estado: pagoRegistrado ? 'pagado' : form.estado,
+      ...(pagoRegistrado && {
+        factura: form.factura.trim(),
+        fechapago: form.fechapago,
+      }),
     };
 
     try {
@@ -140,9 +159,29 @@ const CrudMensualidad = () => {
     }
   };
 
+  const verificarVencimientos = async () => {
+    setCheckingExpirations(true);
+    try {
+      const { data } = await api.post('/mensualidad/verificar-vencimientos');
+      const count = Number(data.actualizados) || 0;
+      show_alert(
+        count
+          ? `${count} pago(s) pendiente(s) marcado(s) como vencido(s)`
+          : 'No hay pagos pendientes vencidos',
+        'success'
+      );
+      await cargarDatos();
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudieron verificar los vencimientos', 'error');
+    } finally {
+      setCheckingExpirations(false);
+    }
+  };
+
   const eliminar = async (mensualidad) => {
     const result = await MySwal.fire({
-      title: `¿Desactivar la mensualidad ${mensualidad.periodo}?`,
+      title: `¿Desactivar la mensualidad ${obtenerNombrePeriodo(mensualidad.periodo_id)}?`,
       text: 'La mensualidad se conservará en la base de datos y dejará de aparecer entre las activas.',
       icon: 'warning',
       showCancelButton: true,
@@ -161,8 +200,79 @@ const CrudMensualidad = () => {
     }
   };
 
+  const crearMetodoPago = async () => {
+    const result = await Swal.fire({
+      title: 'Añadir método de pago',
+      html: '<input id="metodo-nombre" class="swal2-input" placeholder="Nombre del método"><input id="metodo-registro" class="swal2-input" placeholder="Registro">',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar método',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const metodousado = Swal.getPopup().querySelector('#metodo-nombre').value.trim();
+        const registro = Swal.getPopup().querySelector('#metodo-registro').value.trim();
+        if (!metodousado || !registro) {
+          Swal.showValidationMessage('Completa el nombre del método y el registro');
+          return false;
+        }
+        return { metodousado, registro };
+      },
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post('/metodo-pago/', result.value);
+      const { data } = await api.get('/metodo-pago/');
+      const lista = Array.isArray(data) ? data : [];
+      setMetodos(lista);
+      const nuevoMetodo = lista.reduce((ultimo, metodo) => metodo.idmetodopago > (ultimo?.idmetodopago ?? 0) ? metodo : ultimo, null);
+      if (nuevoMetodo) setForm((actual) => ({ ...actual, metodopago: nuevoMetodo.idmetodopago }));
+      show_alert('Método de pago añadido correctamente', 'exito');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo añadir el método de pago', 'error');
+    }
+  };
+
+  const crearMonedaPago = async () => {
+    const result = await Swal.fire({
+      title: 'Añadir moneda de pago',
+      html: '<input id="moneda-nombre" class="swal2-input" placeholder="Nombre de la moneda"><input id="moneda-total" class="swal2-input" type="number" min="0" step="1" placeholder="Monto total"><input id="moneda-registro" class="swal2-input" placeholder="Registro">',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar moneda',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const tipomoneda = Swal.getPopup().querySelector('#moneda-nombre').value.trim();
+        const montototalValue = Swal.getPopup().querySelector('#moneda-total').value.trim();
+        const montototal = Number(montototalValue);
+        const registro = Swal.getPopup().querySelector('#moneda-registro').value.trim();
+        if (!tipomoneda || !montototalValue || !registro || !Number.isInteger(montototal) || montototal < 0) {
+          Swal.showValidationMessage('Completa los datos e indica un monto total válido');
+          return false;
+        }
+        return { tipomoneda, montototal, registro };
+      },
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post('/moneda-pago/', result.value);
+      const { data } = await api.get('/moneda-pago/');
+      const lista = Array.isArray(data) ? data : [];
+      setMonedas(lista);
+      const nuevaMoneda = lista.reduce((ultima, moneda) => moneda.idmoneda > (ultima?.idmoneda ?? 0) ? moneda : ultima, null);
+      if (nuevaMoneda) setForm((actual) => ({ ...actual, monedapago: nuevaMoneda.idmoneda }));
+      show_alert('Moneda de pago añadida correctamente', 'exito');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo añadir la moneda de pago', 'error');
+    }
+  };
+
   const obtenerNombreMetodo = (id) => metodos.find((metodo) => metodo.idmetodopago === id)?.metodousado ?? `ID ${id}`;
   const obtenerNombreMoneda = (id) => monedas.find((moneda) => moneda.idmoneda === id)?.tipomoneda ?? `ID ${id}`;
+  const obtenerNombrePeriodo = (id) => periodos.find((periodo) => Number(periodo.id) === Number(id))?.nombre ?? `ID ${id}`;
   const inputClass = 'w-full rounded border border-gray-700 bg-gray-800 p-2 text-white disabled:opacity-70';
 
   return (
@@ -171,21 +281,38 @@ const CrudMensualidad = () => {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-yellow-400">Gestión de mensualidades</h1>
-            <p className="mt-1 text-sm text-gray-400">Administra periodos, importes y formas de pago.</p>
+            <p className="mt-1 text-sm text-gray-400">Administra períodos, importes y formas de pago. Los pagos se marcan como vencidos tras un mes de retraso.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => abrirModal('create')}
-            disabled={!metodos.length || !monedas.length || !estudiantes.length}
-            className="rounded bg-yellow-400 px-5 py-2 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <i className="fa-solid fa-circle-plus mr-2" aria-hidden="true" />Añadir mensualidad
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={verificarVencimientos}
+              disabled={checkingExpirations}
+              className="rounded border border-yellow-500 px-4 py-2 font-semibold text-yellow-300 transition hover:bg-yellow-950 disabled:cursor-wait disabled:opacity-50"
+            >
+              <i className="fa-solid fa-clock mr-2" aria-hidden="true" />
+              {checkingExpirations ? 'Verificando...' : 'Verificar vencimientos'}
+            </button>
+            <button type="button" onClick={crearMetodoPago} className="rounded border border-gray-300 bg-white px-4 py-2 font-semibold text-black transition hover:bg-gray-200">
+              <i className="fa-solid fa-credit-card mr-2" aria-hidden="true" />Añadir método
+            </button>
+            <button type="button" onClick={crearMonedaPago} className="rounded border border-gray-300 bg-white px-4 py-2 font-semibold text-black transition hover:bg-gray-200">
+              <i className="fa-solid fa-coins mr-2" aria-hidden="true" />Añadir moneda
+            </button>
+            <button
+              type="button"
+              onClick={() => abrirModal('create')}
+              disabled={!metodos.length || !monedas.length || !estudiantes.length || !periodos.length}
+              className="rounded bg-yellow-400 px-5 py-2 font-bold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <i className="fa-solid fa-circle-plus mr-2" aria-hidden="true" />Añadir mensualidad
+            </button>
+          </div>
         </div>
 
-        {(!metodos.length || !monedas.length || !estudiantes.length) && !loading && (
+        {(!metodos.length || !monedas.length || !estudiantes.length || !periodos.length) && !loading && (
           <p className="mb-4 rounded border border-yellow-700 bg-yellow-950/40 p-3 text-sm text-yellow-200">
-            Para registrar mensualidades deben existir estudiantes activos, métodos de pago y monedas configurados.
+            Para registrar mensualidades deben existir estudiantes activos, períodos académicos, métodos de pago y monedas configurados.
           </p>
         )}
 
@@ -208,7 +335,7 @@ const CrudMensualidad = () => {
                 <tr><td colSpan="8" className="p-6 text-center text-gray-400">Cargando mensualidades...</td></tr>
               ) : mensualidades.length ? mensualidades.map((mensualidad) => (
                 <tr key={mensualidad.idmensualidad} className="hover:bg-gray-900/70">
-                  <td className="border border-gray-800 p-3">{mensualidad.periodo}</td>
+                  <td className="border border-gray-800 p-3">{obtenerNombrePeriodo(mensualidad.periodo_id)}</td>
                   <td className="border border-gray-800 p-3">{Number(mensualidad.monto).toLocaleString('es-VE')}</td>
                   <td className="border border-gray-800 p-3">{obtenerNombreMetodo(mensualidad.metodopago)}</td>
                   <td className="border border-gray-800 p-3">{obtenerNombreMoneda(mensualidad.monedapago)}</td>
@@ -222,7 +349,17 @@ const CrudMensualidad = () => {
                     )) : 'Sin estudiante asignado'}
                   </td>
                   <td className="border border-gray-800 p-3">{mensualidad.fecha_corte}</td>
-                  <td className="border border-gray-800 p-3 capitalize">{mensualidad.estado}</td>
+                  <td className="border border-gray-800 p-3 capitalize">
+                    {mensualidad.estudiantes_asignados?.length
+                      ? mensualidad.estudiantes_asignados.map((asignacion) => (
+                        <div key={asignacion.estudiante} className="mb-1 last:mb-0">
+                          <div>{asignacion.estado}</div>
+                          {asignacion.factura && <div className="text-xs text-gray-400">Comprobante: {asignacion.factura}</div>}
+                          {asignacion.fechapago && <div className="text-xs text-gray-400">Pagado el: {asignacion.fechapago}</div>}
+                        </div>
+                      ))
+                      : mensualidad.estado}
+                  </td>
                   <td className="border border-gray-800 p-3">
                     <div className="flex gap-2">
                       <button type="button" title="Editar mensualidad" aria-label="Editar mensualidad" onClick={() => abrirModal('edit', mensualidad)} className="rounded bg-yellow-400 px-3 py-2 text-black hover:bg-yellow-300">
@@ -250,8 +387,11 @@ const CrudMensualidad = () => {
               <button type="button" onClick={cerrarModal} aria-label="Cerrar" className="text-xl text-gray-400 hover:text-white">&times;</button>
             </div>
             <form onSubmit={guardar} className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm">Periodo
-                <input name="periodo" value={form.periodo} onChange={actualizarCampo} placeholder="Ej. 2026-09" required className={inputClass} />
+              <label className="text-sm">Período académico
+                <select name="periodo_id" value={form.periodo_id} onChange={actualizarCampo} required className={inputClass}>
+                  <option value="">Selecciona un período</option>
+                  {periodos.map((periodo) => <option key={periodo.id} value={periodo.id}>{periodo.nombre}</option>)}
+                </select>
               </label>
               <label className="text-sm">Monto
                 <input name="monto" type="number" min="0.01" step="0.01" value={form.monto} onChange={actualizarCampo} required className={inputClass} />
@@ -287,6 +427,32 @@ const CrudMensualidad = () => {
                   {estados.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
                 </select>
               </label>
+              {['pagado', 'completado'].includes(form.estado) && (
+                <fieldset className="grid gap-4 rounded border border-yellow-700 bg-yellow-950/30 p-4 sm:col-span-2 sm:grid-cols-2">
+                  <legend className="px-2 font-semibold text-yellow-300">Datos del pago</legend>
+                  <label className="text-sm">Referencia del comprobante
+                    <input
+                      name="factura"
+                      value={form.factura}
+                      onChange={actualizarCampo}
+                      maxLength={100}
+                      required
+                      placeholder="Número o referencia de operación"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="text-sm">Fecha del pago
+                    <input
+                      name="fechapago"
+                      type="date"
+                      value={form.fechapago}
+                      onChange={actualizarCampo}
+                      required
+                      className={inputClass}
+                    />
+                  </label>
+                </fieldset>
+              )}
               <label className="flex items-center gap-3 text-sm sm:col-span-2">
                 <input name="verificacion" type="checkbox" checked={form.verificacion} onChange={actualizarCampo} className="h-4 w-4 accent-yellow-400" />
                 Verificación confirmada

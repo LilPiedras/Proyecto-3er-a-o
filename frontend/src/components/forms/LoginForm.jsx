@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import promotionalVideo from "../../assets/assets en video/promocion.mp4"
 
 export default function LoginForm() {
   const navigate = useNavigate()
@@ -8,17 +9,50 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPromotionalVideo, setShowPromotionalVideo] = useState(false)
+  const [videoError, setVideoError] = useState(false)
+  const [videoPlaybackError, setVideoPlaybackError] = useState("")
+  const videoRef = useRef(null)
+
+  const cerrarVideo = () => {
+    videoRef.current?.pause()
+    setShowPromotionalVideo(false)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
-    setLoading(true)
 
+    if (email === "rick" && password === "roll") {
+      setVideoError(false)
+      setVideoPlaybackError("")
+      setShowPromotionalVideo(true)
+      if (videoRef.current) {
+        videoRef.current.muted = false
+        videoRef.current.volume = 1
+        videoRef.current.currentTime = 0
+        videoRef.current.play().catch(() => {
+          setVideoPlaybackError("El navegador bloqueó la reproducción automática con audio.")
+        })
+      }
+      return
+    }
+
+    const emailInput = e.currentTarget.elements.email
+    if (!email.trim() || emailInput.validity.typeMismatch) {
+      setError("Ingresa un correo electrónico válido")
+      return
+    }
+    if (!password) {
+      setError("Ingresa tu contraseña")
+      return
+    }
+
+    setLoading(true)
     try {
       const body = new URLSearchParams()
       body.append("username", email)
       body.append("password", password)
-
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -66,13 +100,14 @@ export default function LoginForm() {
   }
 
   return (
+    <>
     <div className="w-full max-w-md mx-auto p-6">
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-white">BIENVENIDOS</h1>
         <p className="text-gray-300 mt-2">Ingresa tus datos para iniciar sesión.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-6">
         <div>
           <label htmlFor="email" className="text-base font-medium text-white">Correo Electronico</label>
           <input
@@ -143,5 +178,45 @@ export default function LoginForm() {
         </div>
       </form>
     </div>
+    <div
+        className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/95 p-4 transition-opacity ${
+          showPromotionalVideo ? "visible opacity-100" : "invisible opacity-0 pointer-events-none"
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Video promocional"
+        aria-hidden={!showPromotionalVideo}
+      >
+        <div className="relative flex h-full max-h-[90vh] w-full max-w-5xl items-center justify-center">
+            <button
+            type="button"
+            onClick={cerrarVideo}
+            className="absolute right-0 top-0 z-10 rounded bg-gray-800 px-4 py-2 font-semibold text-white hover:bg-gray-700"
+          >
+            Cerrar
+          </button>
+          {videoError ? (
+            <p className="rounded-lg border border-red-500/50 bg-gray-900 p-6 text-center text-red-300">
+              No se pudo cargar el video promocional. Comprueba el archivo del video y vuelve a intentarlo.
+            </p>
+          ) : (
+            <video
+              ref={videoRef}
+              src={promotionalVideo}
+              playsInline
+              preload="none"
+              onError={() => setVideoError(true)}
+              onEnded={cerrarVideo}
+              className="max-h-full max-w-full object-contain"
+            />
+          )}
+          {videoPlaybackError && (
+            <p role="alert" className="absolute bottom-4 rounded bg-gray-900/95 px-4 py-2 text-center text-red-300">
+              {videoPlaybackError}
+            </p>
+          )}
+        </div>
+    </div>
+    </>
   )
 }

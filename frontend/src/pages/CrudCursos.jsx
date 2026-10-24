@@ -8,7 +8,6 @@ const CrudCursos = () => {
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados del formulario
   const [idcurso, setIdcurso] = useState('');
   const [nomcurso, setNomcurso] = useState('');
   const [preciocurso, setPreciocurso] = useState('');

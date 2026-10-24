@@ -17,7 +17,6 @@ const CrudOferta = () => {
   
   const [asignaciones, setAsignaciones] = useState([]); 
 
-  // Selecciones del formulario
   const [idMateria, setIdMateria] = useState('');
   const [ciEmpleado, setCiEmpleado] = useState('');
   const [idModulo, setIdModulo] = useState('');

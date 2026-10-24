@@ -18,6 +18,11 @@ class MensualidadEstudianteSalida(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     estudiante: str
+    periodo_id: int
+    fecha_vencimiento: date
+    estado: str
+    factura: Optional[str] = None
+    fechapago: Optional[date] = None
     datos_estudiante: DatosEstudianteSalida
 
 
@@ -30,7 +35,7 @@ class MensualidadSalida(BaseModel):
     monto: Decimal
     encargado: Optional[str] = None
     verificacion: bool
-    periodo: str
+    periodo_id: int
     fecha_corte: date
     fecha_creacion: datetime
     estado: str
@@ -43,10 +48,12 @@ class MensualidadEntrada(BaseModel):
     monedapago: int
     monto: Decimal
     verificacion: bool = False
-    periodo: str
+    periodo_id: int
     fecha_corte: date
     estudiante: str
     estado: str = "pendiente"
+    factura: Optional[str] = Field(default=None, max_length=100)
+    fechapago: Optional[date] = None
 
 
 class MensualidadActualizar(BaseModel):
@@ -55,6 +62,8 @@ class MensualidadActualizar(BaseModel):
     monto: Optional[Decimal] = None
     encargado: Optional[str] = None
     verificacion: Optional[bool] = None
-    periodo: Optional[str] = None
+    periodo_id: Optional[int] = None
     fecha_corte: Optional[date] = None
     estado: Optional[str] = None
+    factura: Optional[str] = Field(default=None, max_length=100)
+    fechapago: Optional[date] = None

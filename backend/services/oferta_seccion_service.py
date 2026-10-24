@@ -161,3 +161,10 @@ def desasignar_estudiante(idseccmo: int, db: Session):
     db.commit()
     db.refresh(oferta)
     return oferta
+
+def inscribir_estudiante_en_seccion(ciestu: str, idsecc: int, db: Session):
+    ofertas = db.query(Oferta_seccion).filter(Oferta_seccion.idsecc == idsecc).all()
+    for oferta in ofertas:
+        oferta.estudiante = ciestu
+    db.commit()
+    return {"mensaje": "Estudiante inscrito en las materias de la sección exitosamente"}

@@ -12,7 +12,6 @@ const CrudHorarios = () => {
   const [loadingBloques, setLoadingBloques] = useState(true);
   const [loadingHorarios, setLoadingHorarios] = useState(true);
 
-  // --- Formulario BLOQUE ---
   const [idbloque, setIdbloque] = useState('');
   const [horainicio, setHorainicio] = useState('');
   const [horafin, setHorafin] = useState('');
@@ -20,7 +19,6 @@ const CrudHorarios = () => {
   const [titleBloque, setTitleBloque] = useState('');
   const [modalBloque, setModalBloque] = useState(false);
 
-  // --- Formulario HORARIO ---
   const [idhorario, setIdhorario] = useState('');
   const [bloque, setBloque] = useState('');
   const [dia, setDia] = useState('');

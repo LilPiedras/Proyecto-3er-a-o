@@ -20,7 +20,8 @@ import CursosDisponibles from "../pages/CursosDisponibles";
 import SeleccionarRol from "../components/SeleccionarRol";
 import CrudPlanEvaluacion from "../pages/CrudPlanEvaluacion";
 import CrudNotas from "../pages/CrudNotas";
-
+import CrudInscripciones from "../pages/CrudInscripciones";
+import InscripcionEstudiante from "../pages/InscripcionEstudiante";
 
 const AppRoutes = () => {
   return (
@@ -43,6 +44,8 @@ const AppRoutes = () => {
         <Route path="/crudnotas" element={<CrudNotas />} />
         <Route path="/crudmensualidad" element={<CrudMensualidad />} />
         <Route path="/cursosdisponibles" element={<CursosDisponibles />} />
+        <Route path="/crudinscripciones" element={<CrudInscripciones />} />
+        <Route path="/estado-inscripcion" element={<InscripcionEstudiante/>} />
         <Route path="/perfil" element={<Perfil />} />
 
         {/* 👈 2. Ruta puente declarada correctamente */}

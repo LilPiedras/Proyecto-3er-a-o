@@ -21,7 +21,9 @@ class Mensualidad_estu(Base):
     monto_pagado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     fecha_vencimiento: Mapped[date] = mapped_column(Date, nullable=False)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
-    periodo: Mapped[str] = mapped_column(String(20), nullable=False)
+    periodo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("periodo_academico.id"), nullable=False
+    )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     mensualidad: Mapped["Mensualidad"] = relationship("Mensualidad", back_populates="estudiantes_asignados")

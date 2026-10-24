@@ -12,7 +12,8 @@ def obtener_perfil_usuario(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4, 5]))
 ):
-    idrol = current_user.login_data.idrol if current_user.login_data else None
+    # Obtenemos el idrol directamente del objeto Usuario
+    idrol = getattr(current_user, "idrol", None)
     
     base_data = {
         "ciuser": current_user.ciuser,

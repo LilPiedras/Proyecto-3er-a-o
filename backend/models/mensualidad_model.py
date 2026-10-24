@@ -20,7 +20,9 @@ class Mensualidad(Base):
     monto: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     verificacion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     encargado: Mapped[Optional[str]] = mapped_column(String(30), ForeignKey("usuario.ciuser", ondelete="SET NULL"), nullable=True)
-    periodo: Mapped[str] = mapped_column(String(20), nullable=False)
+    periodo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("periodo_academico.id"), nullable=False
+    )
     fecha_corte: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
@@ -29,4 +31,4 @@ class Mensualidad(Base):
     estudiantes_asignados: Mapped[list["Mensualidad_estu"]] = relationship("Mensualidad_estu", back_populates="mensualidad")
 
     def __repr__(self) -> str:
-        return f"<Mensualidad id={self.idmensualidad} periodo='{self.periodo}'>"
+        return f"<Mensualidad id={self.idmensualidad} periodo_id={self.periodo_id}>"
