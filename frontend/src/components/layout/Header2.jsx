@@ -109,6 +109,16 @@ const Header = () => {
               {esEstudiante && (
                 <>
                   <li>
+                    <RouterLink to="/mi-modulo" className="cursor-pointer hover:text-yellow-400">
+                      Mi módulo
+                    </RouterLink>
+                  </li>
+                  <li>
+                    <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
+                      Mis notas
+                    </RouterLink>
+                  </li>
+                  <li>
                     <RouterLink to="/cursosdisponibles" className="cursor-pointer hover:text-yellow-400">
                       Cursos
                     </RouterLink>
@@ -119,16 +129,10 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
-                      Mis Notas
-                    </RouterLink>
-                  </li>
-                  <li>
                       <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Mi Inscripcion
                     </RouterLink>
                   </li>
-                  
                 </>
               )}
 

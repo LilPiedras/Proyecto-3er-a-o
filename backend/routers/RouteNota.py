@@ -30,7 +30,7 @@ def ver_notas_estudiante(
     ciestu: str,
     idmateria: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))
+    current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4, 5]))
 ):
     return notas_service.obtener_notas_estudiante(ciestu, idmateria, db)
 
