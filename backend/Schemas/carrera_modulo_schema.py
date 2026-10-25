@@ -1,16 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import date
 
 class CarreraModuloSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     idcarremo: int
-    idmatemo : int
+    idmatemo: int
     idcarrera: int
 
 class CarreraModuloEntrada(BaseModel):
-    idmatemo : int
+    idmatemo: int
     idcarrera: int
 
 class CarreraModuloActualizar(BaseModel):
-    idmatemo : Optional[int] | None = None
-    idcarrera : Optional[int] | None = None
+    idmatemo: Optional[int] = None
+    idcarrera: Optional[int] = None
