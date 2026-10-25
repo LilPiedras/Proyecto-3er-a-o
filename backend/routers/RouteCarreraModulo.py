@@ -20,15 +20,15 @@ def get_db():
     finally:
         db.close()
 
-@modulo_carrera_route.get("/", response_model=List[CarreraModuloEntrada], status_code=status.HTTP_200_OK)
+@modulo_carrera_route.get("/", response_model=List[CarreraModuloSalida], status_code=status.HTTP_200_OK)
 def listar_carrera_modulos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4]))):
     return carrera_modulo_service.listar_carrera_modulos(db)
 
-@modulo_carrera_route.post("/", response_model=CarreraModuloEntrada, status_code=status.HTTP_201_CREATED)
+@modulo_carrera_route.post("/", response_model=CarreraModuloSalida, status_code=status.HTTP_201_CREATED)
 def crear_carrera_modulo(carremo: CarreraModuloEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 3]))):
     return carrera_modulo_service.crear_carrera_modulo(carremo, db)
 
-@modulo_carrera_route.patch("/{idcarremo}", response_model=CarreraModuloActualizar)
+@modulo_carrera_route.patch("/{idcarremo}", response_model=CarreraModuloSalida)
 def actualizar_carrera_modulo(idcarremo: int, carremou: CarreraModuloActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 3]))):
     return carrera_modulo_service.actualizar_carrera_modulo_parcial(idcarremo, carremou, db)
 
