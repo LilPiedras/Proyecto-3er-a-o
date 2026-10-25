@@ -6,10 +6,7 @@ from fastapi import status, HTTPException
 
 
 def listar_carrera_modulos(db: Session):
-    carreram = db.query(Carrera_Modulo).filter(Carrera_Modulo.activo == True).all()
-    if not carreram:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relaciones de carrera-módulo vacías")
-    return carreram
+    return db.query(Carrera_Modulo).filter(Carrera_Modulo.activo == True).all()
 
 
 def crear_carrera_modulo(carreram_data: CarreraModuloEntrada, db: Session):
