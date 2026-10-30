@@ -129,8 +129,13 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
+<<<<<<< HEAD
                     <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                       Mi Inscripcion
+=======
+                      <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Mi Inscripcion
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                     </RouterLink>
                   </li>
                 </>
@@ -223,13 +228,18 @@ const Header = () => {
                     </button>
 
                     {dropdownPersonal && (
+<<<<<<< HEAD
                       <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
+=======
+                      <div className="absolute left-0 mt-3 w-44 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                         <RouterLink to="/cruddocentes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Docentes
                         </RouterLink>
                         <RouterLink to="/crudestudiantes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Estudiantes
                         </RouterLink>
+<<<<<<< HEAD
 
                         {/* EXCLUSIVO PARA ROLES 1 Y 2 */}
                         {[1, 2].includes(userRole) && (
@@ -237,11 +247,17 @@ const Header = () => {
                             Registrar Usuario
                           </RouterLink>
                         )}
+=======
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                       </div>
                     )}
                   </div>
 
+<<<<<<< HEAD
                   {/* MENSUALIDADES */}
+=======
+                  {/* MENSUALIDADES (Directo o se puede incluir) */}
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                   <RouterLink to="/crudmensualidad" className="cursor-pointer hover:text-yellow-400">
                     Mensualidades
                   </RouterLink>
@@ -383,6 +399,7 @@ const Header = () => {
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
                           <RouterLink to="/cruddocentes" onClick={() => setToggle(false)}>Docentes</RouterLink>
                           <RouterLink to="/crudestudiantes" onClick={() => setToggle(false)}>Estudiantes</RouterLink>
+<<<<<<< HEAD
 
                           {/* EXCLUSIVO PARA ROLES 1 Y 2 EN MÓVIL */}
                           {[1, 2].includes(userRole) && (
@@ -390,6 +407,8 @@ const Header = () => {
                               Registrar Usuario
                             </RouterLink>
                           )}
+=======
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                         </div>
                       )}
                     </div>

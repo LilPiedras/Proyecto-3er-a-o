@@ -19,6 +19,7 @@ def listar_usuario(db: Session):
     return usuarios
 
 def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
+<<<<<<< HEAD
     # Verificar si el correo ya pertenece a otro usuario diferente
     existe_correo = db.query(Usuario).filter(
         Usuario.correousuario == usuario.correousuario, 
@@ -56,6 +57,12 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
             return usuario_existente
 
     # Si no existe en absoluto, crearlo normalmente como nuevo
+=======
+    existe = db.query(Usuario).filter(Usuario.correousuario == usuario.correousuario).first()
+    if existe:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     nuevo_usuario = Usuario(
         ciuser=usuario.ciuser,
         nombreusuario=usuario.nombreusuario,
@@ -69,7 +76,11 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
     )
     db.add(nuevo_usuario)
     
+<<<<<<< HEAD
     # Inyectar el admin_id para el Trigger de PostgreSQL
+=======
+    # Le pasamos a PostgreSQL el ID del administrador antes del commit para el Trigger
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
     
     db.commit()
@@ -122,6 +133,7 @@ def eliminar_usuario(ciuser: str, admin_id: str, db: Session):
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
+<<<<<<< HEAD
     # Desactivar lógicamente al usuario
     db_usuario.activo = False
     
@@ -131,6 +143,14 @@ def eliminar_usuario(ciuser: str, admin_id: str, db: Session):
         db_login.activo = False
         
     # Inyección del admin_id para el Trigger de auditoría de PostgreSQL
+=======
+    db_usuario.activo = False
+    db_login = db.query(UserLogin).filter(UserLogin.ciuser == ciuser, UserLogin.activo == True).first()
+    if db_login:
+        db_login.activo = False
+        
+    # Inyección del admin_id para el Trigger (quedará registrado como UPDATE por cambiar activo a False)
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
 
     db.commit()

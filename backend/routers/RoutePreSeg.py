@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends, status
 from typing import List
 from models.usuario_model import Usuario     
 from tokensitos.auth_depencias import VerificarRoles 
+<<<<<<< HEAD
 from pydantic import BaseModel
+=======
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
 
 pregunta_route = APIRouter(
     prefix="/PreguntasSeguridad",
@@ -21,6 +24,7 @@ def get_db():
     finally:
         db.close()
 
+<<<<<<< HEAD
 class AsignarPreguntaSchema(BaseModel):
     ciuser: str
     idpregunta: int
@@ -60,3 +64,22 @@ def recuperar_password(datos: RecuperacionPasswordSchema, db: Session = Depends(
         nueva_password=datos.nueva_password,
         db=db
     )
+=======
+@pregunta_route.get("/", response_model=List[PreguntasSeguridadSalida], status_code=status.HTTP_200_OK)
+def listar_nota(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+    return preguntas_seguridad_service.listar_preguntas(db)
+
+@pregunta_route.post("/", response_model=PreguntasSeguridadEntrada, status_code=status.HTTP_200_OK)
+def crear_notas(pregun: PreguntasSeguridadEntrada, db:Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+    return preguntas_seguridad_service.crear_nueva_preguntas(pregun, db)
+
+@pregunta_route.patch("/{idpregunta}", response_model=PreguntasSeguridadSalida)
+def update_preguntas_seguridad_parcial(idpregunta: int, papu_up: PreguntasSeguridadActualizar, db: Session = Depends(get_db),
+                                        current_user: Usuario = Depends(VerificarRoles([1]))):
+    return preguntas_seguridad_service.actualizar_preguntas_parcial(idpregunta, papu_up, db)
+
+@pregunta_route.delete("/{idpregunta}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_preguntas_logico(idpregunta: int, db: Session = Depends(get_db), 
+                             current_user: Usuario = Depends(VerificarRoles([1]))):
+    return preguntas_seguridad_service.eliminar_pregunta(idpregunta, db)
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac

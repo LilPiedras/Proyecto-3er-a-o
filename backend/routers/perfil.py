@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database.connection import get_db
 from models.usuario_model import Usuario
+<<<<<<< HEAD
 from models.user_login_model import UserLogin  # <--- Importante para buscar el rol
+=======
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
 from tokensitos.auth_depencias import VerificarRoles
 
 perfil_router = APIRouter(prefix="/api/perfil", tags=["Perfil"])
@@ -13,6 +16,7 @@ def obtener_perfil_usuario(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4, 5]))
 ):
+<<<<<<< HEAD
     # Consultar el rol activo del usuario en la tabla user_login
     user_login_record = db.query(UserLogin).filter(
         UserLogin.ciuser == current_user.ciuser, 
@@ -21,6 +25,10 @@ def obtener_perfil_usuario(
     
     # Extraer el idrol o asignar null si no se encuentra
     idrol = user_login_record.idrol if user_login_record else None
+=======
+    # Obtenemos el idrol directamente del objeto Usuario
+    idrol = getattr(current_user, "idrol", None)
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     
     base_data = {
         "ciuser": current_user.ciuser,

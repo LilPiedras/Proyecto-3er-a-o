@@ -16,6 +16,7 @@ def crear_login(log: Login_UserEntrada, db: Session):
     if not rol:
         raise HTTPException(status_code=404, detail="El rol no existe o está inactivo")
 
+<<<<<<< HEAD
     # Buscamos si ya existe el registro para este usuario y rol (esté activo o inactivo)
     db_login = db.query(UserLogin).filter(
         UserLogin.ciuser == log.ciuser,
@@ -40,13 +41,36 @@ def crear_login(log: Login_UserEntrada, db: Session):
             db.commit()
             db.refresh(nuevo)
             return nuevo
+=======
+    existe = db.query(UserLogin).filter(UserLogin.ciuser == log.ciuser,UserLogin.idrol == log.idrol, UserLogin.activo.is_(True)).first()
+    if existe:
+        raise HTTPException(
+            status_code=409,
+            detail="El usuario ya tiene este rol asignado"
+        )
+
+    try:
+        nuevo = UserLogin(
+            ciuser=log.ciuser,
+            idrol=log.idrol,
+            activo=True
+        )
+        db.add(nuevo)
+        db.commit()
+        db.refresh(nuevo)
+        return nuevo
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=409,
             detail="El usuario ya tiene este rol (restricción de base de datos)"
         )
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
 def listar_roles_usuario(ciuser: str, db: Session):
     roles = db.query(UserLogin).filter(UserLogin.ciuser == ciuser, UserLogin.activo.is_(True)).all()
     if not roles:

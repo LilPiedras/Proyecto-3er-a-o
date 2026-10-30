@@ -21,7 +21,11 @@ def get_db():
         db.close()
 
 @usuario_router.get("/{ciuser}", response_model=UsuarioSalida)
+<<<<<<< HEAD
 def obtener_usuario(ciuser: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+=======
+def obtener_usuario(ciuser: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+>>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
     return usuario_service.obtener_usuario_por_id(ciuser, db)
 
 @usuario_router.get("/", response_model=List[UsuarioSalida], status_code=status.HTTP_200_OK)
