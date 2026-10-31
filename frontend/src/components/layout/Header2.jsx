@@ -3,12 +3,16 @@ import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import Logo from "../../assets/Logo.png";
 import { CiMenuFries } from "react-icons/ci";
 import { FaChevronDown } from "react-icons/fa";
+import api from "../../api";
 
 const Header = () => {
   const [scrolling, setScrolling] = useState(false);
   const [toggle, setToggle] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [estadoMensualidad, setEstadoMensualidad] = useState(null);
+  const [cargandoMensualidad, setCargandoMensualidad] = useState(false);
+  const [errorMensualidad, setErrorMensualidad] = useState(false);
 
   // Estados para controlar los menús desplegables en desktop
   const [dropdownPersonal, setDropdownPersonal] = useState(false);
@@ -80,6 +84,76 @@ const Header = () => {
   const esDocentePuro = userRole === 4;
   const esAdministrativo = [1, 2, 3].includes(userRole);
 
+  useEffect(() => {
+    let active = true;
+
+    if (!isAuthenticated || !esEstudiante) {
+      setEstadoMensualidad(null);
+      setCargandoMensualidad(false);
+      setErrorMensualidad(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setCargandoMensualidad(true);
+    setErrorMensualidad(false);
+    api.get("/mensualidad/mi-estado")
+      .then(({ data }) => {
+        if (active) setEstadoMensualidad(data);
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (error.response?.status === 404) {
+          setEstadoMensualidad(null);
+          return;
+        }
+        setErrorMensualidad(true);
+      })
+      .finally(() => {
+        if (active) setCargandoMensualidad(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, esEstudiante, location.pathname]);
+
+  const clasesEstadoMensualidad = {
+    pagado: "border-green-500 text-green-300",
+    vencido: "border-red-500 text-red-300",
+    pendiente: "border-yellow-500 text-yellow-300",
+    completado: "border-blue-500 text-blue-300",
+  };
+  const textoEstadoMensualidad = cargandoMensualidad
+    ? "Consultando mensualidad..."
+    : errorMensualidad
+      ? "No se pudo consultar la mensualidad"
+      : estadoMensualidad
+        ? `Mensualidad: ${estadoMensualidad.estado}`
+        : "Sin mensualidad registrada";
+  const ayudaEstadoMensualidad = {
+    pagado: "Tu mensualidad está pagada. Gracias por mantener tus pagos al día.",
+    vencido: "Tu mensualidad está vencida. Acércate a la sede para regularizar el pago.",
+    pendiente: "Tu mensualidad está pendiente. Acércate a la sede para realizar el pago.",
+    completado: "Tu mensualidad está completada. No tienes pagos pendientes para este período.",
+  };
+  const mensajeAyudaMensualidad = cargandoMensualidad
+    ? "Estamos consultando el estado de tu mensualidad."
+    : errorMensualidad
+      ? "No se pudo consultar tu mensualidad. Inténtalo de nuevo más tarde."
+      : estadoMensualidad
+        ? ayudaEstadoMensualidad[estadoMensualidad.estado] || "Consulta en la sede el estado de tu mensualidad."
+        : "No tienes una mensualidad registrada. Acércate a la sede para recibir información.";
+  const indicadorEstadoMensualidad = (
+    <span
+      title={mensajeAyudaMensualidad}
+      className={`rounded-full border px-3 py-1 text-sm ${clasesEstadoMensualidad[estadoMensualidad?.estado] || "border-gray-500 text-gray-300"}`}
+    >
+      {textoEstadoMensualidad}
+    </span>
+  );
+
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -108,6 +182,7 @@ const Header = () => {
               {/* VISTA ESTUDIANTE (Rol 5) */}
               {esEstudiante && (
                 <>
+                  <li>{indicadorEstadoMensualidad}</li>
                   <li>
                     <RouterLink to="/mi-modulo" className="cursor-pointer hover:text-yellow-400">
                       Mi módulo
@@ -129,13 +204,8 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
-<<<<<<< HEAD
-                    <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
-                      Mi Inscripcion
-=======
                       <RouterLink to="/estado-inscripcion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Mi Inscripcion
->>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                     </RouterLink>
                   </li>
                 </>
@@ -228,36 +298,18 @@ const Header = () => {
                     </button>
 
                     {dropdownPersonal && (
-<<<<<<< HEAD
                       <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
-=======
-                      <div className="absolute left-0 mt-3 w-44 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
->>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                         <RouterLink to="/cruddocentes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Docentes
                         </RouterLink>
                         <RouterLink to="/crudestudiantes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Estudiantes
                         </RouterLink>
-<<<<<<< HEAD
-
-                        {/* EXCLUSIVO PARA ROLES 1 Y 2 */}
-                        {[1, 2].includes(userRole) && (
-                          <RouterLink to="/registro" className="px-4 py-2 text-sm text-yellow-400 font-semibold hover:bg-[#1c2230] transition border-t border-[#232936]">
-                            Registrar Usuario
-                          </RouterLink>
-                        )}
-=======
->>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                       </div>
                     )}
                   </div>
 
-<<<<<<< HEAD
-                  {/* MENSUALIDADES */}
-=======
                   {/* MENSUALIDADES (Directo o se puede incluir) */}
->>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                   <RouterLink to="/crudmensualidad" className="cursor-pointer hover:text-yellow-400">
                     Mensualidades
                   </RouterLink>
@@ -352,6 +404,7 @@ const Header = () => {
               <>
                 {esEstudiante && (
                   <>
+                    {indicadorEstadoMensualidad}
                     <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>Cursos</RouterLink>
                     <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>Oferta Academica</RouterLink>
                   </>
@@ -399,16 +452,6 @@ const Header = () => {
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
                           <RouterLink to="/cruddocentes" onClick={() => setToggle(false)}>Docentes</RouterLink>
                           <RouterLink to="/crudestudiantes" onClick={() => setToggle(false)}>Estudiantes</RouterLink>
-<<<<<<< HEAD
-
-                          {/* EXCLUSIVO PARA ROLES 1 Y 2 EN MÓVIL */}
-                          {[1, 2].includes(userRole) && (
-                            <RouterLink to="/registro" onClick={() => setToggle(false)} className="text-yellow-400 font-semibold">
-                              Registrar Usuario
-                            </RouterLink>
-                          )}
-=======
->>>>>>> 49b812ced42dcb2b4e451415474e74cf6a65e3ac
                         </div>
                       )}
                     </div>
