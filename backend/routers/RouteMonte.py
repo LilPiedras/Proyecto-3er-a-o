@@ -45,6 +45,13 @@ def verificar_vencimientos(
         "mensaje": f"{actualizados} pago(s) pendiente(s) marcado(s) como vencido(s).",
     }
 
+@mensualidad_route.get("/mi-estado", response_model=EstadoMensualidadEstudianteSalida | None)
+def obtener_mi_estado_mensualidad(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([5])),
+):
+    return mensualidad_service.obtener_estado_mensualidad_reciente(current_user.ciuser, db)
+
 @mensualidad_route.get("/{idmensualidad}", response_model=MensualidadSalida)
 def obtener_men(idmensualidad: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return mensualidad_service.obtener_mensualidad_por_id(idmensualidad, db)
