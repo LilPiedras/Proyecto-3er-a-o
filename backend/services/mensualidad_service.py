@@ -26,6 +26,24 @@ def listar_mensualidades(db: Session):
     return db.query(Mensualidad).filter(Mensualidad.activo == True).all()
 
 
+def obtener_estado_mensualidad_reciente(estudiante: str, db: Session):
+    return (
+        db.query(Mensualidad_estu)
+        .join(Mensualidad, Mensualidad.idmensualidad == Mensualidad_estu.idmensualidad)
+        .filter(
+            Mensualidad_estu.estudiante == estudiante,
+            Mensualidad_estu.activo == True,
+            Mensualidad.activo == True,
+        )
+        .order_by(
+            Mensualidad.fecha_creacion.desc(),
+            Mensualidad.idmensualidad.desc(),
+            Mensualidad_estu.idmensualidad_estu.desc(),
+        )
+        .first()
+    )
+
+
 def _estado_pago(estado: str) -> str:
     return "pagado" if estado in {"pagado", "completado"} else estado
 
