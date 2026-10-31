@@ -26,6 +26,13 @@ class MensualidadEstudianteSalida(BaseModel):
     datos_estudiante: DatosEstudianteSalida
 
 
+class EstadoMensualidadEstudianteSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    estado: str
+    fecha_vencimiento: date
+
+
 class MensualidadSalida(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
