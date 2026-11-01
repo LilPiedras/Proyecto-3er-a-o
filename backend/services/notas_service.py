@@ -16,10 +16,7 @@ def obtener_notas_por_id(idnota: int, db: Session):
     return nota
 
 def listar_notas(db: Session):
-    notas = db.query(Notas).filter(Notas.activo.is_(True)).all()
-    if not notas:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de notas vacía")
-    return notas
+    return db.query(Notas).filter(Notas.activo.is_(True)).all()
 
 def crear_nota(nota: NotasEntrada, db: Session):
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == nota.oferta).first()
@@ -65,17 +62,9 @@ def eliminar_nota(idnota: int, db: Session):
 
 def obtener_notas_estudiante(ciestu: str, idmateria: Optional[int], db: Session):
     query = (db.query(Notas).join(Oferta_seccion, Notas.oferta == Oferta_seccion.idseccmo).filter(Oferta_seccion.estudiante == ciestu, Notas.activo.is_(True)))
-
     if idmateria:
         query = (query.outerjoin(PlanEvaluacion, Notas.idevaluacion == PlanEvaluacion.idevaluacion).filter(PlanEvaluacion.idmateria == idmateria))
-
-    notas = query.all()
-    if not notas:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontraron notas registradas para este estudiante"
-        )
-    return notas
+    return query.all()
 
 def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Session):
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == nota_in.oferta).first()
@@ -115,7 +104,7 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
     return nueva_nota
 
 def listar_estudiantes_del_docente(ci_docente: str, db: Session):
-    materias = db.query(Materias).filter(Materias.docente == ci_docente,Materias.activo.is_(True)).all()
+    materias = db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all()
 
     if not materias:
         raise HTTPException(status_code=404, detail="No tienes materias asignadas")
