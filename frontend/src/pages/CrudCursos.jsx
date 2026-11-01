@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
@@ -7,6 +7,7 @@ import { show_alert } from '../components/functions/Showpro_functions';
 const CrudCursos = () => {
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
 
   const [idcurso, setIdcurso] = useState('');
   const [nomcurso, setNomcurso] = useState('');
@@ -20,7 +21,7 @@ const CrudCursos = () => {
 
   const obtenerIdCurso = (curso) => {
     if (!curso) return null;
-    
+
     if (curso.idcurso !== undefined) return curso.idcurso;
     if (curso.id !== undefined) return curso.id;
     if (curso.id_curso !== undefined) return curso.id_curso;
@@ -31,9 +32,12 @@ const CrudCursos = () => {
         return curso[key];
       }
     }
-    
+
     return null;
   };
+
+  const formatearPrecio = (valor) =>
+    `$${new Intl.NumberFormat('es-MX').format(valor || 0)}`;
 
   const cargarCursos = async () => {
     try {
@@ -61,6 +65,23 @@ const CrudCursos = () => {
     cargarCursos();
   }, []);
 
+  const cursosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return cursos;
+    return cursos.filter((c) => {
+      const nombre = String(c.nomcurso || c.nombrecurso || '').toLowerCase();
+      const nivel = String(c.nivelcur || '').toLowerCase();
+      const doc = String(c.docenasig || '').toLowerCase();
+      const precio = String(c.preciocurso ?? '');
+      return (
+        nombre.includes(q) ||
+        nivel.includes(q) ||
+        doc.includes(q) ||
+        precio.includes(q)
+      );
+    });
+  }, [cursos, busqueda]);
+
   const limpiarFormulario = () => {
     setIdcurso('');
     setNomcurso('');
@@ -78,22 +99,23 @@ const CrudCursos = () => {
       setIsModalOpen(true);
     } else if (curso) {
       setTitle('Editar Curso');
-      
-      console.log("Objeto curso completo recibido:", curso);
-      const idEncontrado = obtenerIdCurso(curso);
-      console.log("ID resuelto por la función:", idEncontrado);
 
+      const idEncontrado = obtenerIdCurso(curso);
       if (!idEncontrado) {
-        show_alert('Error interno: No se pudo identificar el ID del curso.', 'error');
-        return; 
+        show_alert(
+          'Error interno: No se pudo identificar el ID del curso.',
+          'error'
+        );
+        return;
       }
 
       setIdcurso(idEncontrado);
       setNomcurso(curso.nomcurso || curso.nombrecurso || '');
-      setPreciocurso(curso.preciocurso !== undefined ? String(curso.preciocurso) : '');
+      setPreciocurso(
+        curso.preciocurso !== undefined ? String(curso.preciocurso) : ''
+      );
       setNivelcur(curso.nivelcur || '');
       setDocenasig(curso.docenasig || '');
-      
       setIsModalOpen(true);
     }
   };
@@ -138,9 +160,9 @@ const CrudCursos = () => {
       if (metodo === 'POST') {
         await api.post('/curso/', parametros);
       } else if (metodo === 'PUT') {
-        await api.put(`/curso/${idPath}`, parametros); 
+        await api.put(`/curso/${idPath}`, parametros);
       } else if (metodo === 'DELETE') {
-        await api.delete(`/curso/${idPath}`); 
+        await api.delete(`/curso/${idPath}`);
       }
 
       const msg =
@@ -172,8 +194,8 @@ const CrudCursos = () => {
 
   const deleteCurso = (curso) => {
     const idParaEliminar = obtenerIdCurso(curso);
-
     const MySwal = withReactContent(Swal);
+
     MySwal.fire({
       title: `¿Seguro de eliminar el curso "${curso.nomcurso}"?`,
       text: 'No se podrá dar marcha atrás',
@@ -181,6 +203,7 @@ const CrudCursos = () => {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
         enviarSolicitud('DELETE', {}, idParaEliminar);
@@ -190,90 +213,177 @@ const CrudCursos = () => {
     });
   };
 
+  const inicial = (c) => {
+    const n = (c.nomcurso || c.nombrecurso || '?').trim();
+    return n.charAt(0).toUpperCase();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-black text-white">
+        <p className="text-xl font-bold text-yellow-400">Cargando cursos...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="CRUD p-6 min-h-screen bg-black text-white">
-      <div className="container mx-auto">
-        <div className="row mt-3">
-          <div className="col-md-4 offset-md-4">
-            <div className="d-grid mx-auto text-center">
-              <button
-                type="button"
-                className="bg-yellow-400 text-black font-bold px-6 py-2 rounded-lg hover:bg-yellow-300 transition"
-                onClick={() => openModal(1)}
-              >
-                <i className="fa-solid fa-circle-plus mr-2"></i> Añadir
-              </button>
-            </div>
+    <div className="p-6 min-h-screen bg-black text-white pt-24">
+      <div className="container mx-auto max-w-6xl">
+        <h2 className="text-3xl font-bold text-yellow-400 mb-2 text-center">
+          Gestión de Cursos
+        </h2>
+        <p className="text-center text-gray-400 text-sm mb-8">
+          Catálogo académico de cursos disponibles
+        </p>
+
+        {/* Resumen */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">Total cursos</p>
+            <p className="text-2xl font-bold text-yellow-400">{cursos.length}</p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              Resultados filtro
+            </p>
+            <p className="text-2xl font-bold text-white">
+              {cursosFiltrados.length}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => openModal(1)}
+              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-circle-plus"></i>
+              Añadir curso
+            </button>
           </div>
         </div>
 
-        <div className="row mt-6">
-          <div className="col-12 col-lg-10 offset-lg-1">
-            <div className="table-responsive">
-              {loading ? (
-                <p className="text-center text-gray-400 p-4">Cargando cursos...</p>
-              ) : (
-                <table className="table table-dark table-bordered w-full text-left">
-                  <thead>
-                    <tr>
-                      <th>CURSO</th>
-                      <th>NIVEL</th>
-                      <th>PRECIO</th>
-                      <th>CÉDULA DOCENTE</th>
-                      <th>ACCIONES</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cursos.length > 0 ? (
-                      cursos.map((c, index) => (
-                        <tr key={obtenerIdCurso(c) || index}>
-                          <td>{c.nomcurso}</td>
-                          <td>{c.nivelcur}</td>
-                          <td>{`$${new Intl.NumberFormat('es-MX').format(c.preciocurso || 0)}`}</td>
-                          <td>{c.docenasig || '—'}</td>
-                          <td>
+        {/* Buscador */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
+          <label className="block text-sm font-bold mb-2 text-yellow-400">
+            Buscar
+          </label>
+          <div className="relative">
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 transition"
+              placeholder="Nombre, nivel, precio o cédula docente..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Tabla */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-white mb-4">Listado de cursos</h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[720px]">
+              <thead className="bg-gray-800 border-b border-gray-700 text-yellow-400 text-xs uppercase">
+                <tr>
+                  <th className="p-3">Curso</th>
+                  <th className="p-3">Nivel</th>
+                  <th className="p-3">Precio</th>
+                  <th className="p-3">Docente</th>
+                  <th className="p-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cursosFiltrados.length > 0 ? (
+                  cursosFiltrados.map((c, index) => {
+                    const id = obtenerIdCurso(c) || index;
+                    const nombre = c.nomcurso || c.nombrecurso || '—';
+
+                    return (
+                      <tr
+                        key={id}
+                        className="border-b border-gray-700 hover:bg-gray-800/80 transition"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-bold shrink-0">
+                              {inicial(c)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-white leading-tight">
+                                {nombre}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                ID: {obtenerIdCurso(c) ?? '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-800 border border-gray-600 text-yellow-300">
+                            {c.nivelcur || '—'}
+                          </span>
+                        </td>
+                        <td className="p-3 font-semibold text-green-400">
+                          {formatearPrecio(c.preciocurso)}
+                        </td>
+                        <td className="p-3 font-mono text-sm text-gray-300">
+                          {c.docenasig || '—'}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-2">
                             <button
                               type="button"
+                              title="Editar"
                               onClick={() => openModal(2, c)}
-                              className="bg-yellow-400 text-black px-3 py-1 rounded mr-2 hover:bg-yellow-300"
+                              className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
                             >
-                              <i className="fa-solid fa-edit"></i>
+                              <i className="fa-solid fa-pen"></i>
                             </button>
                             <button
                               type="button"
+                              title="Eliminar"
                               onClick={() => deleteCurso(c)}
-                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
                             >
                               <i className="fa-solid fa-trash"></i>
                             </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="text-center p-4 text-gray-400">
-                          No hay datos para mostrar
+                          </div>
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center p-10 text-gray-500">
+                      {busqueda
+                        ? 'No hay cursos que coincidan con la búsqueda.'
+                        : 'No hay cursos registrados.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md p-6 text-white relative">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{title}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white relative max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-yellow-400">{title}</h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Completa los datos del curso
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="text-gray-400 hover:text-white font-bold text-xl"
+                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800"
               >
                 ✕
               </button>
@@ -281,60 +391,72 @@ const CrudCursos = () => {
 
             <form onSubmit={validar} className="space-y-4">
               <div>
-                <label className="block text-sm mb-1">Nombre del Curso</label>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Nombre del curso
+                </label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                   placeholder="Ej. Corte y Confección"
                   value={nomcurso}
                   onChange={(e) => setNomcurso(e.target.value)}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm mb-1">Nivel del Curso</label>
-                <input
-                  type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
-                  placeholder="Ej. Básico / Intermedio / Avanzado"
-                  value={nivelcur}
-                  onChange={(e) => setNivelcur(e.target.value)}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-2 text-yellow-400">
+                    Nivel
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
+                    placeholder="Básico / Intermedio / Avanzado"
+                    value={nivelcur}
+                    onChange={(e) => setNivelcur(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2 text-yellow-400">
+                    Precio
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
+                    placeholder="Ej. 50"
+                    value={preciocurso}
+                    onChange={(e) =>
+                      setPreciocurso(e.target.value.replace(/\D/g, ''))
+                    }
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Precio</label>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Cédula del docente{' '}
+                  <span className="text-gray-500 font-normal">(opcional)</span>
+                </label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
-                  placeholder="Ej. 50"
-                  value={preciocurso}
-                  onChange={(e) => setPreciocurso(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1">Cédula del Docente (Opcional)</label>
-                <input
-                  type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                   placeholder="Ej. V-12345678"
                   value={docenasig}
                   onChange={(e) => setDocenasig(e.target.value)}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded bg-yellow-400 text-black font-bold hover:bg-yellow-300"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
                 >
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
@@ -7,12 +7,12 @@ import { show_alert } from '../components/functions/Showpro_functions';
 const CrudCarrera = () => {
   const [carreras, setCarreras] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
 
-  // Estados del formulario
   const [idcarrera, setIdcarrera] = useState('');
   const [nombrecarrera, setNombrecarrera] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  
+
   const [operation, setOperation] = useState(1);
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +25,10 @@ const CrudCarrera = () => {
     } catch (error) {
       console.error(error);
       const detail = error.response?.data?.detail;
-      show_alert(typeof detail === 'string' ? detail : 'Error al cargar carreras', 'error');
+      show_alert(
+        typeof detail === 'string' ? detail : 'Error al cargar carreras',
+        'error'
+      );
       setCarreras([]);
     } finally {
       setLoading(false);
@@ -35,6 +38,17 @@ const CrudCarrera = () => {
   useEffect(() => {
     cargarCarreras();
   }, []);
+
+  const carrerasFiltradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return carreras;
+    return carreras.filter((c) => {
+      const nombre = String(c.nombrecarrera || '').toLowerCase();
+      const desc = String(c.descripcion || '').toLowerCase();
+      const id = String(c.idcarrera ?? '');
+      return nombre.includes(q) || desc.includes(q) || id.includes(q);
+    });
+  }, [carreras, busqueda]);
 
   const limpiarFormulario = () => {
     setIdcarrera('');
@@ -56,6 +70,11 @@ const CrudCarrera = () => {
     }
 
     setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    limpiarFormulario();
   };
 
   const validar = () => {
@@ -91,23 +110,26 @@ const CrudCarrera = () => {
       }
 
       const msg =
-        metodo === 'DELETE' ? 'Carrera eliminada correctamente'
-          : metodo === 'POST' ? 'Carrera registrada correctamente'
-          : 'Carrera actualizada correctamente';
+        metodo === 'DELETE'
+          ? 'Carrera eliminada correctamente'
+          : metodo === 'POST'
+            ? 'Carrera registrada correctamente'
+            : 'Carrera actualizada correctamente';
 
       show_alert(msg, 'success');
-      setIsModalOpen(false);
-      limpiarFormulario();
+      closeModal();
       await cargarCarreras();
     } catch (error) {
       console.error('Error detallado:', error.response?.data);
       const detail = error.response?.data?.detail;
-      
+
       let mensajeError = 'Error en la operación';
       if (typeof detail === 'string') {
         mensajeError = detail;
       } else if (Array.isArray(detail)) {
-        mensajeError = detail.map((err) => `${err.loc[err.loc.length - 1]}: ${err.msg}`).join(' | ');
+        mensajeError = detail
+          .map((err) => `${err.loc[err.loc.length - 1]}: ${err.msg}`)
+          .join(' | ');
       }
       show_alert(mensajeError, 'error');
     }
@@ -115,8 +137,8 @@ const CrudCarrera = () => {
 
   const deleteCarrera = (id, nombre) => {
     if (!id) {
-        show_alert('Error: ID de carrera no válido', 'error');
-        return;
+      show_alert('Error: ID de carrera no válido', 'error');
+      return;
     }
 
     const MySwal = withReactContent(Swal);
@@ -127,6 +149,7 @@ const CrudCarrera = () => {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
         enviarSolicitud('DELETE', {}, id);
@@ -136,92 +159,194 @@ const CrudCarrera = () => {
     });
   };
 
+  const inicial = (c) => {
+    const n = (c.nombrecarrera || '?').trim();
+    return n.charAt(0).toUpperCase();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-black text-white">
+        <p className="text-xl font-bold text-yellow-400">
+          Cargando carreras...
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="CRUD p-6 min-h-screen bg-black text-white">
-      <div className="container mx-auto">
-        <div className="row mt-3">
-          <div className="col-md-4 offset-md-4">
-            <div className="d-grid mx-auto text-center">
-              <button
-                className="bg-yellow-400 text-black font-bold px-6 py-2 rounded-lg hover:bg-yellow-300 transition"
-                onClick={() => openModal(1)}
-              >
-                <i className="fa-solid fa-circle-plus"></i> Añadir Carrera
-              </button>
-            </div>
+    <div className="p-6 min-h-screen bg-black text-white pt-24">
+      <div className="container mx-auto max-w-6xl">
+        <h2 className="text-3xl font-bold text-yellow-400 mb-2 text-center">
+          Gestión de Carreras
+        </h2>
+        <p className="text-center text-gray-400 text-sm mb-8">
+          Programas académicos disponibles en el sistema
+        </p>
+
+        {/* Resumen */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              Total carreras
+            </p>
+            <p className="text-2xl font-bold text-yellow-400">
+              {carreras.length}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              Resultados filtro
+            </p>
+            <p className="text-2xl font-bold text-white">
+              {carrerasFiltradas.length}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => openModal(1)}
+              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-circle-plus"></i>
+              Añadir carrera
+            </button>
           </div>
         </div>
 
-        <div className="row mt-6">
-          <div className="col-12 col-lg-10 offset-lg-1">
-            <div className="table-responsive">
-              {loading ? (
-                <p className="text-center text-gray-400 p-4">Cargando carreras...</p>
-              ) : (
-                <table className="table table-dark table-bordered w-full text-left">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>CARRERA</th>
-                      <th>DESCRIPCIÓN</th>
-                      <th>ACCIONES</th>
+        {/* Buscador */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
+          <label className="block text-sm font-bold mb-2 text-yellow-400">
+            Buscar
+          </label>
+          <div className="relative">
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 transition"
+              placeholder="Nombre, descripción o ID..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Tabla */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-white mb-4">
+            Listado de carreras
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[640px]">
+              <thead className="bg-gray-800 border-b border-gray-700 text-yellow-400 text-xs uppercase">
+                <tr>
+                  <th className="p-3">Carrera</th>
+                  <th className="p-3">Descripción</th>
+                  <th className="p-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {carrerasFiltradas.length > 0 ? (
+                  carrerasFiltradas.map((c, index) => (
+                    <tr
+                      key={c.idcarrera || index}
+                      className="border-b border-gray-700 hover:bg-gray-800/80 transition"
+                    >
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-bold shrink-0">
+                            {inicial(c)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white leading-tight">
+                              {c.nombrecarrera}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ID: {c.idcarrera}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3 text-sm text-gray-300 max-w-md">
+                        <span className="line-clamp-2">
+                          {c.descripcion || '—'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            title="Editar"
+                            onClick={() =>
+                              openModal(
+                                2,
+                                c.idcarrera,
+                                c.nombrecarrera,
+                                c.descripcion
+                              )
+                            }
+                            className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                          >
+                            <i className="fa-solid fa-pen"></i>
+                          </button>
+                          <button
+                            type="button"
+                            title="Eliminar"
+                            onClick={() =>
+                              deleteCarrera(c.idcarrera, c.nombrecarrera)
+                            }
+                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                          >
+                            <i className="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {carreras.length > 0 ? (
-                      carreras.map((c, index) => (
-                        <tr key={c.idcarrera || index}>
-                          <td>{c.idcarrera}</td>
-                          <td>{c.nombrecarrera}</td>
-                          <td>{c.descripcion}</td>
-                          <td>
-                            <button
-                              onClick={() => openModal(2, c.idcarrera, c.nombrecarrera, c.descripcion)}
-                              className="bg-yellow-400 text-black px-3 py-1 rounded mr-2 hover:bg-yellow-300"
-                            >
-                              <i className="fa-solid fa-edit"></i>
-                            </button>
-                            <button
-                              onClick={() => deleteCarrera(c.idcarrera, c.nombrecarrera)}
-                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
-                            >
-                              <i className="fa-solid fa-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center p-4 text-gray-400">
-                          No hay carreras registradas
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center p-10 text-gray-500">
+                      {busqueda
+                        ? 'No hay carreras que coincidan con la búsqueda.'
+                        : 'No hay carreras registradas.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md p-6 text-white relative">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{title}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white font-bold text-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white relative max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-yellow-400">{title}</h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Completa los datos de la carrera
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800"
+              >
                 ✕
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm mb-1">Nombre de la Carrera</label>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Nombre de la carrera
+                </label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                   placeholder="Ej. Diseño de Modas"
                   value={nombrecarrera}
                   onChange={(e) => setNombrecarrera(e.target.value)}
@@ -229,28 +354,30 @@ const CrudCarrera = () => {
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Descripción</label>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Descripción
+                </label>
                 <textarea
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 resize-none"
                   placeholder="Descripción de la carrera"
-                  rows="3"
+                  rows="4"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
-                ></textarea>
+                />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+                  onClick={closeModal}
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={validar}
-                  className="px-4 py-2 rounded bg-yellow-400 text-black font-bold hover:bg-yellow-300"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
                 >
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>

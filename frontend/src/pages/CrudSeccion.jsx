@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
@@ -13,13 +13,14 @@ const CrudSeccion = () => {
   const [carrerasModulos, setCarrerasModulos] = useState([]);
   const [materiasModulos, setMateriasModulos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
   const [sectionStudents, setSectionStudents] = useState([]);
   const [selectedSection, setSelectedSection] = useState(null);
   const [isStudentsModalOpen, setIsStudentsModalOpen] = useState(false);
   const [studentForm, setStudentForm] = useState({
     estudiante: '',
     idcarremo: '',
-    horario: ''
+    horario: '',
   });
 
   const [idsecc, setIdsecc] = useState('');
@@ -29,27 +30,44 @@ const CrudSeccion = () => {
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const contarEstudiantes = (idsecc) =>
+    ofertas.filter((o) => Number(o.idsecc) === Number(idsecc)).length;
+
   const cargarSecciones = async () => {
     try {
       setLoading(true);
-      const [seccionesRes, ofertasRes, estudiantesRes, carrerasModulosRes, materiasModulosRes] = await Promise.all([
+      const [
+        seccionesRes,
+        ofertasRes,
+        estudiantesRes,
+        carrerasModulosRes,
+        materiasModulosRes,
+      ] = await Promise.all([
         api.get('/seccion/'),
         api.get('/Oferta/'),
         api.get('/estudiantes/'),
         api.get('/Carrera_Modulo/'),
-        api.get('/modulo_materia/')
+        api.get('/modulo_materia/'),
       ]);
 
       setSecciones(Array.isArray(seccionesRes.data) ? seccionesRes.data : []);
       setOfertas(Array.isArray(ofertasRes.data) ? ofertasRes.data : []);
-      setEstudiantes(Array.isArray(estudiantesRes.data) ? estudiantesRes.data : []);
-      setCarrerasModulos(Array.isArray(carrerasModulosRes.data) ? carrerasModulosRes.data : []);
-      setMateriasModulos(Array.isArray(materiasModulosRes.data) ? materiasModulosRes.data : []);
+      setEstudiantes(
+        Array.isArray(estudiantesRes.data) ? estudiantesRes.data : []
+      );
+      setCarrerasModulos(
+        Array.isArray(carrerasModulosRes.data) ? carrerasModulosRes.data : []
+      );
+      setMateriasModulos(
+        Array.isArray(materiasModulosRes.data) ? materiasModulosRes.data : []
+      );
     } catch (error) {
       console.error(error);
       const detail = error.response?.data?.detail;
       show_alert(
-        typeof detail === 'string' ? detail : 'Error al cargar secciones y estudiantes',
+        typeof detail === 'string'
+          ? detail
+          : 'Error al cargar secciones y estudiantes',
         'error'
       );
       setSecciones([]);
@@ -67,13 +85,15 @@ const CrudSeccion = () => {
     const lista = ofertas
       .filter((oferta) => Number(oferta.idsecc) === Number(seccion.idsecc))
       .map((oferta) => {
-        const estudiante = estudiantes.find((item) => item.ciestu === oferta.estudiante);
+        const estudiante = estudiantes.find(
+          (item) => item.ciestu === oferta.estudiante
+        );
         return {
           ...oferta,
           nombreCompleto: estudiante
             ? `${estudiante.nombreestu ?? ''} ${estudiante.apelliestu ?? ''}`.trim()
             : '(sin estudiante)',
-          estudianteData: estudiante ?? null
+          estudianteData: estudiante ?? null,
         };
       });
 
@@ -81,7 +101,7 @@ const CrudSeccion = () => {
     setStudentForm({
       estudiante: '',
       idcarremo: carrerasModulos[0]?.idcarremo ?? '',
-      horario: ''
+      horario: '',
     });
     setIsStudentsModalOpen(true);
   };
@@ -105,7 +125,9 @@ const CrudSeccion = () => {
       console.error(error);
       const detail = error.response?.data?.detail;
       show_alert(
-        typeof detail === 'string' ? detail : 'No se pudo eliminar al estudiante de la sección',
+        typeof detail === 'string'
+          ? detail
+          : 'No se pudo eliminar al estudiante de la sección',
         'error'
       );
     }
@@ -129,7 +151,10 @@ const CrudSeccion = () => {
 
     const idcarremo = Number(studentForm.idcarremo);
     if (!Number.isInteger(idcarremo) || idcarremo <= 0) {
-      show_alert('La materia seleccionada no tiene un enlace académico válido', 'warning');
+      show_alert(
+        'La materia seleccionada no tiene un enlace académico válido',
+        'warning'
+      );
       return;
     }
 
@@ -138,7 +163,7 @@ const CrudSeccion = () => {
         idcarremo,
         idsecc: Number(selectedSection.idsecc),
         estudiante: studentForm.estudiante,
-        horario: studentForm.horario ? Number(studentForm.horario) : null
+        horario: studentForm.horario ? Number(studentForm.horario) : null,
       };
 
       await api.post('/Oferta/', payload);
@@ -149,7 +174,9 @@ const CrudSeccion = () => {
       console.error(error);
       const detail = error.response?.data?.detail;
       show_alert(
-        typeof detail === 'string' ? detail : 'No se pudo agregar al estudiante a la sección',
+        typeof detail === 'string'
+          ? detail
+          : 'No se pudo agregar al estudiante a la sección',
         'error'
       );
     }
@@ -158,6 +185,16 @@ const CrudSeccion = () => {
   useEffect(() => {
     cargarSecciones();
   }, []);
+
+  const seccionesFiltradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return secciones;
+    return secciones.filter((s) => {
+      const nombre = String(s.nomsecc || '').toLowerCase();
+      const id = String(s.idsecc ?? '');
+      return nombre.includes(q) || id.includes(q);
+    });
+  }, [secciones, busqueda]);
 
   const limpiarFormulario = () => {
     setIdsecc('');
@@ -237,6 +274,7 @@ const CrudSeccion = () => {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
         enviarSolicitud('DELETE', {}, item.idsecc);
@@ -246,88 +284,184 @@ const CrudSeccion = () => {
     });
   };
 
-  return (
-    <div className="CRUD p-6 min-h-screen bg-black text-white">
-      <div className="container mx-auto">
-        <h2 className="text-2xl font-bold text-center mb-4 text-yellow-400">
-          Secciones
-        </h2>
+  const inicial = (s) => {
+    const n = (s.nomsecc || '?').trim();
+    return n.charAt(0).toUpperCase();
+  };
 
-        <div className="text-center mb-4">
-          <button
-            type="button"
-            className="bg-yellow-400 text-black font-bold px-6 py-2 rounded-lg hover:bg-yellow-300 transition"
-            onClick={() => openModal(1)}
-          >
-            <i className="fa-solid fa-circle-plus"></i> Añadir
-          </button>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-black text-white">
+        <p className="text-xl font-bold text-yellow-400">
+          Cargando secciones...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 min-h-screen bg-black text-white pt-24">
+      <div className="container mx-auto max-w-6xl">
+        <h2 className="text-3xl font-bold text-yellow-400 mb-2 text-center">
+          Gestión de Secciones
+        </h2>
+        <p className="text-center text-gray-400 text-sm mb-8">
+          Grupos académicos y asignación de estudiantes
+        </p>
+
+        {/* Resumen */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              Total secciones
+            </p>
+            <p className="text-2xl font-bold text-yellow-400">
+              {secciones.length}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              Resultados filtro
+            </p>
+            <p className="text-2xl font-bold text-white">
+              {seccionesFiltradas.length}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center">
+            <button
+              type="button"
+              onClick={() => openModal(1)}
+              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-circle-plus"></i>
+              Añadir sección
+            </button>
+          </div>
         </div>
 
-        <div className="table-responsive max-w-3xl mx-auto">
-          {loading ? (
-            <p className="text-center text-gray-400 p-4">Cargando secciones...</p>
-          ) : (
-            <table className="table table-dark table-bordered w-full text-left">
-              <thead>
+        {/* Buscador */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
+          <label className="block text-sm font-bold mb-2 text-yellow-400">
+            Buscar
+          </label>
+          <div className="relative">
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 transition"
+              placeholder="Nombre o ID de sección..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Tabla */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-white mb-4">
+            Listado de secciones
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[560px]">
+              <thead className="bg-gray-800 border-b border-gray-700 text-yellow-400 text-xs uppercase">
                 <tr>
-                  <th>#</th>
-                  <th>NOMBRE SECCIÓN</th>
-                  <th>ACCIONES</th>
+                  <th className="p-3">Sección</th>
+                  <th className="p-3">Estudiantes</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {secciones.length > 0 ? (
-                  secciones.map((s, index) => (
-                    <tr key={s.idsecc || index}>
-                      <td>{index + 1}</td>
-                      <td>{s.nomsecc}</td>
-                      <td>
-                        <button
-                          type="button"
-                          onClick={() => openStudentsModal(s)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded mr-2 hover:bg-blue-500"
-                        >
-                          <i className="fa-solid fa-users"></i>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openModal(2, s)}
-                          className="bg-yellow-400 text-black px-3 py-1 rounded mr-2 hover:bg-yellow-300"
-                        >
-                          <i className="fa-solid fa-edit"></i>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteSeccion(s)}
-                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
-                        >
-                          <i className="fa-solid fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                {seccionesFiltradas.length > 0 ? (
+                  seccionesFiltradas.map((s, index) => {
+                    const total = contarEstudiantes(s.idsecc);
+                    return (
+                      <tr
+                        key={s.idsecc || index}
+                        className="border-b border-gray-700 hover:bg-gray-800/80 transition"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-bold shrink-0">
+                              {inicial(s)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-white leading-tight">
+                                {s.nomsecc}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                ID: {s.idsecc}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-800 border border-gray-600 text-gray-200">
+                            <i className="fa-solid fa-users text-yellow-400"></i>
+                            {total}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              title="Estudiantes"
+                              onClick={() => openStudentsModal(s)}
+                              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition"
+                            >
+                              <i className="fa-solid fa-users"></i>
+                            </button>
+                            <button
+                              type="button"
+                              title="Editar"
+                              onClick={() => openModal(2, s)}
+                              className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                            >
+                              <i className="fa-solid fa-pen"></i>
+                            </button>
+                            <button
+                              type="button"
+                              title="Eliminar"
+                              onClick={() => deleteSeccion(s)}
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center p-4 text-gray-400">
-                      No hay datos para mostrar
+                    <td colSpan="3" className="text-center p-10 text-gray-500">
+                      {busqueda
+                        ? 'No hay secciones que coincidan con la búsqueda.'
+                        : 'No hay secciones registradas.'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
       </div>
 
+      {/* Modal sección */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md p-6 text-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{title}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-yellow-400">{title}</h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Datos de la sección
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="text-gray-400 hover:text-white font-bold text-xl"
+                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800"
               >
                 ✕
               </button>
@@ -335,28 +469,30 @@ const CrudSeccion = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm mb-1">Nombre de la sección</label>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Nombre de la sección
+                </label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                   placeholder="Ej. A, B, 1A..."
                   value={nomsecc}
                   onChange={(e) => setNomsecc(e.target.value)}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={validar}
-                  className="px-4 py-2 rounded bg-yellow-400 text-black font-bold hover:bg-yellow-300"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
                 >
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>
@@ -366,63 +502,98 @@ const CrudSeccion = () => {
         </div>
       )}
 
+      {/* Modal estudiantes */}
       {isStudentsModalOpen && selectedSection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-5xl p-6 text-white max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">
-                Estudiantes de la sección: {selectedSection.nomsecc}
-              </h3>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-5xl p-6 text-white max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-yellow-400">
+                  Estudiantes de la sección
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {selectedSection.nomsecc} · ID {selectedSection.idsecc}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={closeStudentsModal}
-                className="text-gray-400 hover:text-white font-bold text-xl"
+                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800"
               >
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h4 className="text-lg font-semibold mb-3 text-yellow-400">Agregar estudiante</h4>
+              {/* Agregar */}
+              <div className="bg-gray-800/80 rounded-lg p-5 border border-gray-700">
+                <h4 className="text-lg font-semibold mb-4 text-yellow-400">
+                  Agregar estudiante
+                </h4>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm mb-1">Materia / carrera-modulo</label>
+                    <label className="block text-sm font-bold mb-2 text-yellow-400">
+                      Materia / carrera-módulo
+                    </label>
                     <select
-                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      className="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                       value={studentForm.idcarremo}
-                      onChange={(e) => setStudentForm({ ...studentForm, idcarremo: e.target.value })}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          idcarremo: e.target.value,
+                        })
+                      }
                     >
                       <option value="">Seleccione una materia</option>
-                      {carrerasModulos.map((item) => (
-                        (() => {
-                          const relacion = materiasModulos.find(
-                            (materiaModulo) => Number(materiaModulo.idmatemo) === Number(item.idmatemo)
-                          );
-                          const nombreModulo = relacion?.nombremodulo || `Módulo ${item.idmatemo}`;
-                          const nombreMateria = relacion?.nombremateria || `Materia ${item.idmatemo}`;
+                      {carrerasModulos.map((item) => {
+                        const relacion = materiasModulos.find(
+                          (materiaModulo) =>
+                            Number(materiaModulo.idmatemo) ===
+                            Number(item.idmatemo)
+                        );
+                        const nombreModulo =
+                          relacion?.nombremodulo || `Módulo ${item.idmatemo}`;
+                        const nombreMateria =
+                          relacion?.nombremateria || `Materia ${item.idmatemo}`;
 
-                          return (
-                            <option key={item.idcarremo} value={item.idcarremo}>
-                              {nombreMateria} · {nombreModulo}
-                            </option>
-                          );
-                        })()
-                      ))}
+                        return (
+                          <option key={item.idcarremo} value={item.idcarremo}>
+                            {nombreMateria} · {nombreModulo}
+                          </option>
+                        );
+                      })}
                     </select>
+                    {carrerasModulos.length === 0 && (
+                      <p className="text-xs text-red-400 mt-1">
+                        No hay enlaces Carrera-Módulo. Créalos primero.
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm mb-1">Estudiante</label>
+                    <label className="block text-sm font-bold mb-2 text-yellow-400">
+                      Estudiante
+                    </label>
                     <select
-                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      className="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                       value={studentForm.estudiante}
-                      onChange={(e) => setStudentForm({ ...studentForm, estudiante: e.target.value })}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          estudiante: e.target.value,
+                        })
+                      }
                     >
                       <option value="">Seleccione estudiante</option>
                       {estudiantes
-                        .filter((est) => !sectionStudents.some((inscrito) => inscrito.estudiante === est.ciestu))
+                        .filter(
+                          (est) =>
+                            !sectionStudents.some(
+                              (inscrito) => inscrito.estudiante === est.ciestu
+                            )
+                        )
                         .map((est) => (
                           <option key={est.ciestu} value={est.ciestu}>
                             {est.ciestu} · {est.nombreestu} {est.apelliestu}
@@ -432,12 +603,22 @@ const CrudSeccion = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm mb-1">Horario (opcional)</label>
+                    <label className="block text-sm font-bold mb-2 text-yellow-400">
+                      Horario{' '}
+                      <span className="text-gray-500 font-normal">
+                        (opcional)
+                      </span>
+                    </label>
                     <input
                       type="number"
-                      className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      className="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
                       value={studentForm.horario}
-                      onChange={(e) => setStudentForm({ ...studentForm, horario: e.target.value })}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          horario: e.target.value,
+                        })
+                      }
                       placeholder="Id del horario"
                     />
                   </div>
@@ -445,37 +626,57 @@ const CrudSeccion = () => {
                   <button
                     type="button"
                     onClick={guardarEstudianteEnSeccion}
-                    className="w-full bg-yellow-400 text-black font-bold py-2 rounded hover:bg-yellow-300"
+                    className="w-full bg-yellow-400 text-black font-bold py-2.5 rounded-lg hover:bg-yellow-300 transition"
                   >
                     Guardar estudiante
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h4 className="text-lg font-semibold mb-3 text-yellow-400">Lista de estudiantes</h4>
-                <div className="space-y-2">
+              {/* Lista */}
+              <div className="bg-gray-800/80 rounded-lg p-5 border border-gray-700">
+                <h4 className="text-lg font-semibold mb-4 text-yellow-400">
+                  Lista de estudiantes
+                  <span className="ml-2 text-sm font-normal text-gray-400">
+                    ({sectionStudents.length})
+                  </span>
+                </h4>
+                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                   {sectionStudents.length > 0 ? (
                     sectionStudents.map((inscrito) => (
                       <div
                         key={inscrito.idseccmo}
-                        className="flex items-center justify-between gap-3 bg-gray-700 rounded p-3"
+                        className="flex items-center justify-between gap-3 bg-gray-900 border border-gray-700 rounded-lg p-3 hover:border-gray-600 transition"
                       >
-                        <div>
-                          <div className="font-semibold">{inscrito.nombreCompleto}</div>
-                          <div className="text-xs text-gray-300">CI: {inscrito.estudiante}</div>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-bold text-sm shrink-0">
+                            {(inscrito.nombreCompleto || '?')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-white truncate">
+                              {inscrito.nombreCompleto}
+                            </p>
+                            <p className="text-xs text-gray-400 font-mono">
+                              CI: {inscrito.estudiante}
+                            </p>
+                          </div>
                         </div>
                         <button
                           type="button"
+                          title="Quitar"
                           onClick={() => eliminarEstudianteDeSeccion(inscrito)}
-                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
+                          className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition shrink-0"
                         >
                           <i className="fa-solid fa-trash"></i>
                         </button>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-400">No hay estudiantes inscritos en esta sección.</p>
+                    <p className="text-gray-500 text-center py-8">
+                      No hay estudiantes inscritos en esta sección.
+                    </p>
                   )}
                 </div>
               </div>
