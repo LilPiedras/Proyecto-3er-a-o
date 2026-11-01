@@ -263,6 +263,9 @@ const Header = () => {
                         <RouterLink to="/crudcarrera" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Carreras
                         </RouterLink>
+                        <RouterLink to="/crudcarreramodulo" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Carrera-Módulo
+                        </RouterLink>
                         <RouterLink to="/crudmodulomateria" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Módulo Materia
                         </RouterLink>

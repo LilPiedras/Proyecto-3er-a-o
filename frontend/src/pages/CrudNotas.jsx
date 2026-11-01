@@ -58,35 +58,39 @@ const CrudNotas = () => {
     }
   };
 
-    const cargarDatosDocente = async () => {
-    try {
-        const ci = localStorage.getItem("ciuser") || "";
+const cargarDatosDocente = async () => {
+  try {
+    const ci = localStorage.getItem("ciuser") || "";
 
-        const promesas = [
-        api.get("/Oferta/").catch(() => ({ data: [] })),
-        api.get("/Notas/").catch(() => ({ data: [] })),
-        api.get("/plan-evaluacion/").catch(() => ({ data: [] })), // ← NUEVO
-        ];
+    const promesas = [
+      api.get("/Oferta/").catch(() => ({ data: [] })),
+      api.get("/Notas/").catch(() => ({ data: [] })),
+      api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
+    ];
 
-        if (ci) {
-        promesas.push(
-            api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
-        );
-        }
-
-        const [resOfertas, resNotas, resPlanes, resEstu] = await Promise.all(promesas);
-
-        setOfertas(Array.isArray(resOfertas.data) ? resOfertas.data : []);
-        setNotasLista(Array.isArray(resNotas.data) ? resNotas.data : []);
-        setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []); // ← NUEVO
-        setEstudiantes(
-        resEstu && Array.isArray(resEstu.data) ? resEstu.data : []
-        );
-    } catch (error) {
-        console.error(error);
-        show_alert("Error al cargar datos de notas", "error");
+    if (ci) {
+      promesas.push(
+        api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
+      );
     }
-    };
+
+    const [resOfertas, resNotas, resPlanes, resEstu] = await Promise.all(promesas);
+
+    const listaOfertas = Array.isArray(resOfertas.data) ? resOfertas.data : [];
+    const listaNotas = Array.isArray(resNotas.data) ? resNotas.data : [];
+    const listaPlanes = Array.isArray(resPlanes.data) ? resPlanes.data : [];
+    const listaEstu =
+      resEstu && Array.isArray(resEstu.data) ? resEstu.data : [];
+
+    setOfertas(listaOfertas);
+    setNotasLista(listaNotas);
+    setEvaluaciones(listaPlanes);
+    setEstudiantes(listaEstu);
+  } catch (error) {
+    console.error(error);
+    show_alert("Error al cargar datos de notas", "error");
+  }
+};
 
   const cargarEvaluaciones = async (idmateria) => {
     if (!idmateria) {
@@ -234,7 +238,7 @@ const CrudNotas = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-bold mb-2 text-yellow-400">
-                      Oferta (idseccmo)
+                      Oferta (estudiante / sección)
                     </label>
                     <select
                       className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
@@ -243,14 +247,32 @@ const CrudNotas = () => {
                       required
                     >
                       <option value="">-- Seleccionar --</option>
-                      {ofertas
-                        .filter((o) => o.estudiante)
-                        .map((o) => (
-                          <option key={o.idseccmo} value={o.idseccmo}>
-                            #{o.idseccmo} — Est: {o.estudiante} — Secc: {o.idsecc}
-                          </option>
-                        ))}
+
+                      {/* 1) Preferir estudiantes del endpoint del docente */}
+                      {estudiantes.length > 0
+                        ? estudiantes.map((e) => (
+                            <option key={e.idseccmo} value={e.idseccmo}>
+                              #{e.idseccmo} — {e.nombreestu} {e.apelliestu} ({e.ciestu}) — Secc:{" "}
+                              {e.idsecc}
+                            </option>
+                          ))
+                        : /* 2) Fallback: ofertas de /Oferta/ que ya tengan estudiante */
+                          ofertas
+                            .filter((o) => o.estudiante)
+                            .map((o) => (
+                              <option key={o.idseccmo} value={o.idseccmo}>
+                                #{o.idseccmo} — Est: {o.estudiante} — Secc: {o.idsecc}
+                              </option>
+                            ))}
                     </select>
+
+                    {estudiantes.length === 0 &&
+                      ofertas.filter((o) => o.estudiante).length === 0 && (
+                        <p className="text-xs text-red-400 mt-1">
+                          No hay ofertas con estudiante asignado. Asigna un estudiante a una
+                          oferta
+                        </p>
+                      )}
                   </div>
 
                   <div>

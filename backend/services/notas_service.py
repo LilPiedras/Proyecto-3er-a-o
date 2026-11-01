@@ -104,10 +104,7 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
     return nueva_nota
 
 def listar_estudiantes_del_docente(ci_docente: str, db: Session):
-    materias = db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all()
-
-    if not materias:
-        raise HTTPException(status_code=404, detail="No tienes materias asignadas")
+    materias = (db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all())
 
     ofertas = (db.query(Oferta_seccion, Estudiante).join(Estudiante, Oferta_seccion.estudiante == Estudiante.ciestu).filter(Oferta_seccion.estudiante.isnot(None)).all())
 
@@ -119,10 +116,7 @@ def listar_estudiantes_del_docente(ci_docente: str, db: Session):
             "nombreestu": estu.nombreestu,
             "apelliestu": estu.apelliestu,
             "idsecc": oferta.idsecc,
-            "horario": oferta.horario
+            "horario": oferta.horario,
         })
-
-    if not resultado:
-        raise HTTPException(status_code=404, detail="No hay estudiantes asignados aún")
 
     return resultado

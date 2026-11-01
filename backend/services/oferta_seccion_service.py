@@ -26,16 +26,10 @@ def obtener_oferta_detallada_estudiante(ciestu: str, db: Session):
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="El estudiante no posee una sección o horario asignado actualmente."
         )
-        
     return ofertas
 
-
-# 1. FUNCIÓN PARA EL DIRECTOR (Ve todas las ofertas y registros)
 def listar_ofertas(db: Session):
-    secmo = db.query(Oferta_seccion).all() # Se quitó el filtro .activo == True porque no existe en el modelo
-    if not secmo:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sin ofertas inscritas")
-    return secmo
+    return db.query(Oferta_seccion).all()
 
 def crear_oferta(seccmo: OfertaEntrada, db: Session):
     try:

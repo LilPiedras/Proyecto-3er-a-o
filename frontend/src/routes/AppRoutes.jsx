@@ -24,6 +24,7 @@ import CrudInscripciones from "../pages/CrudInscripciones";
 import InscripcionEstudiante from "../pages/InscripcionEstudiante";
 import MiModulo from "../pages/MiModulo";
 import RecuperarPassword from "../pages/RecuperarPassword";
+import CrudCarreraModulo from "../pages/CrudCarreraModulo";
 
 const AppRoutes = () => {
   return (
@@ -49,6 +50,8 @@ const AppRoutes = () => {
         <Route path="/crudinscripciones" element={<CrudInscripciones />} />
         <Route path="/estado-inscripcion" element={<InscripcionEstudiante />} />
         <Route path="/mi-modulo" element={<MiModulo />} />
+        <Route path="/crudcarreramodulo" element={<CrudCarreraModulo />} />
+        
         <Route path="/perfil" element={<Perfil />} />
         
         {/* Ruta alineada correctamente */}
