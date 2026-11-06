@@ -1,6 +1,6 @@
 from database.connection import SessionLocal
 from models.carrera_model import Carrera
-from Schemas.carrera_schema import CarreraEntrada, CarreraUpdata
+from Schemas.carrera_schema import CarreraEntrada, CarreraSalida, CarreraUpdata
 from services import carrera_service
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -26,12 +26,12 @@ def listar_carreras(db: Session = Depends(get_db), current_user: Usuario = Depen
     return carrera_service.listar_carrera(db)
 
 
-@carrera_route.post("/", response_model=CarreraEntrada, status_code=status.HTTP_201_CREATED)
+@carrera_route.post("/", response_model=CarreraSalida, status_code=status.HTTP_201_CREATED)
 def crear_carrera(carrera: CarreraEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return carrera_service.crear_carrera(carrera, db)
 
 
-@carrera_route.patch("/{idcarrera}", response_model=CarreraUpdata)
+@carrera_route.patch("/{idcarrera}", response_model=CarreraSalida)
 def update_modulo(idcarrera: int, materiamo: CarreraUpdata, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return carrera_service.actualizar_carrera_parcial(idcarrera, materiamo, db)
 
