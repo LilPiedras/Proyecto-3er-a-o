@@ -51,7 +51,7 @@ export default function LoginForm() {
     setLoading(true)
     try {
       const body = new URLSearchParams()
-      body.append("username", email)
+      body.append("username", email.trim().toLowerCase())
       body.append("password", password)
       const res = await fetch("/api/auth/login", {
         method: "POST",
