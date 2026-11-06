@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 from sqlalchemy import (Boolean, Date, String)
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 from models.base import Base
 
 class Empleado(Base):
@@ -15,5 +15,12 @@ class Empleado(Base):
     correoempleado: Mapped[Optional[str]] = mapped_column(String(200))
     cargo: Mapped[Optional[str]] = mapped_column(String(40))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    @validates("correoempleado")
+    def normalizar_correo(self, _key: str, value: Optional[str]) -> Optional[str]:
+        if _key == "correoempleado" and value is not None:
+            return value.strip().lower()
+        return value
+
     #def __repr__(self) -> str:
     #  return f"<Empleado id={self.idempleado} nombre={self.nombreempleado!r}>"
