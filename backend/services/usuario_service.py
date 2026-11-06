@@ -4,7 +4,7 @@ from Schemas.usuario_schema import UsuarioEntrada, UsuarioUpdata
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 from tokensitos.tokesificador import hashear_password 
-from sqlalchemy import text # Agregado para enviar el ID al trigger de PostgreSQL
+from sqlalchemy import func, text # Agregado para enviar el ID al trigger de PostgreSQL
 
 def obtener_usuario_por_id(ciuser: str, db: Session):
     usuario = db.query(Usuario).filter(Usuario.ciuser == ciuser, Usuario.activo == True).first()
@@ -19,7 +19,10 @@ def listar_usuario(db: Session):
     return usuarios
 
 def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
-    existe = db.query(Usuario).filter(Usuario.correousuario == usuario.correousuario).first()
+    correo_normalizado = usuario.correousuario.strip().lower()
+    existe = db.query(Usuario).filter(
+        func.lower(func.trim(Usuario.correousuario)) == correo_normalizado
+    ).first()
     if existe:
         raise HTTPException(status_code=400, detail="El usuario ya existe")
 
@@ -30,7 +33,7 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
         contrase=hashear_password(usuario.contrase),
         empleado=usuario.empleado,
         estudiante=usuario.estudiante,
-        correousuario=usuario.correousuario,
+        correousuario=correo_normalizado,
         teleusuario=usuario.teleusuario,
         activo=True
     )
