@@ -17,7 +17,7 @@ const Home = () => {
           transition={{ duration: 0.6, ease: easeInOut }}
         >
           Ofrecemos la mejor educación a nuestros estudiantes <br />
-          Para crear profesionales hechos y derechos[cite: 5]
+          Para crear profesionales hechos y derechos
         </Motion.h1>
 
         <Motion.p 

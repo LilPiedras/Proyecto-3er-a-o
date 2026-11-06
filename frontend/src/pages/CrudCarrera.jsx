@@ -12,6 +12,7 @@ const CrudCarrera = () => {
   const [idcarrera, setIdcarrera] = useState('');
   const [nombrecarrera, setNombrecarrera] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [precioUsd, setPrecioUsd] = useState('');
 
   const [operation, setOperation] = useState(1);
   const [title, setTitle] = useState('');
@@ -46,7 +47,7 @@ const CrudCarrera = () => {
       const nombre = String(c.nombrecarrera || '').toLowerCase();
       const desc = String(c.descripcion || '').toLowerCase();
       const id = String(c.idcarrera ?? '');
-      return nombre.includes(q) || desc.includes(q) || id.includes(q);
+      return nombre.includes(q) || desc.includes(q) || id.includes(q) || String(c.precio_usd ?? '').includes(q);
     });
   }, [carreras, busqueda]);
 
@@ -54,9 +55,10 @@ const CrudCarrera = () => {
     setIdcarrera('');
     setNombrecarrera('');
     setDescripcion('');
+    setPrecioUsd('');
   };
 
-  const openModal = (op, id = '', nombre = '', desc = '') => {
+  const openModal = (op, id = '', nombre = '', desc = '', precio = '') => {
     limpiarFormulario();
     setOperation(op);
 
@@ -67,6 +69,7 @@ const CrudCarrera = () => {
       setIdcarrera(id);
       setNombrecarrera(nombre);
       setDescripcion(desc);
+      setPrecioUsd(String(precio));
     }
 
     setIsModalOpen(true);
@@ -86,10 +89,16 @@ const CrudCarrera = () => {
       show_alert('Escribe una descripción', 'warning');
       return;
     }
+    const precio = Number(precioUsd);
+    if (!Number.isFinite(precio) || precio <= 0) {
+      show_alert('Indica un precio en dólares mayor que cero', 'warning');
+      return;
+    }
 
     const parametros = {
       nombrecarrera: nombrecarrera.trim(),
       descripcion: descripcion.trim(),
+      precio_usd: precio,
     };
 
     if (operation === 1) {
@@ -243,6 +252,7 @@ const CrudCarrera = () => {
                 <tr>
                   <th className="p-3">Carrera</th>
                   <th className="p-3">Descripción</th>
+                  <th className="p-3 text-right">Precio base (USD)</th>
                   <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -273,6 +283,9 @@ const CrudCarrera = () => {
                           {c.descripcion || '—'}
                         </span>
                       </td>
+                      <td className="p-3 text-right font-semibold text-yellow-300">
+                        ${Number(c.precio_usd || 0).toFixed(2)}
+                      </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-2">
                           <button
@@ -283,7 +296,8 @@ const CrudCarrera = () => {
                                 2,
                                 c.idcarrera,
                                 c.nombrecarrera,
-                                c.descripcion
+                                c.descripcion,
+                                c.precio_usd
                               )
                             }
                             className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
@@ -306,7 +320,7 @@ const CrudCarrera = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center p-10 text-gray-500">
+                    <td colSpan="4" className="text-center p-10 text-gray-500">
                       {busqueda
                         ? 'No hay carreras que coincidan con la búsqueda.'
                         : 'No hay carreras registradas.'}
@@ -363,6 +377,22 @@ const CrudCarrera = () => {
                   rows="4"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Precio base mensual (USD)
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required
+                  className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
+                  placeholder="Ej. 25.00"
+                  value={precioUsd}
+                  onChange={(e) => setPrecioUsd(e.target.value)}
                 />
               </div>
 

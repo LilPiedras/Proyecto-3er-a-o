@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
@@ -11,17 +11,27 @@ const CrudMensualidad = () => {
   const [mensualidades, setMensualidades] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
   const [periodos, setPeriodos] = useState([]);
+  const [carreras, setCarreras] = useState([]);
+  const [ofertas, setOfertas] = useState([]);
   const [metodos, setMetodos] = useState([]);
   const [monedas, setMonedas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingExpirations, setCheckingExpirations] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [cotizacion, setCotizacion] = useState(null);
+  const [cargandoCotizacion, setCargandoCotizacion] = useState(false);
+  const [errorCotizacion, setErrorCotizacion] = useState('');
+  const solicitudCotizacion = useRef(0);
   const [modal, setModal] = useState(false);
   const [operation, setOperation] = useState('create');
   const [selectedId, setSelectedId] = useState(null);
   const [form, setForm] = useState({
     metodopago: '',
     monedapago: '',
-    monto: '',
+    monto_carreras_usd: '',
+    monto_guardado: '',
+    monto_extra: '0',
+    tasa_conversion: '',
     verificacion: false,
     periodo_id: '',
     fecha_corte: '',
@@ -44,18 +54,22 @@ const CrudMensualidad = () => {
     };
 
     try {
-      const [lista, listaMetodos, listaMonedas, listaEstudiantes, listaPeriodos] = await Promise.all([
+      const [lista, listaMetodos, listaMonedas, listaEstudiantes, listaPeriodos, listaCarreras, listaOfertas] = await Promise.all([
         cargarLista('/mensualidad/'),
         cargarLista('/metodo-pago/'),
         cargarLista('/moneda-pago/'),
         cargarLista('/estudiantes/'),
         cargarLista('/periodo/'),
+        cargarLista('/carrera/'),
+        cargarLista('/Oferta/'),
       ]);
       setMensualidades(lista);
       setMetodos(listaMetodos);
       setMonedas(listaMonedas);
       setEstudiantes(listaEstudiantes);
       setPeriodos(listaPeriodos);
+      setCarreras(listaCarreras);
+      setOfertas(listaOfertas);
     } catch (error) {
       const detail = error.response?.data?.detail;
       show_alert(typeof detail === 'string' ? detail : 'No se pudieron cargar las mensualidades y sus catálogos', 'error');
@@ -73,7 +87,10 @@ const CrudMensualidad = () => {
     setForm({
       metodopago: metodos.find((metodo) => Number(metodo.idmetodopago) === Number(form.metodopago))?.idmetodopago ?? metodos[0]?.idmetodopago ?? '',
       monedapago: monedas.find((moneda) => Number(moneda.idmoneda) === Number(form.monedapago))?.idmoneda ?? monedas[0]?.idmoneda ?? '',
-      monto: '',
+      monto_carreras_usd: '',
+      monto_guardado: '',
+      monto_extra: '0',
+      tasa_conversion: '',
       verificacion: false,
       periodo_id: periodos[0]?.id ?? '',
       fecha_corte: '',
@@ -84,34 +101,105 @@ const CrudMensualidad = () => {
     });
   };
 
+  const cargarCotizacion = async (estudiante, periodoId) => {
+    const solicitudActual = ++solicitudCotizacion.current;
+    setCotizacion(null);
+    setErrorCotizacion('');
+    if (!estudiante || !periodoId) {
+      setCargandoCotizacion(false);
+      return;
+    }
+
+    setCargandoCotizacion(true);
+    try {
+      const { data } = await api.get('/mensualidad/cotizacion', {
+        params: { estudiante, periodo_id: periodoId },
+      });
+      if (solicitudActual === solicitudCotizacion.current) setCotizacion(data);
+    } catch (error) {
+      if (solicitudActual === solicitudCotizacion.current) {
+        const detail = error.response?.data?.detail;
+        setErrorCotizacion(typeof detail === 'string' ? detail : 'No se pudo calcular el precio de las carreras');
+      }
+    } finally {
+      if (solicitudActual === solicitudCotizacion.current) setCargandoCotizacion(false);
+    }
+  };
+
   const abrirModal = (modo, mensualidad = null) => {
     setOperation(modo);
+    let estudianteSeleccionado;
+    let periodoSeleccionado;
     if (mensualidad) {
+      solicitudCotizacion.current += 1;
       setSelectedId(mensualidad.idmensualidad);
+      setCotizacion(null);
+      setErrorCotizacion('');
+      setCargandoCotizacion(false);
+      estudianteSeleccionado = mensualidad.estudiantes_asignados?.[0]?.estudiante ?? '';
+      periodoSeleccionado = mensualidad.periodo_id ?? '';
       setForm({
         metodopago: mensualidad.metodopago ?? '',
         monedapago: mensualidad.monedapago ?? '',
-        monto: mensualidad.monto ?? '',
+        monto_carreras_usd: String(mensualidad.monto_carreras_usd ?? '0'),
+        monto_guardado: String(mensualidad.monto ?? '0'),
+        monto_extra: String(mensualidad.monto_extra ?? '0'),
+        tasa_conversion: String(mensualidad.tasa_conversion ?? '1'),
         verificacion: Boolean(mensualidad.verificacion),
-        periodo_id: mensualidad.periodo_id ?? '',
+        periodo_id: periodoSeleccionado,
         fecha_corte: mensualidad.fecha_corte ?? '',
-        estudiante: mensualidad.estudiantes_asignados?.[0]?.estudiante ?? '',
+        estudiante: estudianteSeleccionado,
         estado: mensualidad.estudiantes_asignados?.[0]?.estado ?? mensualidad.estado ?? 'pendiente',
         factura: mensualidad.estudiantes_asignados?.[0]?.factura ?? '',
         fechapago: mensualidad.estudiantes_asignados?.[0]?.fechapago ?? '',
       });
     } else {
       limpiarFormulario();
+      estudianteSeleccionado = estudiantes[0]?.ciestu || '';
+      periodoSeleccionado = periodos[0]?.id || '';
     }
+    cargarCotizacion(estudianteSeleccionado, periodoSeleccionado);
     setModal(true);
   };
 
-  const cerrarModal = () => setModal(false);
+  const cerrarModal = () => {
+    solicitudCotizacion.current += 1;
+    setCotizacion(null);
+    setErrorCotizacion('');
+    setModal(false);
+  };
 
   const actualizarCampo = (event) => {
     const { name, value, type, checked } = event.target;
     setForm((actual) => ({ ...actual, [name]: type === 'checkbox' ? checked : value }));
+    if (operation === 'create' && (name === 'estudiante' || name === 'periodo_id')) {
+      cargarCotizacion(
+        name === 'estudiante' ? value : form.estudiante,
+        name === 'periodo_id' ? value : form.periodo_id,
+      );
+    }
   };
+
+  const montoCarrerasUsd = Number(
+    operation === 'create'
+      ? cotizacion?.monto_carreras_usd ?? 0
+      : form.monto_carreras_usd || 0,
+  );
+  const tasaConversion = Number(form.tasa_conversion);
+  const montoExtra = Number(form.monto_extra);
+  const montoCalculado = operation === 'create'
+    ? Number.isFinite(montoCarrerasUsd * tasaConversion + montoExtra)
+      ? Number((montoCarrerasUsd * tasaConversion + montoExtra).toFixed(2))
+      : 0
+    : Number(form.monto_guardado || 0);
+  const carrerasRegistradas = [...new Set(
+    ofertas
+      .filter((oferta) => String(oferta.estudiante) === String(form.estudiante) && oferta.idcarrera != null)
+      .map((oferta) => Number(oferta.idcarrera)),
+  )].map((idcarrera) => (
+    carreras.find((carrera) => Number(carrera.idcarrera) === idcarrera)?.nombrecarrera
+      || `Carrera #${idcarrera}`
+  ));
 
   const guardar = async (event) => {
     event.preventDefault();
@@ -124,17 +212,24 @@ const CrudMensualidad = () => {
       show_alert('Para registrar el pago, indica la referencia del comprobante y la fecha de pago', 'warning');
       return;
     }
-    if (!Number.isFinite(Number(form.monto)) || Number(form.monto) <= 0) {
-      show_alert('Escribe un monto válido mayor que cero', 'warning');
+    if (operation === 'create' && (!cotizacion || cargandoCotizacion || errorCotizacion)) {
+      show_alert(errorCotizacion || 'Espera a que se calcule el precio mínimo de las carreras', 'warning');
+      return;
+    }
+    if (operation === 'create' && (!Number.isFinite(tasaConversion) || tasaConversion <= 0 || !Number.isFinite(montoExtra) || montoExtra < 0 || montoCalculado <= 0)) {
+      show_alert('Indica una tasa de cambio positiva y un extra igual o mayor que cero', 'warning');
       return;
     }
 
     const payload = {
       metodopago: Number(form.metodopago),
       monedapago: Number(form.monedapago),
-      monto: Number(form.monto),
+      ...(operation === 'create' && {
+        periodo_id: Number(form.periodo_id),
+        monto_extra: montoExtra,
+        tasa_conversion: tasaConversion,
+      }),
       verificacion: form.verificacion,
-      periodo_id: Number(form.periodo_id),
       fecha_corte: form.fecha_corte,
       estado: pagoRegistrado ? 'pagado' : form.estado,
       ...(pagoRegistrado && {
@@ -176,6 +271,26 @@ const CrudMensualidad = () => {
       show_alert(typeof detail === 'string' ? detail : 'No se pudieron verificar los vencimientos', 'error');
     } finally {
       setCheckingExpirations(false);
+    }
+  };
+
+  const descargarReporte = async () => {
+    setDownloadingReport(true);
+    try {
+      const { data } = await api.get('/analitics/mensualidades/pdf', { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = 'reporte_mensualidades.pdf';
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo generar el reporte PDF de mensualidades', 'error');
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
@@ -286,6 +401,15 @@ const CrudMensualidad = () => {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={descargarReporte}
+              disabled={downloadingReport}
+              className="rounded border border-red-500 px-4 py-2 font-semibold text-red-300 transition hover:bg-red-950 disabled:cursor-wait disabled:opacity-50"
+            >
+              <i className="fa-solid fa-file-pdf mr-2" aria-hidden="true" />
+              {downloadingReport ? 'Generando PDF...' : 'Reporte PDF'}
+            </button>
+            <button
+              type="button"
               onClick={verificarVencimientos}
               disabled={checkingExpirations}
               className="rounded border border-yellow-500 px-4 py-2 font-semibold text-yellow-300 transition hover:bg-yellow-950 disabled:cursor-wait disabled:opacity-50"
@@ -388,13 +512,10 @@ const CrudMensualidad = () => {
             </div>
             <form onSubmit={guardar} className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm">Período académico
-                <select name="periodo_id" value={form.periodo_id} onChange={actualizarCampo} required className={inputClass}>
+                <select name="periodo_id" value={form.periodo_id} onChange={actualizarCampo} disabled={operation !== 'create'} required className={inputClass}>
                   <option value="">Selecciona un período</option>
                   {periodos.map((periodo) => <option key={periodo.id} value={periodo.id}>{periodo.nombre}</option>)}
                 </select>
-              </label>
-              <label className="text-sm">Monto
-                <input name="monto" type="number" min="0.01" step="0.01" value={form.monto} onChange={actualizarCampo} required className={inputClass} />
               </label>
               <label className="text-sm">Método de pago
                 <select name="metodopago" value={form.metodopago} onChange={actualizarCampo} required className={inputClass}>
@@ -418,6 +539,94 @@ const CrudMensualidad = () => {
                   ))}
                 </select>
                 {operation !== 'create' && <span className="text-xs text-gray-400">La asignación del estudiante no se cambia al editar la mensualidad.</span>}
+              </label>
+              {operation === 'create' && form.estudiante && (
+                <div
+                  role="status"
+                  className={`rounded border p-3 text-sm sm:col-span-2 ${
+                    carrerasRegistradas.length
+                      ? 'border-green-700 bg-green-950/40 text-green-200'
+                      : 'border-yellow-700 bg-yellow-950/30 text-yellow-200'
+                  }`}
+                >
+                  {carrerasRegistradas.length ? (
+                    <>
+                      <p className="font-semibold">Estudiante registrado en carrera</p>
+                      <p>{carrerasRegistradas.join(', ')}</p>
+                    </>
+                  ) : (
+                    <p>Este estudiante no aparece asignado a ninguna carrera.</p>
+                  )}
+                </div>
+              )}
+              <div className="rounded border border-gray-700 bg-gray-800/60 p-3 text-sm sm:col-span-2">
+                {operation !== 'create' ? (
+                  <>
+                    <p className="mb-2 font-semibold text-yellow-300">Desglose guardado de esta mensualidad</p>
+                    <p className="text-gray-200">Base de carreras: ${montoCarrerasUsd.toFixed(2)} USD</p>
+                    <p className="text-gray-200">Extra: {Number(form.monto_extra || 0).toFixed(2)} · Tasa: {form.tasa_conversion}</p>
+                    {montoCarrerasUsd === 0 && (
+                      <p className="mt-1 text-xs text-gray-400">Esta mensualidad es anterior al registro del desglose de precios.</p>
+                    )}
+                  </>
+                ) : cargandoCotizacion ? (
+                  <p className="text-gray-300">Calculando carreras asignadas...</p>
+                ) : errorCotizacion ? (
+                  <p className="text-red-300">{errorCotizacion}</p>
+                ) : cotizacion ? (
+                  <>
+                    <p className="mb-2 font-semibold text-yellow-300">Carreras asignadas — precio base en USD</p>
+                    <ul className="mb-2 space-y-1">
+                      {cotizacion.carreras.map((carrera) => (
+                        <li key={carrera.idcarrera} className="flex justify-between gap-3 text-gray-200">
+                          <span>{carrera.nombrecarrera}</span>
+                          <span>${Number(carrera.precio_usd).toFixed(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="border-t border-gray-700 pt-2 font-bold text-white">
+                      Mínimo base: ${Number(cotizacion.monto_carreras_usd).toFixed(2)} USD
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-gray-400">Selecciona estudiante y período para calcular el precio base.</p>
+                )}
+              </div>
+              <label className="text-sm">Tasa de cambio
+                <input
+                  name="tasa_conversion"
+                  type="number"
+                  min="0.000001"
+                  step="0.000001"
+                  value={form.tasa_conversion}
+                  onChange={actualizarCampo}
+                  disabled={operation !== 'create'}
+                  required
+                  className={inputClass}
+                />
+                <span className="text-xs text-gray-400">Unidades de la moneda elegida por cada 1 USD. Para USD, usa 1.</span>
+              </label>
+              <label className="text-sm">Extra en moneda seleccionada
+                <input
+                  name="monto_extra"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.monto_extra}
+                  onChange={actualizarCampo}
+                  disabled={operation !== 'create'}
+                  required
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold">Total mensualidad (calculado)
+                <input
+                  type="number"
+                  value={montoCalculado.toFixed(2)}
+                  readOnly
+                  className={`${inputClass} cursor-not-allowed text-yellow-300`}
+                />
+                <span className="text-xs text-gray-400">Carreras × tasa de cambio + extra.</span>
               </label>
               <label className="text-sm">Fecha de corte
                 <input name="fecha_corte" type="date" value={form.fecha_corte} onChange={actualizarCampo} required className={inputClass} />
