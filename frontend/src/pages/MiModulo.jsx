@@ -164,45 +164,6 @@ const MiModulo = () => {
             <p className="text-gray-500 text-sm">No hay horario registrado todavía.</p>
           )}
         </section>
-
-        {/* Notas */}
-        <section className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-yellow-400 mb-4">Mis notas</h2>
-          {notas?.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-yellow-400 text-xs uppercase border-b border-gray-700">
-                  <tr>
-                    <th className="p-2">Materia</th>
-                    <th className="p-2">Evaluación</th>
-                    <th className="p-2">Nota</th>
-                    <th className="p-2">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {notas.map((n) => (
-                    <tr key={n.idnota} className="border-b border-gray-800">
-                      <td className="p-2">{n.nombremateria || `Oferta #${n.oferta}`}</td>
-                      <td className="p-2">{n.titulo_evaluacion || "—"}</td>
-                      <td className="p-2">
-                        <span
-                          className={`font-bold ${
-                            (n.calificacion ?? 0) >= 10 ? "text-green-400" : "text-red-400"
-                          }`}
-                        >
-                          {n.calificacion != null ? n.calificacion.toFixed(2) : "—"}
-                        </span>
-                      </td>
-                      <td className="p-2 text-gray-400">{n.fechanota || "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">Aún no tienes notas registradas.</p>
-          )}
-        </section>
       </div>
     </div>
   );

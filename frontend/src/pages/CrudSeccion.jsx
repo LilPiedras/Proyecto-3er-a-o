@@ -158,8 +158,22 @@ const CrudSeccion = () => {
       return;
     }
 
+    // Buscar la carrera a partir del idcarremo seleccionado
+    const relacion = carrerasModulos.find(
+      (cm) => Number(cm.idcarremo) === idcarremo
+    );
+
+    if (!relacion || !relacion.idcarrera) {
+      show_alert(
+        'No se pudo determinar la carrera de ese enlace académico',
+        'warning'
+      );
+      return;
+    }
+
     try {
       const payload = {
+        idcarrera: Number(relacion.idcarrera), // ← ESTE era el que faltaba
         idcarremo,
         idsecc: Number(selectedSection.idsecc),
         estudiante: studentForm.estudiante,
@@ -176,7 +190,9 @@ const CrudSeccion = () => {
       show_alert(
         typeof detail === 'string'
           ? detail
-          : 'No se pudo agregar al estudiante a la sección',
+          : Array.isArray(detail)
+            ? detail.map((d) => d.msg || JSON.stringify(d)).join(' | ')
+            : 'No se pudo agregar al estudiante a la sección',
         'error'
       );
     }

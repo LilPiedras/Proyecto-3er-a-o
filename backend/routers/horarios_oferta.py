@@ -68,27 +68,38 @@ def asignar_horario_materia(
     db: Session = Depends(get_db)
 ):
     try:
-        # Parseo seguro de variables
         idmateria = int(datos.idmateria)
         ciempleado = str(datos.ciempleado).strip()
         idmodulo = int(datos.idmodulo)
         idhorario = int(datos.idhorario)
 
-      
         db.execute(
             text("UPDATE materia SET docente = :docente WHERE idmateria = :idmateria"),
             {"docente": ciempleado, "idmateria": idmateria}
         )
 
-       
-        db.execute(
-            text("DELETE FROM materias_modulo WHERE idmateria = :idmateria"),
+        existe = db.execute(
+            text("SELECT idmatemo FROM materias_modulo WHERE idmateria = :idmateria LIMIT 1"),
             {"idmateria": idmateria}
-        )
-        db.execute(
-            text("INSERT INTO materias_modulo (idmateria, idmodulo) VALUES (:idmateria, :idmodulo)"),
-            {"idmateria": idmateria, "idmodulo": idmodulo}
-        )
+        ).fetchone()
+
+        if existe:
+            db.execute(
+                text("""
+                    UPDATE materias_modulo
+                    SET idmodulo = :idmodulo
+                    WHERE idmateria = :idmateria
+                """),
+                {"idmodulo": idmodulo, "idmateria": idmateria}
+            )
+        else:
+            db.execute(
+                text("""
+                    INSERT INTO materias_modulo (idmateria, idmodulo)
+                    VALUES (:idmateria, :idmodulo)
+                """),
+                {"idmateria": idmateria, "idmodulo": idmodulo}
+            )
 
         idcarrera = int(datos.idcarrera) if datos.idcarrera else None
         idsecc = int(datos.idsecc) if datos.idsecc else None
@@ -96,24 +107,43 @@ def asignar_horario_materia(
         if not idcarrera or not idsecc:
             carrera_row = db.execute(text("SELECT idcarrera FROM carrera LIMIT 1")).fetchone()
             seccion_row = db.execute(text("SELECT idsecc FROM seccion LIMIT 1")).fetchone()
-            
+
             if carrera_row and seccion_row:
                 idcarrera = carrera_row[0]
                 idsecc = seccion_row[0]
             else:
                 raise Exception("No existen carreras o secciones registradas en la base de datos.")
 
-        db.execute(
+        oferta_existente = db.execute(
             text("""
-                INSERT INTO oferta_seccion (idcarrera, idsecc, horario)
-                VALUES (:idcarrera, :idsecc, :idhorario);
+                SELECT idseccmo FROM oferta_seccion
+                WHERE idcarrera = :idcarrera AND idsecc = :idsecc
+                LIMIT 1
             """),
-            {"idcarrera": idcarrera, "idsecc": idsecc, "idhorario": idhorario}
-        )
+            {"idcarrera": idcarrera, "idsecc": idsecc}
+        ).fetchone()
+
+        if oferta_existente:
+            db.execute(
+                text("""
+                    UPDATE oferta_seccion
+                    SET horario = :idhorario
+                    WHERE idseccmo = :idseccmo
+                """),
+                {"idhorario": idhorario, "idseccmo": oferta_existente[0]}
+            )
+        else:
+            db.execute(
+                text("""
+                    INSERT INTO oferta_seccion (idcarrera, idsecc, horario)
+                    VALUES (:idcarrera, :idsecc, :idhorario)
+                """),
+                {"idcarrera": idcarrera, "idsecc": idsecc, "idhorario": idhorario}
+            )
 
         db.commit()
         return JSONResponse(
-            content={"mensaje": "Asignación guardada y consolidada en oferta_seccion con éxito"},
+            content={"mensaje": "Asignación guardada correctamente"},
             status_code=200
         )
 

@@ -104,15 +104,24 @@ const Perfil = () => {
   };
 
   const getRoleName = (idrol) => {
-    switch (idrol) {
+    const rol = Number(idrol);
+    switch (rol) {
       case 1:
+        return "Director";
       case 2:
-      case 3: return 'Personal Administrativo';
-      case 4: return 'Docente';
-      case 5: return 'Estudiante';
-      default: return `Rol ID: ${idrol}`;
+        return "Sub Director";
+      case 3:
+        return "Coordinador";
+      case 4:
+        return "Docente";
+      case 5:
+        return "Estudiante";
+      default:
+        return "Sin rol";
     }
   };
+
+
 
   return (
     <div className="min-h-[80vh] w-full bg-[#1c180e] flex justify-center items-center py-12 px-4">
@@ -137,23 +146,36 @@ const Perfil = () => {
           ) : error ? (
             <p className="text-red-400 font-medium py-6 bg-red-950/20 rounded-xl border border-red-900/40">{error}</p>
           ) : (
-            perfil && (
-              <div>
-                <h2 className="text-3xl font-bold text-gray-100 mb-1">
-                  {perfil.nombre || perfil.nombreusuario} {perfil.apellido || perfil.apellusuario}
-                </h2>
-                
-                <div className="flex justify-center items-center gap-2 mb-6">
-                  <span className="px-3 py-1 bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-xs font-semibold rounded-full">
-                    {getRoleName(perfil.idrol)}
-                  </span>
-                  {perfil.activo_detalle !== undefined && (
-                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${perfil.activo_detalle ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${perfil.activo_detalle ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`}></span>
-                      {perfil.activo_detalle ? 'Activo' : 'Inactivo'}
-                    </span>
-                  )}
-                </div>
+                perfil && (
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-100 mb-1">
+                      {perfil.nombre || perfil.nombreusuario}{" "}
+                      {perfil.apellido || perfil.apellusuario}
+                    </h2>
+
+                    <div className="flex justify-center items-center gap-2 mb-6">
+                      <span className="px-3 py-1 bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-[#fbbf24] text-xs font-semibold rounded-full">
+                        {getRoleName(
+                          perfil.idrol ?? perfil.rol ?? localStorage.getItem("idrol")
+                        )}
+                      </span>
+                      {perfil.activo_detalle !== undefined && (
+                        <span
+                          className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${
+                            perfil.activo_detalle
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              perfil.activo_detalle ? "bg-emerald-400 animate-pulse" : "bg-red-400"
+                            }`}
+                          ></span>
+                          {perfil.activo_detalle ? "Activo" : "Inactivo"}
+                        </span>
+                      )}
+                    </div>
 
                 {/* Notificaciones flotantes de éxito o error al cambiar correo */}
                 {mensajeCorreo.texto && (

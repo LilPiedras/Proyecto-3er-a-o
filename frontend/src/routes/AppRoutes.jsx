@@ -25,6 +25,7 @@ import InscripcionEstudiante from "../pages/InscripcionEstudiante";
 import MiModulo from "../pages/MiModulo";
 import RecuperarPassword from "../pages/RecuperarPassword";
 import CrudCarreraModulo from "../pages/CrudCarreraModulo";
+import ResumenCalificaciones from "../pages/ResumenCalificaciones";
 
 const AppRoutes = () => {
   return (
@@ -51,6 +52,7 @@ const AppRoutes = () => {
         <Route path="/estado-inscripcion" element={<InscripcionEstudiante />} />
         <Route path="/mi-modulo" element={<MiModulo />} />
         <Route path="/crudcarreramodulo" element={<CrudCarreraModulo />} />
+        <Route path="/resumen-calificaciones" element={<ResumenCalificaciones />} />
         
         <Route path="/perfil" element={<Perfil />} />
         
