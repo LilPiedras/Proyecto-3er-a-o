@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { FaShieldAlt, FaUserEdit, FaUserTimes, FaUserCheck, FaKey } from "react-icons/fa"
+import { FaShieldAlt, FaUserEdit, FaUserTimes, FaUserCheck, FaKey, FaUserTag, FaPlus, FaTrash } from "react-icons/fa"
 import api from "../../api"
 
 export default function RegisterForm() {
@@ -19,10 +19,10 @@ export default function RegisterForm() {
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
-  // Estados para el Modal de Asignación de Rol (Paso 2)
+  // Estados para el Modal de Asignación de Rol Inicial (Paso 2)
   const [modalRolOpen, setModalRolOpen] = useState(false)
   const [cedulaRegistrada, setCedulaRegistrada] = useState("")
-  const [rolSeleccionado, setRolSeleccionado] = useState(5) // 5 por defecto (Estudiante)
+  const [rolesSeleccionados, setRolesSeleccionados] = useState([5])
   const [tipoVinculoMsg, setTipoVinculoMsg] = useState("")
   const [loadingRol, setLoadingRol] = useState(false)
   const [errorRol, setErrorRol] = useState("")
@@ -37,7 +37,7 @@ export default function RegisterForm() {
   const [errorPregunta, setErrorPregunta] = useState("")
   const [successPregunta, setSuccessPregunta] = useState("")
 
-  // Estados para los Modales de Modificar y Eliminar
+  // Estados para Modificar y Eliminar Usuarios
   const [modalModificar, setModalModificar] = useState(false)
   const [modalEliminar, setModalEliminar] = useState(false)
   const [cedulaGestion, setCedulaGestion] = useState("")
@@ -51,7 +51,72 @@ export default function RegisterForm() {
   const [accionLoading, setAccionLoading] = useState(false)
   const [modalMsg, setModalMsg] = useState({ tipo: "", texto: "" })
 
-  // Paso 1: Registrar el usuario validando listas completas de estudiantes y empleados
+  // ESTADOS PARA LA GESTIÓN DE ROLES EXTRA
+  const [rolesActualesUsuario, setRolesActualesUsuario] = useState([])
+  const [nuevoRolAAsignar, setNuevoRolAAsignar] = useState(5)
+  const [loadingGestionRoles, setLoadingGestionRoles] = useState(false)
+
+  const catalogoRoles = [
+    { id: 1, nombre: "Director" },
+    { id: 2, nombre: "SubDirector" },
+    { id: 3, nombre: "Coordinador" },
+    { id: 4, nombre: "Docente" },
+    { id: 5, nombre: "Estudiante" }
+  ]
+
+  // Cargar lista de roles de un usuario desde /usuario_login/usuario/{ciuser}
+  const cargarRolesUsuario = async (ciuser) => {
+    setLoadingGestionRoles(true)
+    try {
+      const { data } = await api.get(`/usuario_login/usuario/${encodeURIComponent(ciuser)}`)
+      setRolesActualesUsuario(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setRolesActualesUsuario([])
+    } finally {
+      setLoadingGestionRoles(false)
+    }
+  }
+
+  // Agregar un Rol Extra a un usuario existente
+  const handleAgregarRolExtra = async () => {
+    if (!usuarioEncontrado) return
+    setModalMsg({ tipo: "", texto: "" })
+    setLoadingGestionRoles(true)
+
+    try {
+      await api.post('/usuario_login/', {
+        ciuser: usuarioEncontrado.ciuser,
+        idrol: Number(nuevoRolAAsignar)
+      })
+
+      setModalMsg({ tipo: "exito", texto: "¡Nuevo rol asignado con éxito!" })
+      await cargarRolesUsuario(usuarioEncontrado.ciuser)
+    } catch (err) {
+      const detail = err.response?.data?.detail
+      setModalMsg({ tipo: "error", texto: typeof detail === 'string' ? detail : "Error al asignar el nuevo rol" })
+    } finally {
+      setLoadingGestionRoles(false)
+    }
+  }
+
+  // Eliminar/Desactivar un Rol de un usuario existente
+  const handleEliminarRolUsuario = async (ciuser_log) => {
+    setModalMsg({ tipo: "", texto: "" })
+    setLoadingGestionRoles(true)
+
+    try {
+      await api.delete(`/usuario_login/${ciuser_log}`)
+      setModalMsg({ tipo: "exito", texto: "Rol retirado del usuario." })
+      await cargarRolesUsuario(usuarioEncontrado.ciuser)
+    } catch (err) {
+      const detail = err.response?.data?.detail
+      setModalMsg({ tipo: "error", texto: typeof detail === 'string' ? detail : "No se pudo retirar el rol" })
+    } finally {
+      setLoadingGestionRoles(false)
+    }
+  }
+
+  // Registro inicial del usuario (Paso 1)
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
@@ -64,36 +129,30 @@ export default function RegisterForm() {
       let vinculadoEstudiante = null
       let vinculadoEmpleado = null
       let mensajeVinculo = "Usuario Registrado"
-      let rolSugerido = 5 // Por defecto Estudiante
+      let rolSugerido = 5
 
-      // 1. Consultar lista completa de estudiantes
       try {
         const resEstu = await api.get('/estudiantes/')
         const listaEstud = Array.isArray(resEstu.data) ? resEstu.data : []
-        const existeEstu = listaEstud.some(est => est.ciestu === formattedDni)
-        
-        if (existeEstu) {
+        if (listaEstud.some(est => est.ciestu === formattedDni)) {
           vinculadoEstudiante = formattedDni
           mensajeVinculo = "Estudiante Verificado"
           rolSugerido = 5
         }
       } catch (err) {
-        console.warn("No se pudo verificar la lista de estudiantes:", err)
+        console.warn("Error consultando estudiantes:", err)
       }
 
-      // 2. Consultar lista completa de empleados
       try {
         const resEmp = await api.get('/empleado/')
         const listaEmp = Array.isArray(resEmp.data) ? resEmp.data : []
-        const existeEmp = listaEmp.some(emp => emp.ciempleado === formattedDni)
-        
-        if (existeEmp) {
+        if (listaEmp.some(emp => emp.ciempleado === formattedDni)) {
           vinculadoEmpleado = formattedDni
           mensajeVinculo = "Empleado / Docente Verificado"
-          rolSugerido = 4 // Rol Docente
+          rolSugerido = 4
         }
       } catch (err) {
-        console.warn("No se pudo verificar la lista de empleados:", err)
+        console.warn("Error consultando empleados:", err)
       }
 
       const payload = {
@@ -107,33 +166,24 @@ export default function RegisterForm() {
         empleado: vinculadoEmpleado
       }
 
-      // Enviar registro del usuario (o reactivación si ya existía inactivo)
       await api.post('/usuario/', payload)
 
-      // Configurar datos para el paso 2 (Modal de asignación de rol)
       setCedulaRegistrada(formattedDni)
       setTipoVinculoMsg(mensajeVinculo)
-      setRolSeleccionado(rolSugerido)
+      setRolesSeleccionados([rolSugerido])
       setSuccessMsg(`¡Usuario registrado! Detectado como: ${mensajeVinculo}`)
       setModalRolOpen(true)
 
     } catch (err) {
       console.error(err)
       const detail = err.response?.data?.detail
-      let errorMsg = "Error al registrarse"
-      
-      if (Array.isArray(detail)) {
-        errorMsg = detail.map(d => `${d.loc.join('.')}: ${d.msg}`).join(" | ")
-      } else if (typeof detail === "string") {
-        errorMsg = detail
-      }
-      setError(errorMsg)
+      setError(typeof detail === 'string' ? detail : "Error al registrar usuario")
     } finally {
       setLoading(false)
     }
   }
 
-  // Paso 2: Asignar el rol en /usuario_login/
+  // Asignar roles iniciales (Paso 2)
   const handleAsignarRol = async (e) => {
     e.preventDefault()
     setErrorRol("")
@@ -141,14 +191,15 @@ export default function RegisterForm() {
     setLoadingRol(true)
 
     try {
-      await api.post('/usuario_login/', {
-        ciuser: cedulaRegistrada,
-        idrol: Number(rolSeleccionado)
-      })
+      for (const idrol of rolesSeleccionados) {
+        await api.post('/usuario_login/', {
+          ciuser: cedulaRegistrada,
+          idrol: Number(idrol)
+        })
+      }
 
-      setSuccessRol("¡Rol vinculado correctamente!")
-      
-      // Cargar las preguntas del catálogo antes de abrir el modal del Paso 3
+      setSuccessRol("¡Roles vinculados correctamente!")
+
       try {
         const { data } = await api.get('/PreguntasSeguridad/')
         if (Array.isArray(data) && data.length > 0) {
@@ -156,10 +207,9 @@ export default function RegisterForm() {
           setIdPreguntaSeleccionada(data[0].idpregunta)
         }
       } catch (err) {
-        console.warn("No se pudieron cargar las preguntas del catálogo:", err)
+        console.warn("Error cargando preguntas:", err)
       }
 
-      // Avanzar al Paso 3: Configurar Pregunta de Seguridad automáticamente
       setTimeout(() => {
         setModalRolOpen(false)
         setSuccessRol("")
@@ -168,15 +218,14 @@ export default function RegisterForm() {
       }, 1000)
 
     } catch (err) {
-      console.error(err)
       const detail = err.response?.data?.detail
-      setErrorRol(typeof detail === 'string' ? detail : "Error al asignar el rol.")
+      setErrorRol(typeof detail === 'string' ? detail : "Error al asignar los roles.")
     } finally {
       setLoadingRol(false)
     }
   }
 
-  // Paso 3: Guardar Pregunta de Seguridad en /PreguntasSeguridad/asignar
+  // Pregunta de seguridad (Paso 3)
   const handleAsignarPregunta = async (e) => {
     e.preventDefault()
     setErrorPregunta("")
@@ -191,8 +240,7 @@ export default function RegisterForm() {
       })
 
       setSuccessPregunta("¡Pregunta de seguridad configurada con éxito!")
-      
-      // Finalizar todo el proceso y limpiar formularios
+
       setTimeout(() => {
         setModalPreguntaOpen(false)
         setSuccessMsg("")
@@ -203,11 +251,10 @@ export default function RegisterForm() {
         setEmail("")
         setDni("")
         setPassword("")
-        setRolSeleccionado(5)
+        setRolesSeleccionados([5])
       }, 1500)
 
     } catch (err) {
-      console.error(err)
       const detail = err.response?.data?.detail
       setErrorPregunta(typeof detail === 'string' ? detail : "Error al guardar la pregunta de seguridad.")
     } finally {
@@ -215,7 +262,7 @@ export default function RegisterForm() {
     }
   }
 
-  // Buscar usuario para Modificar o Eliminar (con codificación segura de URL)
+  // Buscar usuario
   const handleBuscarUsuario = async () => {
     setModalMsg({ tipo: "", texto: "" })
     const cedulaLimpia = cedulaGestion.trim()
@@ -227,7 +274,6 @@ export default function RegisterForm() {
     setAccionLoading(true)
     try {
       const { data } = await api.get(`/usuario/${encodeURIComponent(cedulaLimpia)}`)
-
       setUsuarioEncontrado(data)
       setEditForm({
         nombreusuario: data.nombreusuario || "",
@@ -236,16 +282,20 @@ export default function RegisterForm() {
         teleusuario: data.teleusuario || "",
       })
       setModalMsg({ tipo: "exito", texto: "¡Usuario encontrado!" })
+
+      // Cargar también sus roles actuales
+      await cargarRolesUsuario(data.ciuser)
+
     } catch (err) {
       setUsuarioEncontrado(null)
       const detail = err.response?.data?.detail
-      setModalMsg({ tipo: "error", texto: typeof detail === 'string' ? detail : "Usuario no encontrado en el sistema." })
+      setModalMsg({ tipo: "error", texto: typeof detail === 'string' ? detail : "Usuario no encontrado." })
     } finally {
       setAccionLoading(false)
     }
   }
 
-  // Guardar Modificación (PATCH)
+  // Guardar Modificación de Usuario (PATCH)
   const handleActualizarUsuario = async (e) => {
     e.preventDefault()
     if (!usuarioEncontrado) return
@@ -254,7 +304,6 @@ export default function RegisterForm() {
 
     try {
       await api.patch(`/usuario/${encodeURIComponent(usuarioEncontrado.ciuser)}`, editForm)
-
       setModalMsg({ tipo: "exito", texto: "¡Usuario modificado con éxito!" })
       setTimeout(() => {
         setModalModificar(false)
@@ -269,7 +318,7 @@ export default function RegisterForm() {
     }
   }
 
-  // Eliminar lógicamente (DELETE)
+  // Eliminar usuario
   const handleEliminarUsuario = async () => {
     if (!usuarioEncontrado) return
     setAccionLoading(true)
@@ -277,7 +326,6 @@ export default function RegisterForm() {
 
     try {
       await api.delete(`/usuario/${encodeURIComponent(usuarioEncontrado.ciuser)}`)
-
       setModalMsg({ tipo: "exito", texto: "¡Usuario eliminado lógicamente con éxito!" })
       setTimeout(() => {
         setModalEliminar(false)
@@ -301,14 +349,14 @@ export default function RegisterForm() {
           <p className="text-gray-400 mt-2 text-sm">Panel administrativo para dar de alta cuentas en el sistema.</p>
         </div>
 
-        {/* Botones de gestión (Modificar / Eliminar) */}
+        {/* Botones de gestión */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button
             type="button"
             onClick={() => { setUsuarioEncontrado(null); setCedulaGestion(""); setModalMsg({tipo:"", texto:""}); setModalModificar(true); }}
             className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#181d28] border border-[#232936] text-[#fbbf24] hover:bg-[#202736] transition-all text-xs font-semibold cursor-pointer shadow-md"
           >
-            <FaUserEdit size={14} /> Modificar Usuario
+            <FaUserEdit size={14} /> Modificar Usuario / Roles
           </button>
           <button
             type="button"
@@ -319,7 +367,7 @@ export default function RegisterForm() {
           </button>
         </div>
 
-        {/* Formulario de Registro Principal (Paso 1)[cite: 10] */}
+        {/* Formulario de Registro Principal (Paso 1) */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
             <label htmlFor="name" className="text-sm font-semibold uppercase tracking-wider text-gray-400">Nombres</label>
@@ -438,7 +486,7 @@ export default function RegisterForm() {
         </form>
       </div>
 
-      {/* VENTANA MODAL 1: ASIGNAR ROL (PASO 2)[cite: 10] */}
+      {/* VENTANA MODAL 1: ASIGNAR ROL INICIAL (PASO 2 MULTIPLE) */}
       {modalRolOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 shadow-2xl relative">
@@ -456,26 +504,40 @@ export default function RegisterForm() {
               </div>
 
               <p className="text-gray-400 text-xs mt-3">
-                Selecciona o confirma su rol para asociarlo en <span className="text-gray-300 font-semibold">UserLogin</span>.
+                Selecciona los roles que tendrá el usuario en el sistema.
               </p>
             </div>
 
             <form onSubmit={handleAsignarRol} className="flex flex-col gap-4">
               <div>
-                <label htmlFor="modalRol" className="text-xs font-semibold uppercase tracking-wider text-gray-400">Rol del Usuario</label>
-                <select
-                  id="modalRol"
-                  className="text-gray-200 w-full border border-[#252c3d] rounded-xl p-3 mt-1.5 bg-[#161a25] focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  value={rolSeleccionado}
-                  onChange={(e) => setRolSeleccionado(Number(e.target.value))}
-                  required
-                >
-                  <option value={5}>Estudiante</option>
-                  <option value={4}>Docente</option>
-                  <option value={1}>Director</option>
-                  <option value={2}>SubDirector</option>
-                  <option value={3}>Coordinador</option>
-                </select>
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 block">
+                  Roles del Usuario (Puedes seleccionar varios)
+                </label>
+                <div className="flex flex-col gap-2.5 mt-1.5 bg-[#161a25] border border-[#252c3d] rounded-xl p-3.5">
+                  {catalogoRoles.map((rol) => {
+                    const isChecked = rolesSeleccionados.includes(rol.id)
+                    return (
+                      <label key={rol.id} className="flex items-center gap-3 text-sm text-gray-200 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          value={rol.id}
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setRolesSeleccionados([...rolesSeleccionados, rol.id])
+                            } else {
+                              if (rolesSeleccionados.length > 1) {
+                                setRolesSeleccionados(rolesSeleccionados.filter(id => id !== rol.id))
+                              }
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-yellow-400 focus:ring-yellow-400 accent-yellow-400 cursor-pointer"
+                        />
+                        {rol.nombre}
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
 
               {errorRol && (
@@ -579,12 +641,12 @@ export default function RegisterForm() {
         </div>
       )}
 
-      {/* MODAL: MODIFICAR USUARIO[cite: 10] */}
+      {/* MODAL: MODIFICAR USUARIO Y ROLES EXTRA */}
       {modalModificar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-100 mb-2 text-center">Modificar Usuario</h3>
-            <p className="text-gray-400 text-xs text-center mb-4">Ingresa la cédula del usuario para buscarlo y editar sus datos.</p>
+          <div className="w-full max-w-lg bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-100 mb-2 text-center">Modificar Usuario y Roles</h3>
+            <p className="text-gray-400 text-xs text-center mb-4">Ingresa la cédula para actualizar sus datos o agregar/quitar roles.</p>
             
             <div className="flex gap-2 mb-4">
               <input
@@ -598,7 +660,7 @@ export default function RegisterForm() {
                 type="button"
                 onClick={handleBuscarUsuario}
                 disabled={accionLoading}
-                className="px-4 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl text-sm hover:bg-yellow-500 cursor-pointer"
+                className="px-4 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl text-sm hover:bg-yellow-500 cursor-pointer shrink-0"
               >
                 Buscar
               </button>
@@ -611,64 +673,123 @@ export default function RegisterForm() {
             )}
 
             {usuarioEncontrado && (
-              <form onSubmit={handleActualizarUsuario} className="flex flex-col gap-3">
-                <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Nombre</label>
-                  <input
-                    type="text"
-                    value={editForm.nombreusuario}
-                    onChange={(e) => setEditForm({ ...editForm, nombreusuario: e.target.value })}
-                    className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Apellido</label>
-                  <input
-                    type="text"
-                    value={editForm.apellusuario}
-                    onChange={(e) => setEditForm({ ...editForm, apellusuario: e.target.value })}
-                    className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Correo Electrónico</label>
-                  <input
-                    type="email"
-                    value={editForm.correousuario}
-                    onChange={(e) => setEditForm({ ...editForm, correousuario: e.target.value })}
-                    className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Teléfono</label>
-                  <input
-                    type="text"
-                    value={editForm.teleusuario}
-                    onChange={(e) => setEditForm({ ...editForm, teleusuario: e.target.value })}
-                    className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
-                  />
+              <div className="flex flex-col gap-5">
+                
+                {/* 1. SECCIÓN PRINCIPAL: GESTIÓN DE ROLES (APARECE DE PRIMERO) */}
+                <div className="bg-[#161a25] border border-[#252c3d] rounded-xl p-4 shadow-inner">
+                  <p className="text-xs font-bold uppercase text-yellow-400 mb-3 flex items-center gap-1.5">
+                    <FaUserTag size={14} /> Roles Activos del Usuario
+                  </p>
+
+                  {loadingGestionRoles ? (
+                    <p className="text-xs text-gray-400">Cargando roles...</p>
+                  ) : rolesActualesUsuario.length > 0 ? (
+                    <div className="flex flex-col gap-2 mb-3">
+                      {rolesActualesUsuario.map((r) => {
+                        const rolInfo = catalogoRoles.find(c => c.id === r.idrol)
+                        return (
+                          <div key={r.ciuser_log} className="flex justify-between items-center bg-[#11141d] px-3.5 py-2 rounded-lg border border-gray-800 text-xs">
+                            <span className="text-gray-200 font-semibold">{rolInfo ? rolInfo.nombre : `Rol #${r.idrol}`}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarRolUsuario(r.ciuser_log)}
+                              className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
+                              title="Retirar este rol"
+                            >
+                              <FaTrash size={13} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 mb-3">El usuario no posee roles asignados actualmente.</p>
+                  )}
+
+                  {/* FORMULARIO PARA AÑADIR UN ROL EXTRA */}
+                  <div className="flex gap-2 pt-3 border-t border-gray-800">
+                    <select
+                      value={nuevoRolAAsignar}
+                      onChange={(e) => setNuevoRolAAsignar(Number(e.target.value))}
+                      className="w-full text-gray-200 border border-[#252c3d] rounded-lg p-2.5 bg-[#11141d] text-xs focus:outline-none"
+                    >
+                      {catalogoRoles.map(r => (
+                        <option key={r.id} value={r.id}>{r.nombre}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleAgregarRolExtra}
+                      disabled={loadingGestionRoles}
+                      className="bg-yellow-400 text-gray-900 px-3.5 py-2.5 rounded-lg font-bold text-xs hover:bg-yellow-500 transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                    >
+                      <FaPlus size={11} /> Añadir Rol
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex gap-3 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setModalModificar(false)}
-                    className="w-1/2 py-2.5 rounded-xl border border-gray-600 text-gray-300 font-semibold hover:bg-gray-800 transition text-sm cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={accionLoading}
-                    className="w-1/2 py-2.5 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition text-sm cursor-pointer disabled:opacity-50"
-                  >
-                    Guardar Cambios
-                  </button>
-                </div>
-              </form>
+                {/* 2. FORMULARIO DE DATOS PERSONALES DEL USUARIO */}
+                <form onSubmit={handleActualizarUsuario} className="flex flex-col gap-3 pt-2 border-t border-gray-800">
+                  <p className="text-xs font-bold uppercase text-gray-400 mb-1">Datos Personales</p>
+                  
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-gray-400">Nombre</label>
+                    <input
+                      type="text"
+                      value={editForm.nombreusuario}
+                      onChange={(e) => setEditForm({ ...editForm, nombreusuario: e.target.value })}
+                      className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-gray-400">Apellido</label>
+                    <input
+                      type="text"
+                      value={editForm.apellusuario}
+                      onChange={(e) => setEditForm({ ...editForm, apellusuario: e.target.value })}
+                      className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-gray-400">Correo Electrónico</label>
+                    <input
+                      type="email"
+                      value={editForm.correousuario}
+                      onChange={(e) => setEditForm({ ...editForm, correousuario: e.target.value })}
+                      className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-gray-400">Teléfono</label>
+                    <input
+                      type="text"
+                      value={editForm.teleusuario}
+                      onChange={(e) => setEditForm({ ...editForm, teleusuario: e.target.value })}
+                      className="w-full text-gray-200 border border-[#252c3d] rounded-xl p-2.5 mt-1 bg-[#161a25] text-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setModalModificar(false)}
+                      className="w-1/2 py-2.5 rounded-xl border border-gray-600 text-gray-300 font-semibold hover:bg-gray-800 transition text-sm cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={accionLoading}
+                      className="w-1/2 py-2.5 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition text-sm cursor-pointer disabled:opacity-50"
+                    >
+                      Guardar Cambios
+                    </button>
+                  </div>
+                </form>
+              </div>
             )}
 
             {!usuarioEncontrado && (
@@ -686,7 +807,7 @@ export default function RegisterForm() {
         </div>
       )}
 
-      {/* MODAL: ELIMINAR USUARIO[cite: 10] */}
+      {/* MODAL: ELIMINAR USUARIO */}
       {modalEliminar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 shadow-2xl relative">

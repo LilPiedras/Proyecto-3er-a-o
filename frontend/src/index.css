@@ -21,3 +21,68 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.auditorias-print-heading {
+  display: none;
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .auditorias-print,
+  .auditorias-print * {
+    visibility: visible;
+  }
+
+  .auditorias-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .auditorias-print-heading {
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .auditorias-print-heading h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .auditorias-print-heading p {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .auditorias-print table {
+    width: 100%;
+    min-width: 0;
+    font-size: 10px;
+  }
+
+  .auditorias-print th,
+  .auditorias-print td {
+    padding: 6px;
+    color: black !important;
+  }
+
+  .auditorias-print details > *:not(summary) {
+    display: block !important;
+  }
+
+  .auditorias-print summary {
+    display: none;
+  }
+}

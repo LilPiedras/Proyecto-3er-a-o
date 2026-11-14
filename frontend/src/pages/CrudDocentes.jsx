@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -256,9 +257,9 @@ const CrudDocentes = () => {
             <button
               type="button"
               onClick={() => openModal(1)}
-              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <i className="fa-solid fa-circle-plus"></i>
+              <Plus size={18} />
               Añadir docente
             </button>
           </div>
@@ -270,7 +271,7 @@ const CrudDocentes = () => {
             Buscar
           </label>
           <div className="relative">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
             <input
               type="text"
               className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 transition"
@@ -341,6 +342,7 @@ const CrudDocentes = () => {
                         <td className="p-3 text-sm text-gray-300">{fecha}</td>
                         <td className="p-3">
                           <div className="flex justify-end gap-2">
+                            {/* Botón Editar (Amarillo con Lápiz) */}
                             <button
                               type="button"
                               title="Editar"
@@ -356,17 +358,18 @@ const CrudDocentes = () => {
                                   d.fechacontra
                                 )
                               }
-                              className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                              className="bg-yellow-400 text-black p-2 rounded-lg hover:bg-yellow-300 transition cursor-pointer flex items-center justify-center"
                             >
-                              <i className="fa-solid fa-pen"></i>
+                              <Pencil size={16} />
                             </button>
+                            {/* Botón Eliminar (Rojo con Papelera) */}
                             <button
                               type="button"
                               title="Eliminar"
                               onClick={() => deleteDocente(d.ciempleado, nom)}
-                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                              className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-500 transition cursor-pointer flex items-center justify-center"
                             >
-                              <i className="fa-solid fa-trash"></i>
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>
@@ -402,7 +405,7 @@ const CrudDocentes = () => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800"
+                className="text-gray-400 hover:text-white font-bold text-xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-800 cursor-pointer"
               >
                 ✕
               </button>
@@ -521,14 +524,14 @@ const CrudDocentes = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={validar}
-                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition cursor-pointer"
                 >
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>

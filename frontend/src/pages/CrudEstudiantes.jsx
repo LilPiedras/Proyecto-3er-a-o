@@ -471,15 +471,16 @@ const CrudEstudiantes = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition flex items-center gap-2"
                 >
-                  Cancelar
+                  <i className="fa-solid fa-xmark"></i> Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={validar}
-                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition flex items-center gap-2"
                 >
+                  <i className="fa-solid fa-save"></i>
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>
               </div>

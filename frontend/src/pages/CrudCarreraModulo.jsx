@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { QRCodeCanvas } from 'qrcode.react';
+import { FaFilePdf, FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -12,6 +14,10 @@ const CrudCarreraModulo = () => {
   const [materiasModulos, setMateriasModulos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [idCarreraSeleccionada, setIdCarreraSeleccionada] = useState('');
+
+  // Estados para el Modal de Exportación y QR limpio
+  const [modalExportOpen, setModalExportOpen] = useState(false);
+  const [urlPdfGenerado, setUrlPdfGenerado] = useState('');
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -109,6 +115,41 @@ const CrudCarreraModulo = () => {
     }
   };
 
+  // Abrir Modal de Exportación y QR limpio
+  const abrirModalExportar = () => {
+    if (!idCarreraSeleccionada) {
+      return show_alert('Selecciona una carrera para exportar', 'warning');
+    }
+    
+    const baseURL = api.defaults.baseURL || 'http://localhost:8000';
+    const urlCompleta = `${baseURL.replace(/\/$/, "")}/Carrera_Modulo/${idCarreraSeleccionada}/exportar-pdf`;
+    
+    setUrlPdfGenerado(urlCompleta);
+    setModalExportOpen(true);
+  };
+
+  // Descarga directa del PDF
+  const descargarPdfDirecto = async () => {
+    try {
+      const response = await api.get(`/Carrera_Modulo/${idCarreraSeleccionada}/exportar-pdf`, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `reporte_carrera_${idCarreraSeleccionada}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      show_alert('PDF descargado con éxito', 'success');
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      show_alert('Error al exportar el PDF de la carrera', 'error');
+    }
+  };
+
   if (cargando) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-black text-white">
@@ -137,7 +178,7 @@ const CrudCarreraModulo = () => {
               <h3 className="text-xl font-bold">1. Selección de Carrera</h3>
             </div>
 
-            <div className="mb-6">
+            <div className="flex gap-2 mb-6">
               <select
                 className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
                 value={idCarreraSeleccionada}
@@ -150,12 +191,24 @@ const CrudCarreraModulo = () => {
                   </option>
                 ))}
               </select>
-              {carreras.length === 0 && (
-                <p className="text-xs text-yellow-400 mt-2">
-                  No hay carreras. Créalas en el CRUD de Carreras.
-                </p>
-              )}
+
+              {/* Botón Exportar PDF / Modal */}
+              <button 
+                type="button"
+                onClick={abrirModalExportar} 
+                disabled={!idCarreraSeleccionada} 
+                className="bg-yellow-400 text-black px-3.5 rounded font-bold hover:bg-yellow-300 disabled:opacity-50 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                title="Exportar"
+              >
+                <i className="fa-solid fa-file-pdf"></i> Exportar
+              </button>
             </div>
+            
+            {carreras.length === 0 && (
+              <p className="text-xs text-yellow-400 mt-2 mb-4">
+                No hay carreras. Créalas en el CRUD de Carreras.
+              </p>
+            )}
 
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">2. Banco de Materia-Módulo</h3>
@@ -263,7 +316,7 @@ const CrudCarreraModulo = () => {
           </div>
         </div>
 
-        {/* Resumen global (estilo tabla de Notas) */}
+        {/* Resumen global */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mt-8 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">
             Todas las relaciones
@@ -321,6 +374,62 @@ const CrudCarreraModulo = () => {
           </div>
         </div>
       </div>
+
+      {/* --- VENTANA FLOTANTE (MODAL) PARA PDF Y QR --- */}
+      {modalExportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 max-w-sm w-full relative text-center shadow-2xl">
+            <button
+              onClick={() => setModalExportOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition cursor-pointer"
+            >
+              <FaTimes size={18} />
+            </button>
+
+            <h4 className="text-lg font-bold text-yellow-400 mb-1 flex items-center justify-center gap-2">
+              <FaFilePdf /> Exportar Carrera #{idCarreraSeleccionada}
+            </h4>
+            <p className="text-xs text-gray-400 mb-5">Elige una opción de descarga o escanea el código QR.</p>
+
+            {/* Botón Descarga */}
+            <button
+              onClick={descargarPdfDirecto}
+              className="w-full py-3 mb-5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg text-sm"
+            >
+              <FaDownload size={15} /> Descargar Archivo PDF
+            </button>
+
+            <div className="border-t border-[#252c3d] pt-4">
+              <p className="text-xs font-semibold text-gray-300 mb-3">Escanea el Código QR del Reporte:</p>
+              
+              {/* Código QR limpio */}
+              <div className="bg-white p-3 rounded-2xl inline-block shadow-md border border-gray-200">
+                <QRCodeCanvas
+                  value={urlPdfGenerado}
+                  size={160}
+                  bgColor={"#FFFFFF"}
+                  fgColor={"#000000"}
+                  level={"M"}
+                  includeMargin={true}
+                />
+              </div>
+
+              <div className="mt-3">
+                <a
+                  href={urlPdfGenerado}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-yellow-400 hover:underline flex items-center justify-center gap-1.5"
+                >
+                  Abrir enlace del reporte <FaExternalLinkAlt size={10} />
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

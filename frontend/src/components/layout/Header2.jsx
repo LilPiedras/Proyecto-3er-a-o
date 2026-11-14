@@ -17,13 +17,16 @@ const Header = () => {
   // Estados para controlar los menús desplegables en desktop
   const [dropdownPersonal, setDropdownPersonal] = useState(false);
   const [dropdownAcademica, setDropdownAcademica] = useState(false);
+  const [dropdownGerencia, setDropdownGerencia] = useState(false);
 
   // Estados para acordeones en mobile
   const [mobilePersonal, setMobilePersonal] = useState(false);
   const [mobileAcademica, setMobileAcademica] = useState(false);
+  const [mobileGerencia, setMobileGerencia] = useState(false);
 
   const dropdownPersonalRef = useRef(null);
   const dropdownAcademicaRef = useRef(null);
+  const dropdownGerenciaRef = useRef(null);
   
   const [isDark, setIsDark] = useState(() => {
     return (
@@ -55,6 +58,7 @@ const Header = () => {
     // Cerrar dropdowns al cambiar de ruta
     setDropdownPersonal(false);
     setDropdownAcademica(false);
+    setDropdownGerencia(false);
     setToggle(false);
   }, [location]);
 
@@ -66,6 +70,9 @@ const Header = () => {
       }
       if (dropdownAcademicaRef.current && !dropdownAcademicaRef.current.contains(event.target)) {
         setDropdownAcademica(false);
+      }
+      if (dropdownGerenciaRef.current && !dropdownGerenciaRef.current.contains(event.target)) {
+        setDropdownGerencia(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -224,6 +231,11 @@ const Header = () => {
                       Notas
                     </RouterLink>
                   </li>
+                  <li>
+                    <RouterLink to="/dashboard-docente" className="cursor-pointer hover:text-yellow-400">
+                      Dashboard Docente
+                    </RouterLink>
+                  </li>
                 </>
               )}
 
@@ -298,14 +310,38 @@ const Header = () => {
                         <RouterLink to="/crudestudiantes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Estudiantes
                         </RouterLink>
+                        <RouterLink to="/registro" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Registrar Usuarios
+                        </RouterLink>
+                        
                       </div>
                     )}
                   </div>
 
-                  {/* MENSUALIDADES (Directo o se puede incluir) */}
-                  <RouterLink to="/crudmensualidad" className="cursor-pointer hover:text-yellow-400">
-                    Mensualidades
-                  </RouterLink>
+                  {/* DROPDOWN GERENCIA */}
+                  <div className="relative" ref={dropdownGerenciaRef}>
+                    <button
+                      onClick={() => {
+                        setDropdownGerencia(!dropdownGerencia);
+                        setDropdownAcademica(false);
+                        setDropdownPersonal(false);
+                      }}
+                      className="flex items-center gap-1.5 cursor-pointer hover:text-yellow-400 transition"
+                      aria-expanded={dropdownGerencia}
+                    >
+                      Gerencia <FaChevronDown className={`text-xs transition-transform ${dropdownGerencia ? 'rotate-180' : ''}`} />
+                    </button>
+                    {dropdownGerencia && (
+                      <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
+                        <RouterLink to="/crudmensualidad" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Mensualidades
+                        </RouterLink>
+                        <RouterLink to="/auditorias" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Auditorías
+                        </RouterLink>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -449,7 +485,21 @@ const Header = () => {
                       )}
                     </div>
 
-                    <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>Mensualidades</RouterLink>
+                    <div className="w-full flex flex-col items-center">
+                      <button
+                        onClick={() => setMobileGerencia(!mobileGerencia)}
+                        className="flex items-center gap-2 text-yellow-400 font-semibold py-2"
+                        aria-expanded={mobileGerencia}
+                      >
+                        Gerencia <FaChevronDown className={`text-sm transition-transform ${mobileGerencia ? 'rotate-180' : ''}`} />
+                      </button>
+                      {mobileGerencia && (
+                        <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
+                          <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>Mensualidades</RouterLink>
+                          <RouterLink to="/auditorias" onClick={() => setToggle(false)}>Auditorías</RouterLink>
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 

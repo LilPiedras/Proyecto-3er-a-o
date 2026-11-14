@@ -24,36 +24,40 @@ class AsignacionSchema(BaseModel):
 def obtener_horarios_materias(db: Session = Depends(get_db)):
     try:
         query = text("""
-            SELECT DISTINCT ON (m.idmateria)
+            SELECT
+                os.idseccmo,
                 m.idmateria,
-                m.nombremateria AS materia,
-                mod.nombremodulo AS modulo,
+                COALESCE(m.nombremateria, 'Oferta académica #' || os.idseccmo::text) AS materia,
+                COALESCE(mod.nombremodulo, 'Sin módulo') AS modulo,
                 COALESCE(e.nombreempleado || ' ' || e.apellidoempleado, 'Sin docente asignado') AS docente,
                 COALESCE(h.dia, 'Por definir') AS dia,
                 COALESCE(h.salon, 'S/N') AS salon,
                 COALESCE(b.horainicio, '--:--') AS horainicio,
                 COALESCE(b.horafin, '--:--') AS horafin
-            FROM public.materia m
-            LEFT JOIN public.empleado e ON m.docente = e.ciempleado
-            LEFT JOIN public.materias_modulo mm ON m.idmateria = mm.idmateria
-            LEFT JOIN public.modulo mod ON mm.idmodulo = mod.idmodulo
-            LEFT JOIN public.oferta_seccion os ON os.horario IS NOT NULL
+            FROM public.oferta_seccion os
             LEFT JOIN public.horario h ON os.horario = h.idhorario
             LEFT JOIN public.bloque b ON h.bloque = b.idbloque
-            ORDER BY m.idmateria, os.idseccmo DESC;
+            LEFT JOIN public.carrera_modulo cm ON cm.idcarremo = os.idcarremo
+            LEFT JOIN public.materias_modulo mm ON mm.idmatemo = cm.idmatemo
+            LEFT JOIN public.materia m ON m.idmateria = mm.idmateria
+            LEFT JOIN public.modulo mod ON mod.idmodulo = mm.idmodulo
+            LEFT JOIN public.empleado e ON m.docente = e.ciempleado
+            WHERE os.horario IS NOT NULL
+            ORDER BY os.idseccmo DESC;
         """)
         resultado = db.execute(query).fetchall()
         
         return [
             {
-                "idmateria": row[0],
-                "materia": row[1],
-                "modulo": row[2] or "Sin módulo",
-                "docente": row[3],
-                "dia": row[4],
-                "salon": row[5],
-                "horainicio": str(row[6]),
-                "horafin": str(row[7])
+                "idseccmo": row[0],
+                "idmateria": row[1],
+                "materia": row[2],
+                "modulo": row[3],
+                "docente": row[4],
+                "dia": row[5],
+                "salon": row[6],
+                "horainicio": str(row[7]),
+                "horafin": str(row[8]),
             }
             for row in resultado
         ]

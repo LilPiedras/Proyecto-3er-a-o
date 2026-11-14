@@ -18,6 +18,9 @@ class Mensualidad(Base):
     monedapago: Mapped[int] = mapped_column(Integer, ForeignKey("monedapago.idmoneda"), nullable=False)
     
     monto: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_carreras_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    monto_extra: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    tasa_conversion: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False, default=1)
     verificacion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     encargado: Mapped[Optional[str]] = mapped_column(String(30), ForeignKey("usuario.ciuser", ondelete="SET NULL"), nullable=True)
     periodo_id: Mapped[int] = mapped_column(

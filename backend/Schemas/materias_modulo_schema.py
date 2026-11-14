@@ -12,7 +12,6 @@ class MateriaModuloEntrada(BaseModel):
 
 class MateriaModuloSalida(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     idmatemo: int
     idmateria : int
     idmodulo : int

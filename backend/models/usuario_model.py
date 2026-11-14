@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy import (Boolean, Integer, String, ForeignKey)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from models.base import Base
 
 class Usuario(Base):
@@ -17,6 +17,12 @@ class Usuario(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
     logins = relationship("UserLogin", back_populates="usuario", uselist=True)
+
+    @validates("correousuario")
+    def normalizar_correo(self, _key: str, value: Optional[str]) -> Optional[str]:
+        if _key == "correousuario" and value is not None:
+            return value.strip().lower()
+        return value
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.ciuser} nombre={self.nombreusuario!r}>"

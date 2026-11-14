@@ -9,11 +9,11 @@ const CursosDisponibles = () => {
   const cargarCursosDisponibles = async () => {
     setCargando(true);
     try {
-      // Consumimos la ruta del backend para listar los cursos[cite: 11]
+
       const response = await api.get('/curso/');
       const listaCursos = Array.isArray(response.data) ? response.data : [];
       
-      // Mostramos todos los cursos que vienen del backend sin filtrar el estado activo
+      
       setCursos(listaCursos);
     } catch (error) {
       console.error("Error al cargar cursos:", error);

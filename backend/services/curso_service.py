@@ -1,6 +1,8 @@
 from models.curso_model import Curso
+from models.empleado_model import Empleado
 from Schemas.curso_schema import CursoEntrada, CursoActualizar
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
 
 def obtener_curso_por_id(idcurso: int, db: Session):
@@ -16,6 +18,17 @@ def listar_curso(db: Session):
     return cursos
 
 def crear_curso(curso_in: CursoEntrada, db: Session):
+    if curso_in.docenasig:
+        profesor = db.query(Empleado).filter(
+            Empleado.ciempleado == curso_in.docenasig,
+            Empleado.activo.is_(True),
+        ).first()
+        if profesor is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="El profesor seleccionado no existe o está inactivo. Actualiza la lista de profesores e inténtalo de nuevo.",
+            )
+
     nuevo_curso = Curso(
         nomcurso=curso_in.nomcurso,
         preciocurso=curso_in.preciocurso,
@@ -24,7 +37,14 @@ def crear_curso(curso_in: CursoEntrada, db: Session):
         activo=True 
     )
     db.add(nuevo_curso)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se pudo registrar el curso porque un dato relacionado dejó de estar disponible. Actualiza la lista e inténtalo de nuevo.",
+        ) from error
     db.refresh(nuevo_curso)
     return nuevo_curso
 

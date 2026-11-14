@@ -1,14 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime
+from datetime import date, time
 
 class AuditoriaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    idseria: int
     usuario_escritor_id: str
     usuario_objeto_id: str
     accion: str
     datos_anteriores: Optional[str] = None
     datos_nuevos: Optional[str] = None
-    fecha: datetime
+    fecha: date
+    hora: Optional[time] = None
 
 class AuditoriaEntrada(BaseModel):
     usuario_escritor_id: str
@@ -16,7 +20,8 @@ class AuditoriaEntrada(BaseModel):
     accion: str
     datos_anteriores: Optional[str] = None
     datos_nuevos: Optional[str] = None
-    fecha: datetime
+    fecha: date
+    hora: Optional[time] = None
 
 class AuditoriaActualizar(BaseModel):
     usuario_escritor_id: Optional[str] = None
@@ -24,4 +29,5 @@ class AuditoriaActualizar(BaseModel):
     accion: Optional[str] = None
     datos_anteriores: Optional[str] = None
     datos_nuevos: Optional[str] = None
-    fecha: Optional[datetime] = None
+    fecha: Optional[date] = None
+    hora: Optional[time] = None

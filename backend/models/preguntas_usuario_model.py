@@ -10,7 +10,7 @@ class Preguntas_Usuario(Base):
     idpreuser: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
     ciuser: Mapped[str] = mapped_column(String(20),ForeignKey("usuario.ciuser") ,nullable=False)
     idpregunta: Mapped[int] = mapped_column(Integer,ForeignKey("preguntas_seguridad.idpregunta") ,nullable=False)
-    respuesta: Mapped[str] = mapped_column(String(20), nullable=False)
+    respuesta: Mapped[str] = mapped_column(String(200), nullable=False)
 
     def __repr__(self) -> str:
         return f"<Preguntas_User id={self.idpreuser}>"

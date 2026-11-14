@@ -21,7 +21,7 @@ def get_db():
 
 @monedas_route.get("/Moneda Pago/", response_model=List[MonedaPagoSalida], status_code=status.HTTP_200_OK)
 @monedas_route.get("/moneda-pago/", response_model=List[MonedaPagoSalida], status_code=status.HTTP_200_OK)
-def listar_moneda_pago(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_moneda_pago(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return moneda_pago_service.listar_judios(db)
 
 @monedas_route.post("/Moneda Pago/", response_model=MonedaPagoEntrada, status_code=status.HTTP_200_OK)

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { QRCodeCanvas } from 'qrcode.react';
+import { FaFilePdf, FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -13,6 +15,10 @@ const CrudModuloMateria = () => {
 
   const [idModuloSeleccionado, setIdModuloSeleccionado] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  // Estados para el Modal de Exportación y QR limpio
+  const [modalExportOpen, setModalExportOpen] = useState(false);
+  const [urlPdfGenerado, setUrlPdfGenerado] = useState('');
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -248,12 +254,21 @@ const CrudModuloMateria = () => {
     }
   };
 
-  // Función para exportar el PDF utilizando la ruta limpia del backend
-  const exportarPdfModulo = async () => {
+  // 1. Abrir Modal y construir la URL limpia para el QR
+  const abrirModalExportar = () => {
     if (!idModuloSeleccionado) {
-      return show_alert('Selecciona un módulo para exportar su PDF', 'warning');
+      return show_alert('Selecciona un módulo para exportar', 'warning');
     }
+    
+    const baseURL = api.defaults.baseURL || 'http://localhost:8000';
+    const urlCompleta = `${baseURL.replace(/\/$/, "")}/modulo_materia/${idModuloSeleccionado}/exportar-pdf`;
+    
+    setUrlPdfGenerado(urlCompleta);
+    setModalExportOpen(true);
+  };
 
+  // 2. Descargar el archivo directamente desde el navegador
+  const descargarPdfDirecto = async () => {
     try {
       setCargando(true);
       const response = await api.get(`/modulo_materia/${idModuloSeleccionado}/exportar-pdf`, {
@@ -268,7 +283,7 @@ const CrudModuloMateria = () => {
       link.click();
       document.body.removeChild(link);
 
-      show_alert('PDF generado con éxito', 'success');
+      show_alert('PDF descargado con éxito', 'success');
     } catch (error) {
       console.error("Error al generar PDF:", error);
       show_alert('Error al exportar el PDF del módulo', 'error');
@@ -326,14 +341,14 @@ const CrudModuloMateria = () => {
                 <i className="fa-solid fa-trash"></i>
               </button>
 
-              {/* Botón Exportar PDF */}
+              {/* Botón que abre el Modal de Exportar */}
               <button 
-                onClick={exportarPdfModulo} 
+                onClick={abrirModalExportar} 
                 disabled={!idModuloSeleccionado || cargando} 
                 className="bg-yellow-400 text-black px-3.5 rounded font-bold hover:bg-yellow-300 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                title="Exportar PDF"
+                title="Exportar"
               >
-                <i className="fa-solid fa-file-pdf"></i> PDF
+                <i className="fa-solid fa-file-arrow-down"></i> Exportar
               </button>
             </div>
 
@@ -413,6 +428,62 @@ const CrudModuloMateria = () => {
 
         </div>
       </div>
+
+      {/* --- VENTANA FLOTANTE (MODAL) PARA PDF Y QR --- */}
+      {modalExportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-[#11141d] border border-[#2b2518] rounded-2xl p-6 max-w-sm w-full relative text-center shadow-2xl">
+            <button
+              onClick={() => setModalExportOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition cursor-pointer"
+            >
+              <FaTimes size={18} />
+            </button>
+
+            <h4 className="text-lg font-bold text-yellow-400 mb-1 flex items-center justify-center gap-2">
+              <FaFilePdf /> Exportar Módulo #{idModuloSeleccionado}
+            </h4>
+            <p className="text-xs text-gray-400 mb-5">Elige una opción de descarga o escanea el código QR.</p>
+
+            {/* 1. Botón para descargar el PDF */}
+            <button
+              onClick={descargarPdfDirecto}
+              className="w-full py-3 mb-5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg text-sm"
+            >
+              <FaDownload size={15} /> Descargar Archivo PDF
+            </button>
+
+            <div className="border-t border-[#252c3d] pt-4">
+              <p className="text-xs font-semibold text-gray-300 mb-3">Escanea el Código QR del Reporte:</p>
+              
+              {/* 2. Código QR limpio y perfectamente legible */}
+              <div className="bg-white p-3 rounded-2xl inline-block shadow-md border border-gray-200">
+                <QRCodeCanvas
+                  value={urlPdfGenerado}
+                  size={160}
+                  bgColor={"#FFFFFF"}
+                  fgColor={"#000000"}
+                  level={"M"}
+                  includeMargin={true}
+                />
+              </div>
+
+              <div className="mt-3">
+                <a
+                  href={urlPdfGenerado}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-yellow-400 hover:underline flex items-center justify-center gap-1.5"
+                >
+                  Abrir enlace del reporte <FaExternalLinkAlt size={10} />
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

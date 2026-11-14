@@ -10,7 +10,7 @@ class OfertaEntrada(BaseModel):
 
 class OfertaSalida(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
+    idseccmo: int
     idseccmo: int
     idcarrera: int
     idsecc: int
@@ -38,7 +38,6 @@ class AsignarEstudiante(BaseModel):
 
 class OfertaConEstudiante(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     idseccmo: int
     idcarremo: int
     idsecc: int

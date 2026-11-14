@@ -18,6 +18,7 @@ def crear_nueva_preguntas(pregun: PreguntasSeguridadEntrada, db:Session):
     db.refresh(pregun)
     return pregun
 
+
 def actualizar_preguntas_parcial(idpregunta: int, pregun_update: PreguntasSeguridadActualizar, db: Session):
     db_pregun = db.query(PreguntasSeguridad).filter(PreguntasSeguridad.idpregunta == idpregunta).first()
     if not db_pregun:

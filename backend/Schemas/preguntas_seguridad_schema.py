@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import date
 
 class PreguntasSeguridadSalida(BaseModel):
+    idpregunta: int
     preguntas : str
 
 PreSegSalida = PreguntasSeguridadSalida

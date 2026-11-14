@@ -16,7 +16,8 @@ def listar_carrera(db: Session):
 def crear_carrera(carri: CarreraEntrada, db: Session):
     nueva_carrera = Carrera(
         nombrecarrera = carri.nombrecarrera,
-        descripcion = carri.descripcion
+        descripcion = carri.descripcion,
+        precio_usd = carri.precio_usd,
     )
     db.add(nueva_carrera)
     db.commit()

@@ -21,7 +21,7 @@ def get_db():
 
 @metodo_route.get("/ Metodo Pago/", response_model=List[MetodoPagoSalida], status_code=status.HTTP_200_OK)
 @metodo_route.get("/metodo-pago/", response_model=List[MetodoPagoSalida], status_code=status.HTTP_200_OK)
-def listar_metodo_pago(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_metodo_pago(db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return metodo_pago_service.listar_metodos(db)
 
 @metodo_route.post("/ Metodo Pago/", response_model=MetodoPagoEntrada, status_code=status.HTTP_200_OK)

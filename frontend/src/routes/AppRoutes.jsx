@@ -26,6 +26,8 @@ import MiModulo from "../pages/MiModulo";
 import RecuperarPassword from "../pages/RecuperarPassword";
 import CrudCarreraModulo from "../pages/CrudCarreraModulo";
 import ResumenCalificaciones from "../pages/ResumenCalificaciones";
+import DashboardDocente from "../pages/DashboardDocente";
+import Auditorias from "../pages/Auditorias";
 
 const AppRoutes = () => {
   return (
@@ -53,6 +55,8 @@ const AppRoutes = () => {
         <Route path="/mi-modulo" element={<MiModulo />} />
         <Route path="/crudcarreramodulo" element={<CrudCarreraModulo />} />
         <Route path="/resumen-calificaciones" element={<ResumenCalificaciones />} />
+        <Route path="/dashboard-docente" element={<DashboardDocente/>} />
+        <Route path="/auditorias" element={<Auditorias />} />
         
         <Route path="/perfil" element={<Perfil />} />
         

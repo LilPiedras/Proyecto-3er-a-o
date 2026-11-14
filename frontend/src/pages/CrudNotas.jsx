@@ -8,7 +8,6 @@ const CrudNotas = () => {
   const [cargando, setCargando] = useState(true);
 
   const [misNotas, setMisNotas] = useState([]);
-
   const [estudiantes, setEstudiantes] = useState([]);
   const [ofertas, setOfertas] = useState([]);
   const [evaluaciones, setEvaluaciones] = useState([]);
@@ -58,50 +57,65 @@ const CrudNotas = () => {
     }
   };
 
-const cargarDatosDocente = async () => {
-  try {
-    const ci = localStorage.getItem("ciuser") || "";
+  const cargarDatosDocente = async () => {
+    try {
+      const ci = localStorage.getItem("ciuser") || "";
 
-    const promesas = [
-      api.get("/Oferta/").catch(() => ({ data: [] })),
-      api.get("/Notas/").catch(() => ({ data: [] })),
-      api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
-    ];
+      const promesas = [
+        api.get("/Oferta/").catch(() => ({ data: [] })),
+        api.get("/Notas/").catch(() => ({ data: [] })),
+        api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
+      ];
 
-    if (ci) {
-      promesas.push(
-        api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
-      );
+      if (ci) {
+        promesas.push(
+          api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
+        );
+      }
+
+      const [resOfertas, resNotas, resPlanes, resEstu] = await Promise.all(promesas);
+
+      setOfertas(Array.isArray(resOfertas.data) ? resOfertas.data : []);
+      setNotasLista(Array.isArray(resNotas.data) ? resNotas.data : []);
+      // Por defecto cargamos todos los planes, luego se filtran al seleccionar oferta
+      setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []);
+      setEstudiantes(resEstu && Array.isArray(resEstu.data) ? resEstu.data : []);
+    } catch (error) {
+      console.error(error);
+      show_alert("Error al cargar datos de notas", "error");
     }
+  };
 
-    const [resOfertas, resNotas, resPlanes, resEstu] = await Promise.all(promesas);
+  // Cargar evaluaciones filtradas por la materia de la oferta seleccionada
+  const manejarCambioOferta = async (eIdSeccMo) => {
+    setOferta(eIdSeccMo);
+    setIdevaluacion("");
 
-    const listaOfertas = Array.isArray(resOfertas.data) ? resOfertas.data : [];
-    const listaNotas = Array.isArray(resNotas.data) ? resNotas.data : [];
-    const listaPlanes = Array.isArray(resPlanes.data) ? resPlanes.data : [];
-    const listaEstu =
-      resEstu && Array.isArray(resEstu.data) ? resEstu.data : [];
-
-    setOfertas(listaOfertas);
-    setNotasLista(listaNotas);
-    setEvaluaciones(listaPlanes);
-    setEstudiantes(listaEstu);
-  } catch (error) {
-    console.error(error);
-    show_alert("Error al cargar datos de notas", "error");
-  }
-};
-
-  const cargarEvaluaciones = async (idmateria) => {
-    if (!idmateria) {
-      setEvaluaciones([]);
+    if (!eIdSeccMo) {
+      // Si desmarca, recargamos todos los planes por defecto
+      try {
+        const { data } = await api.get("/plan-evaluacion/");
+        setEvaluaciones(Array.isArray(data) ? data : []);
+      } catch {
+        setEvaluaciones([]);
+      }
       return;
     }
-    try {
-      const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
-      setEvaluaciones(Array.isArray(data) ? data : []);
-    } catch {
-      setEvaluaciones([]);
+
+    // Buscamos la materia asociada a esta oferta o estudiante asignado
+    const estudianteSeleccionado = estudiantes.find(
+      (est) => String(est.idseccmo) === String(eIdSeccMo)
+    );
+    
+    const idmateria = estudianteSeleccionado?.idmateria;
+
+    if (idmateria) {
+      try {
+        const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
+        setEvaluaciones(Array.isArray(data) ? data : []);
+      } catch {
+        setEvaluaciones([]);
+      }
     }
   };
 
@@ -243,12 +257,10 @@ const cargarDatosDocente = async () => {
                     <select
                       className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
                       value={oferta}
-                      onChange={(e) => setOferta(e.target.value)}
+                      onChange={(e) => manejarCambioOferta(e.target.value)}
                       required
                     >
                       <option value="">-- Seleccionar --</option>
-
-                      {/* 1) Preferir estudiantes del endpoint del docente */}
                       {estudiantes.length > 0
                         ? estudiantes.map((e) => (
                             <option key={e.idseccmo} value={e.idseccmo}>
@@ -256,8 +268,7 @@ const cargarDatosDocente = async () => {
                               {e.idsecc}
                             </option>
                           ))
-                        : /* 2) Fallback: ofertas de /Oferta/ que ya tengan estudiante */
-                          ofertas
+                        : ofertas
                             .filter((o) => o.estudiante)
                             .map((o) => (
                               <option key={o.idseccmo} value={o.idseccmo}>
@@ -269,8 +280,7 @@ const cargarDatosDocente = async () => {
                     {estudiantes.length === 0 &&
                       ofertas.filter((o) => o.estudiante).length === 0 && (
                         <p className="text-xs text-red-400 mt-1">
-                          No hay ofertas con estudiante asignado. Asigna un estudiante a una
-                          oferta
+                          No hay ofertas con estudiante asignado. Asigna un estudiante a una oferta.
                         </p>
                       )}
                   </div>
@@ -292,7 +302,7 @@ const cargarDatosDocente = async () => {
                       ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      Si no carga, déjalo vacío o crea el plan antes.
+                      Evaluaciones filtradas según la materia seleccionada.
                     </p>
                   </div>
 

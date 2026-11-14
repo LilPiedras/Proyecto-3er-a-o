@@ -4,10 +4,52 @@ import withReactContent from 'sweetalert2-react-content';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
+const obtenerMensajeError = (error, accion) => {
+  const estado = error.response?.status;
+  const detail = error.response?.data?.detail;
+
+  if (estado === 401) return 'Tu sesión expiró. Inicia sesión nuevamente.';
+  if (estado === 403) return 'No tienes permiso para gestionar cursos. Esta acción está reservada al rol 1.';
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        const campo = item?.loc?.filter((parte) => parte !== 'body').join(' → ');
+        return `${campo || 'Datos'}: ${item?.msg || 'Dato no válido'}`;
+      })
+      .join('\n');
+  }
+  if (typeof detail === 'string' && detail !== 'Internal Server Error') return detail;
+
+  const serverMessage = error.response?.data?.error_detalle
+    || error.response?.data?.message
+    || error.response?.data?.error;
+  if (typeof serverMessage === 'string') return serverMessage;
+  if (!error.response) return 'No se pudo conectar con el servidor. Verifica tu conexión e inténtalo de nuevo.';
+  if (estado >= 500) return `El servidor no pudo ${accion}. Inténtalo de nuevo; si continúa, comparte el código HTTP ${estado}.`;
+  return `No se pudo ${accion} (HTTP ${estado}).`;
+};
+
+const solicitarCursos = async () => {
+  const { data } = await api.get('/curso/');
+  return Array.isArray(data) ? data : [];
+};
+
+const solicitarProfesores = async () => {
+  const { data } = await api.get('/empleado/');
+  const lista = Array.isArray(data) ? data : [];
+  return lista.filter((empleado) => /docente|profesor/i.test(empleado.cargo || ''));
+};
+
 const CrudCursos = () => {
   const [cursos, setCursos] = useState([]);
+  const [profesores, setProfesores] = useState([]);
+  const [cargandoProfesores, setCargandoProfesores] = useState(
+    () => Number(localStorage.getItem('idrol')) === 1,
+  );
+  const [errorProfesores, setErrorProfesores] = useState('');
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const esAdministrador = Number(localStorage.getItem('idrol')) === 1;
 
   const [idcurso, setIdcurso] = useState('');
   const [nomcurso, setNomcurso] = useState('');
@@ -41,9 +83,7 @@ const CrudCursos = () => {
 
   const cargarCursos = async () => {
     try {
-      setLoading(true);
-      const { data } = await api.get('/curso/');
-      setCursos(Array.isArray(data) ? data : []);
+      setCursos(await solicitarCursos());
     } catch (error) {
       console.error('Error al cargar cursos:', error);
       if (error.response?.status === 404) {
@@ -62,8 +102,50 @@ const CrudCursos = () => {
   };
 
   useEffect(() => {
-    cargarCursos();
-  }, []);
+    let active = true;
+
+    solicitarCursos()
+      .then((data) => {
+        if (active) setCursos(data);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error('Error al cargar cursos:', error);
+        if (error.response?.status === 404) {
+          setCursos([]);
+        } else {
+          show_alert(obtenerMensajeError(error, 'cargar los cursos'), 'error');
+          setCursos([]);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    if (esAdministrador) {
+      solicitarProfesores()
+        .then((data) => {
+          if (active) setProfesores(data);
+        })
+        .catch((error) => {
+          if (!active) return;
+          if (error.response?.status === 404) {
+            setProfesores([]);
+            return;
+          }
+          const mensaje = obtenerMensajeError(error, 'cargar la lista de profesores');
+          setErrorProfesores(mensaje);
+          show_alert(mensaje, 'error');
+        })
+        .finally(() => {
+          if (active) setCargandoProfesores(false);
+        });
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [esAdministrador]);
 
   const cursosFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -156,6 +238,11 @@ const CrudCursos = () => {
   };
 
   const enviarSolicitud = async (metodo, parametros = {}, idPath = null) => {
+    if (!esAdministrador) {
+      show_alert('No tienes permiso para gestionar cursos. Esta acción está reservada al rol 1.', 'warning');
+      return;
+    }
+
     try {
       if (metodo === 'POST') {
         await api.post('/curso/', parametros);
@@ -174,21 +261,12 @@ const CrudCursos = () => {
 
       show_alert(msg, 'success');
       closeModal();
+      setLoading(true);
       await cargarCursos();
     } catch (error) {
       console.error('Error HTTP:', error);
-      const detail = error.response?.data?.detail;
-
-      if (Array.isArray(detail)) {
-        const primerError = detail[0];
-        const campo = primerError?.loc?.join(' -> ') || 'Campo';
-        const msgError = primerError?.msg || 'Error de validación';
-        show_alert(`${campo}: ${msgError}`, 'error');
-      } else if (typeof detail === 'string') {
-        show_alert(detail, 'error');
-      } else {
-        show_alert('Error al realizar la operación', 'error');
-      }
+      const accion = metodo === 'POST' ? 'registrar el curso' : metodo === 'PUT' ? 'actualizar el curso' : 'eliminar el curso';
+      show_alert(obtenerMensajeError(error, accion), 'error');
     }
   };
 
@@ -251,14 +329,20 @@ const CrudCursos = () => {
             </p>
           </div>
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => openModal(1)}
-              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-circle-plus"></i>
-              Añadir curso
-            </button>
+            {esAdministrador ? (
+              <button
+                type="button"
+                onClick={() => openModal(1)}
+                className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+              >
+                <i className="fa-solid fa-circle-plus"></i>
+                Añadir curso
+              </button>
+            ) : (
+              <p className="text-center text-sm text-gray-400">
+                Solo el rol 1 puede registrar o modificar cursos.
+              </p>
+            )}
           </div>
         </div>
 
@@ -291,7 +375,7 @@ const CrudCursos = () => {
                   <th className="p-3">Nivel</th>
                   <th className="p-3">Precio</th>
                   <th className="p-3">Docente</th>
-                  <th className="p-3 text-right">Acciones</th>
+                  {esAdministrador && <th className="p-3 text-right">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -331,7 +415,7 @@ const CrudCursos = () => {
                         <td className="p-3 font-mono text-sm text-gray-300">
                           {c.docenasig || '—'}
                         </td>
-                        <td className="p-3">
+                        {esAdministrador && <td className="p-3">
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
@@ -350,13 +434,13 @@ const CrudCursos = () => {
                               <i className="fa-solid fa-trash"></i>
                             </button>
                           </div>
-                        </td>
+                        </td>}
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center p-10 text-gray-500">
+                    <td colSpan={esAdministrador ? 5 : 4} className="text-center p-10 text-gray-500">
                       {busqueda
                         ? 'No hay cursos que coincidan con la búsqueda.'
                         : 'No hay cursos registrados.'}
@@ -434,30 +518,52 @@ const CrudCursos = () => {
 
               <div>
                 <label className="block text-sm font-bold mb-2 text-yellow-400">
-                  Cédula del docente{' '}
+                  Profesor del curso{' '}
                   <span className="text-gray-500 font-normal">(opcional)</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
-                  placeholder="Ej. V-12345678"
                   value={docenasig}
                   onChange={(e) => setDocenasig(e.target.value)}
-                />
+                  disabled={cargandoProfesores}
+                >
+                  <option value="">
+                    {cargandoProfesores ? 'Cargando profesores…' : 'Sin profesor asignado'}
+                  </option>
+                  {docenasig && !profesores.some((profesor) => profesor.ciempleado === docenasig) && (
+                    <option value={docenasig}>Profesor actual ({docenasig})</option>
+                  )}
+                  {profesores.map((profesor) => (
+                    <option key={profesor.ciempleado} value={profesor.ciempleado}>
+                      {profesor.nombreempleado} {profesor.apellidoempleado} — {profesor.ciempleado}
+                    </option>
+                  ))}
+                </select>
+                {errorProfesores && (
+                  <p role="alert" className="mt-2 text-sm text-red-300">
+                    No se pudo cargar la lista: {errorProfesores}
+                  </p>
+                )}
+                {!cargandoProfesores && !errorProfesores && profesores.length === 0 && (
+                  <p className="mt-2 text-sm text-gray-400">
+                    No hay profesores activos. Puedes registrar el curso sin asignarlo.
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+                  className="px-4 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition flex items-center gap-2"
                 >
-                  Cancelar
+                  <i className="fa-solid fa-xmark"></i> Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
+                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition flex items-center gap-2"
                 >
+                  <i className="fa-solid fa-save"></i>
                   {operation === 1 ? 'Guardar' : 'Actualizar'}
                 </button>
               </div>

@@ -82,7 +82,7 @@ const CrudOferta = () => {
           fetchResiliente(['/empleado/', '/empleados/']),
           fetchResiliente(['/modulo/', '/modulos/']),
           fetchResiliente(['/horarios/', '/horario/']),
-          fetchResiliente(['/api/horarios-materias'])
+          fetchResiliente(['/api/ofertas/', '/ofertas/', '/api/horarios-materias'])
         ]);
 
         const soloActivos = (lista) => 
@@ -110,11 +110,10 @@ const CrudOferta = () => {
   const crearAsignacion = async (e) => {
     e.preventDefault();
     if (!idMateria || !ciEmpleado || !idModulo || !idHorario) {
-      return show_alert('Debes completar todos los campos', 'warning');
+      return show_alert('Debes completar todos los campos requeridos', 'warning');
     }
 
     try {
-
       const payload = {
         idmateria: parseInt(idMateria, 10),
         ciempleado: String(ciEmpleado),
@@ -133,7 +132,57 @@ const CrudOferta = () => {
       cargarDatos();
     } catch (error) {
       console.error("Error en POST:", error);
-      show_alert('Error al consolidar la asignación', 'error');
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' 
+          ? detail 
+          : Array.isArray(detail) 
+            ? detail.map(e => e.msg).join('\n') 
+            : 'Error al consolidar la asignación', 
+        'error'
+      );
+    }
+  };
+
+  const eliminarAsignacion = async (itemCompleto) => {
+    if (Number(rolUsuario) !== 1) {
+      show_alert('No tienes permiso para eliminar ofertas académicas. Esta acción está reservada al rol 1.', 'warning');
+      return;
+    }
+
+    const idseccmo = itemCompleto.idseccmo;
+    if (!idseccmo) {
+      show_alert('No se puede eliminar: falta el identificador de la oferta académica. Recarga la página e inténtalo de nuevo.', 'error');
+      return;
+    }
+
+    const result = await MySwal.fire({
+      title: '¿Estás seguro?',
+      text: 'Se eliminará esta oferta académica y sus horarios asociados.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.delete(`/Oferta/${idseccmo}`);
+      show_alert('Oferta académica eliminada correctamente.', 'success');
+      await cargarDatos();
+    } catch (error) {
+      console.error("Error al eliminar oferta académica:", error);
+      const detail = error.response?.data?.detail ?? error.response?.data?.error_detalle;
+      const mensaje = error.response?.status === 403
+        ? 'Tu rol no tiene permiso para eliminar ofertas académicas. Esta acción está reservada al rol 1.'
+        : error.response?.status === 404
+          ? 'La oferta ya no existe. Actualiza la lista e inténtalo de nuevo.'
+          : typeof detail === 'string'
+            ? detail
+            : 'No se pudo eliminar la oferta. Puede estar vinculada a otros registros.';
+      show_alert(mensaje, 'error');
     }
   };
 
@@ -261,13 +310,14 @@ const CrudOferta = () => {
                       <th className="p-3">Día</th>
                       <th className="p-3">Horario</th>
                       <th className="p-3">Salón</th>
+                      <th className="p-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {asignaciones.length > 0 ? (
                       asignaciones.map((a, i) => (
                         <tr key={i} className="border-b border-gray-700 hover:bg-gray-800">
-                          <td className="p-3 font-mono text-gray-400">#{a.idmateria}</td>
+                          <td className="p-3 font-mono text-gray-400">#{a.idmateria ?? a.idseccmo}</td>
                           <td className="p-3 text-yellow-400 font-semibold">{a.materia}</td>
                           <td className="p-3 text-white font-medium">{a.modulo}</td>
                           <td className="p-3 text-gray-300">{a.docente}</td>
@@ -278,11 +328,22 @@ const CrudOferta = () => {
                             </span>
                           </td>
                           <td className="p-3 text-gray-300">{a.salon}</td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => eliminarAsignacion(a)}
+                              disabled={!a.idseccmo}
+                              className="bg-red-600 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 text-white px-3 py-1 rounded transition text-sm inline-flex items-center gap-1"
+                              title={Number(rolUsuario) !== 1 ? "Solo el rol 1 puede eliminar ofertas académicas" : a.idseccmo ? "Eliminar oferta académica" : "No existe una oferta con horario para eliminar"}
+                              aria-label={Number(rolUsuario) !== 1 ? "Eliminar no permitido: requiere rol 1" : a.idseccmo ? `Eliminar oferta ${a.idseccmo}` : "Oferta académica no disponible para eliminar"}
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center p-6 text-gray-500">
+                        <td colSpan="8" className="text-center p-6 text-gray-500">
                           No hay asignaciones registradas o no se pudo cargar la vista.
                         </td>
                       </tr>

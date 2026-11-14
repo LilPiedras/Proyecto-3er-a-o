@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime, time
 from typing import Optional
-from sqlalchemy import (Date, ForeignKey,Integer, String, Text)
+from sqlalchemy import Date, ForeignKey, Integer, String, Text, Time, text
 from sqlalchemy.orm import (Mapped, mapped_column)
 from models.base import Base
 
@@ -14,6 +14,11 @@ class Auditoria(Base):
     datos_anteriores: Mapped[Optional[str]] = mapped_column(Text)
     datos_nuevos: Mapped[Optional[str]] = mapped_column(Text)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    hora: Mapped[Optional[time]] = mapped_column(
+        Time,
+        default=lambda: datetime.now().time(),
+        server_default=text("LOCALTIME"),
+    )
 
     def __repr__(self) -> str:
         return f"<Auditoria id={self.idseria}>"

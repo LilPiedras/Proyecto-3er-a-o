@@ -135,7 +135,8 @@ CREATE TABLE public.auditoria (
     accion character varying(100) NOT NULL,
     datos_anteriores character varying(200),
     datos_nuevos character varying(200),
-    fecha date NOT NULL
+    fecha date NOT NULL,
+    hora time without time zone DEFAULT LOCALTIME
 );
 
 

@@ -4,7 +4,7 @@ from Schemas.mensualidad_schema import *
 from services import mensualidad_service
 from sqlalchemy.orm import Session
 from sqlalchemy import text  # 👈 Importante: agregar esta importación
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from typing import List
 from models.usuario_model import Usuario     
 from tokensitos.auth_depencias import VerificarRoles 
@@ -52,12 +52,21 @@ def obtener_mi_estado_mensualidad(
 ):
     return mensualidad_service.obtener_estado_mensualidad_reciente(current_user.ciuser, db)
 
+@mensualidad_route.get("/cotizacion")
+def obtener_cotizacion_mensualidad(
+    estudiante: str = Query(min_length=1, max_length=30),
+    periodo_id: int = Query(gt=0),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1])),
+):
+    return mensualidad_service.obtener_cotizacion_carreras(estudiante.strip(), periodo_id, db)
+
 @mensualidad_route.get("/{idmensualidad}", response_model=MensualidadSalida)
 def obtener_men(idmensualidad: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     return mensualidad_service.obtener_mensualidad_por_id(idmensualidad, db)
 
 @mensualidad_route.get("/", response_model=List[MensualidadSalida], status_code=status.HTTP_200_OK)
-def listar_mensualidad(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_mensualidad(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return mensualidad_service.listar_mensualidades(db)
 
 @mensualidad_route.post("/", response_model=MensualidadSalida, status_code=status.HTTP_201_CREATED)
