@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, ForeignKey, UniqueConstraint
+from sqlalchemy import Integer, String, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base import Base
 
@@ -9,13 +9,14 @@ class Asignacion_Docente(Base):
     empleado_id: Mapped[str] = mapped_column(String, ForeignKey("empleado.ciempleado"), nullable=False)
     materia_id: Mapped[int] = mapped_column(Integer, ForeignKey("materia.idmateria"), nullable=False)
     seccion_id: Mapped[int] = mapped_column(Integer, ForeignKey("seccion.idsecc"), nullable=False)
-    horario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("horario.idhorario"), nullable=True) # <-- Columna necesaria para el horario
+    horario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("horario.idhorario"), nullable=True)
     fecha_asignacion: Mapped[str] = mapped_column(String(30))
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     __table_args__ = (
         UniqueConstraint(
-            'empleado_id', 'materia_id', 'seccion_id', 
-            name='asignacion_docente_composite_key'
+            "empleado_id", "materia_id", "seccion_id",
+            name="asignacion_docente_composite_key"
         ),
     )
 

@@ -20,24 +20,36 @@ from Schemas.asistencia_schema import (
     AsistenciaLoteEntrada,
 )
 
+def _es_docente(usuario: Usuario) -> bool:
+    roles = getattr(usuario, "roles_activos", None)
+    if roles:
+        return 4 in roles
+    return False
+
+
+def _ci_docente(usuario: Usuario) -> str | None:
+    if usuario.empleado:
+        return str(usuario.empleado).strip()
+    if usuario.ciuser:
+        return str(usuario.ciuser).strip()
+    return None
 
 def _verificar_materia(idmateria: int, usuario: Usuario, db: Session) -> Materias:
-    materia = db.query(Materias).filter(
-        Materias.idmateria == idmateria,
-        Materias.activo.is_(True),
-    ).first()
+    materia = db.query(Materias).filter(Materias.idmateria == idmateria, Materias.activo.is_(True)).first()
     if materia is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La materia no existe o está inactiva")
-
-    if usuario.login_data.idrol == 4 and (
-        not usuario.empleado or materia.docente != usuario.empleado
-    ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo puedes gestionar la asistencia de tus materias asignadas",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La materia no existe o está inactiva",
         )
-    return materia
 
+    if _es_docente(usuario):
+        ci = _ci_docente(usuario)
+        if not ci or materia.docente != ci:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo puedes gestionar la asistencia de tus materias asignadas",
+            )
+    return materia
 
 def _estudiante_inscrito(idmateria: int, asisestu: str, db: Session) -> bool:
     inscripcion = (
@@ -64,13 +76,14 @@ def listar_materias(usuario: Usuario, db: Session):
         .join(Estudiante, Estudiante.ciestu == Oferta_seccion.estudiante)
         .filter(Materias.activo.is_(True), Estudiante.activo.is_(True))
     )
-    if usuario.login_data.idrol == 4:
-        if not usuario.empleado:
+    if _es_docente(usuario):
+        ci = _ci_docente(usuario)
+        if not ci:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="El usuario docente no tiene un empleado vinculado",
             )
-        query = query.filter(Materias.docente == usuario.empleado)
+        query = query.filter(Materias.docente == ci)
 
     return [
         {"idmateria": row.idmateria, "nombremateria": row.nombremateria}
@@ -88,13 +101,14 @@ def listar_secciones(usuario: Usuario, db: Session):
         .join(Estudiante, Estudiante.ciestu == Oferta_seccion.estudiante)
         .filter(Materias.activo.is_(True), Estudiante.activo.is_(True))
     )
-    if usuario.login_data.idrol == 4:
-        if not usuario.empleado:
+    if _es_docente(usuario):
+        ci = _ci_docente(usuario)
+        if not ci:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="El usuario docente no tiene un empleado vinculado",
             )
-        query = query.filter(Materias.docente == usuario.empleado)
+        query = query.filter(Materias.docente == ci)
 
     return [
         {"idsecc": row.idsecc, "nomsecc": row.nomsecc}
@@ -115,13 +129,14 @@ def listar_materias_por_seccion(idsecc: int, usuario: Usuario, db: Session):
             Estudiante.activo.is_(True),
         )
     )
-    if usuario.login_data.idrol == 4:
-        if not usuario.empleado:
+    if _es_docente(usuario):
+        ci = _ci_docente(usuario)
+        if not ci:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="El usuario docente no tiene un empleado vinculado",
             )
-        query = query.filter(Materias.docente == usuario.empleado)
+        query = query.filter(Materias.docente == ci)
 
     return [
         {"idmateria": row.idmateria, "nombremateria": row.nombremateria}

@@ -3,92 +3,136 @@ import api from '../api';
 
 export default function PanelDocenteNotas() {
   const [materiasDocente, setMateriasDocente] = useState([]);
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState('');
   const [estudiantes, setEstudiantes] = useState([]);
+  const [todosEstudiantes, setTodosEstudiantes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMaterias, setLoadingMaterias] = useState(true);
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState('');
 
-  // 1. Cargar la lista de materias que imparte el docente al montar el componente
+  const ciDocente =
+    localStorage.getItem('ciuser') ||
+    localStorage.getItem('ciempleado') ||
+    '';
+
   useEffect(() => {
-    const cargarMaterias = async () => {
+    const cargar = async () => {
+      if (!ciDocente) {
+        setError('No se encontró la cédula del docente en sesión.');
+        setLoadingMaterias(false);
+        return;
+      }
       try {
         setLoadingMaterias(true);
-        // Ajusta el endpoint según la ruta de materias que maneje tu backend
-        const { data } = await api.get('/materias/'); 
-        setMateriasDocente(Array.isArray(data) ? data : []);
+
+        // Estudiantes solo de sus materias (endpoint corregido)
+        const { data } = await api.get(`/Notas/docente/${ciDocente}/estudiantes`);
+        const lista = Array.isArray(data) ? data : [];
+        setTodosEstudiantes(lista);
+
+        // Materias únicas a partir de esos estudiantes
+        const map = new Map();
+        lista.forEach((e) => {
+          if (e.idmateria && !map.has(e.idmateria)) {
+            map.set(e.idmateria, {
+              idmateria: e.idmateria,
+              nombremateria: e.nombremateria || `Materia #${e.idmateria}`,
+            });
+          }
+        });
+        setMateriasDocente(Array.from(map.values()));
       } catch (err) {
-        console.error("Error al cargar las materias:", err);
+        console.error(err);
+        setError('No se pudieron cargar tus materias asignadas.');
+        setMateriasDocente([]);
+        setTodosEstudiantes([]);
       } finally {
         setLoadingMaterias(false);
       }
     };
-    cargarMaterias();
-  }, []);
+    cargar();
+  }, [ciDocente]);
 
-  // 2. Al seleccionar una materia, consultar los estudiantes inscritos
-  const handleSeleccionarMateria = async (e) => {
+  const handleSeleccionarMateria = (e) => {
     const idMat = e.target.value;
     setMateriaSeleccionada(idMat);
+    setMensaje('');
+    setError('');
     setEstudiantes([]);
-    setMensaje("");
-    setError("");
 
     if (!idMat) return;
 
     setLoading(true);
-    try {
-      const { data } = await api.get(`/docente/materias/${idMat}/estudiantes`);
-      // Mapeamos los datos para añadir un campo editable "nuevaNota"
-      setEstudiantes(
-        Array.isArray(data) ? data.map(est => ({ ...est, nuevaNota: est.nota })) : []
-      );
-    } catch (err) {
-      console.error("Error al cargar estudiantes:", err);
-      setError("No se pudieron cargar los estudiantes inscritos.");
-    } finally {
-      setLoading(false);
-    }
+    const filtrados = todosEstudiantes
+      .filter((est) => String(est.idmateria) === String(idMat))
+      .map((est) => ({
+        ...est,
+        ciuser: est.ciestu,
+        nombre: `${est.nombreestu || ''} ${est.apelliestu || ''}`.trim(),
+        nuevaNota: '',
+        idseccmo: est.idseccmo,
+      }));
+    setEstudiantes(filtrados);
+    setLoading(false);
   };
 
-  // 3. Manejar el cambio de notas en tiempo real dentro del input de la tabla
   const handleNotaChange = (ciuser, valor) => {
-    setEstudiantes(prev =>
-      prev.map(est => est.ciuser === ciuser ? { ...est, nuevaNota: valor } : est)
+    setEstudiantes((prev) =>
+      prev.map((est) =>
+        est.ciuser === ciuser ? { ...est, nuevaNota: valor } : est
+      )
     );
   };
 
-  // 4. Enviar las calificaciones al backend usando el endpoint masivo
   const handlePublicarNotas = async () => {
-    setError("");
-    setMensaje("");
+    setError('');
+    setMensaje('');
+
+    const conNota = estudiantes.filter(
+      (e) => e.nuevaNota !== '' && e.nuevaNota != null
+    );
+    if (conNota.length === 0) {
+      setError('Ingresa al menos una calificación.');
+      return;
+    }
 
     try {
-      const payload = estudiantes.map(est => ({
-        ciuser: est.ciuser,
-        idmateria: Number(materiaSeleccionada),
-        calificacion: parseFloat(est.nuevaNota) || 0.0
-      }));
-
-      await api.post('/docente/notas/publicar', payload);
-      setMensaje("¡Notas publicadas y actualizadas correctamente!");
+      for (const est of conNota) {
+        const valor = parseFloat(est.nuevaNota);
+        if (isNaN(valor) || valor < 0 || valor > 20) {
+          setError(`Nota inválida para ${est.nombre} (debe ser 0–20).`);
+          return;
+        }
+        await api.post(`/Notas/docente/${ciDocente}`, {
+          notas: valor,
+          oferta: est.idseccmo,
+          fechanota: new Date().toISOString().slice(0, 10),
+          idevaluacion: null,
+        });
+      }
+      setMensaje('¡Notas publicadas correctamente!');
     } catch (err) {
-      console.error("Error al publicar notas:", err);
-      setError("Ocurrió un error al intentar guardar las calificaciones.");
+      console.error(err);
+      const detail = err.response?.data?.detail;
+      setError(
+        typeof detail === 'string'
+          ? detail
+          : 'Error al guardar las calificaciones.'
+      );
     }
   };
 
   return (
     <div className="min-h-screen bg-[#1c180e] text-white p-6 pt-24 flex justify-center items-start">
       <div className="w-full max-w-4xl bg-[#11141d] border border-[#2b2518] rounded-3xl shadow-2xl p-8">
-        
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-100">PANEL DE DOCENTE</h1>
-          <p className="text-gray-400 mt-1 text-sm">Gestión de calificaciones y estudiantes inscritos.</p>
+          <p className="text-gray-400 mt-1 text-sm">
+            Solo ves las materias y estudiantes que tienes asignados.
+          </p>
         </div>
 
-        {/* Selector de Materias */}
         <div className="mb-6">
           <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
             Selecciona tu Materia
@@ -97,35 +141,37 @@ export default function PanelDocenteNotas() {
             value={materiaSeleccionada}
             onChange={handleSeleccionarMateria}
             disabled={loadingMaterias}
-            className="w-full bg-[#161a25] border border-[#252c3d] rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
+            className="w-full bg-[#161a25] border border-[#252c3d] rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
-            <option value="">{loadingMaterias ? "Cargando materias..." : "-- Selecciona una materia --"}</option>
-            {materiasDocente.map(mat => (
-              <option key={mat.idmateria || mat.id} value={mat.idmateria || mat.id}>
-                {mat.nombremateria || mat.nombre}
+            <option value="">
+              {loadingMaterias
+                ? 'Cargando materias...'
+                : materiasDocente.length === 0
+                  ? 'No tienes materias asignadas'
+                  : '-- Selecciona una materia --'}
+            </option>
+            {materiasDocente.map((mat) => (
+              <option key={mat.idmateria} value={mat.idmateria}>
+                {mat.nombremateria}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Estados de carga y mensajes */}
         {loading && (
-          <p className="text-center text-yellow-400 py-8 text-sm font-medium">Buscando estudiantes inscritos...</p>
+          <p className="text-center text-yellow-400 py-8 text-sm">Cargando estudiantes...</p>
         )}
-
         {error && (
-          <p className="text-red-400 text-sm font-medium bg-red-950/30 p-3 rounded-xl border border-red-900/50 mb-4">
+          <p className="text-red-400 text-sm bg-red-950/30 p-3 rounded-xl border border-red-900/50 mb-4">
             {error}
           </p>
         )}
-
         {mensaje && (
-          <p className="text-emerald-400 text-sm font-medium bg-emerald-950/30 p-3 rounded-xl border border-emerald-900/50 mb-4">
+          <p className="text-emerald-400 text-sm bg-emerald-950/30 p-3 rounded-xl border border-emerald-900/50 mb-4">
             {mensaje}
           </p>
         )}
 
-        {/* Tabla de Estudiantes */}
         {!loading && estudiantes.length > 0 && (
           <div>
             <div className="overflow-x-auto mb-6 border border-[#252c3d] rounded-xl">
@@ -139,9 +185,12 @@ export default function PanelDocenteNotas() {
                 </thead>
                 <tbody>
                   {estudiantes.map((est) => (
-                    <tr key={est.ciuser} className="border-b border-[#252c3d] hover:bg-[#161a25]/60 transition-all">
+                    <tr
+                      key={est.ciuser + '-' + est.idseccmo}
+                      className="border-b border-[#252c3d] hover:bg-[#161a25]/60"
+                    >
                       <td className="p-3.5 font-mono text-sm text-gray-300">{est.ciuser}</td>
-                      <td className="p-3.5 text-sm text-gray-200 font-medium">{est.nombre}</td>
+                      <td className="p-3.5 text-sm text-gray-200">{est.nombre}</td>
                       <td className="p-3.5 text-center">
                         <input
                           type="number"
@@ -158,12 +207,11 @@ export default function PanelDocenteNotas() {
                 </tbody>
               </table>
             </div>
-
             <div className="flex justify-end">
               <button
                 type="button"
                 onClick={handlePublicarNotas}
-                className="py-3 px-6 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition-all shadow-lg cursor-pointer text-sm"
+                className="py-3 px-6 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 text-sm"
               >
                 Publicar Notas
               </button>
@@ -172,9 +220,10 @@ export default function PanelDocenteNotas() {
         )}
 
         {!loading && materiaSeleccionada && estudiantes.length === 0 && !error && (
-          <p className="text-gray-500 text-center py-8 text-sm">No hay estudiantes inscritos en esta materia actualmente.</p>
+          <p className="text-gray-500 text-center py-8 text-sm">
+            No hay estudiantes inscritos en esta materia.
+          </p>
         )}
-
       </div>
     </div>
   );

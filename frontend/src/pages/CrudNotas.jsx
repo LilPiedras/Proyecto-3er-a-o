@@ -36,7 +36,7 @@ const CrudNotas = () => {
     setCiuser(localStorage.getItem("ciuser") || "");
   }, []);
 
-  const esDocenteOAdmin = [1, 2, "1", "2"].includes(rolUsuario);
+  const esDocenteOAdmin = [1, 2, 4, "1", "2", "4"].includes(rolUsuario);
   const esEstudiante = [5, "5"].includes(rolUsuario);
 
   const cargarNotasEstudiante = async (ci) => {
@@ -264,8 +264,8 @@ const CrudNotas = () => {
                       {estudiantes.length > 0
                         ? estudiantes.map((e) => (
                             <option key={e.idseccmo} value={e.idseccmo}>
-                              #{e.idseccmo} — {e.nombreestu} {e.apelliestu} ({e.ciestu}) — Secc:{" "}
-                              {e.idsecc}
+                              #{e.idseccmo} — {e.nombreestu} {e.apelliestu} ({e.ciestu})
+                              {e.nombremateria ? ` — ${e.nombremateria}` : ''} — Secc: {e.idsecc}
                             </option>
                           ))
                         : ofertas

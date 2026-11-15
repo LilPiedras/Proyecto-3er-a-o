@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import { show_alert } from "../components/functions/Showpro_functions";
+import HorarioVisual from "../components/HorarioVisual";
 
 const MiModulo = () => {
   const [data, setData] = useState(null);
@@ -130,39 +131,10 @@ const MiModulo = () => {
           )}
         </section>
 
-        {/* Horario */}
+        {/* Horario visual */}
         <section className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
           <h2 className="text-lg font-bold text-yellow-400 mb-4">Mi horario</h2>
-          {horarios?.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-yellow-400 text-xs uppercase border-b border-gray-700">
-                  <tr>
-                    <th className="p-2">Día</th>
-                    <th className="p-2">Hora</th>
-                    <th className="p-2">Salón</th>
-                    <th className="p-2">Materia</th>
-                    <th className="p-2">Docente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {horarios.map((h, i) => (
-                    <tr key={`${h.idhorario}-${i}`} className="border-b border-gray-800">
-                      <td className="p-2 font-medium">{h.dia}</td>
-                      <td className="p-2">
-                        {h.horainicio} – {h.horafin}
-                      </td>
-                      <td className="p-2">{h.salon}</td>
-                      <td className="p-2">{h.materia || "—"}</td>
-                      <td className="p-2 text-gray-300">{h.docente || "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">No hay horario registrado todavía.</p>
-          )}
+          <HorarioVisual horarios={horarios || []} />
         </section>
       </div>
     </div>

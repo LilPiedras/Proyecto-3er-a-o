@@ -77,18 +77,46 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
             detail="Esta oferta no tiene estudiante asignado. Asigna un estudiante primero."
         )
 
-    if nota_in.idevaluacion:
-        evaluacion = db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == nota_in.idevaluacion).first()
+    materias_docente = (db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all())
+    if not materias_docente:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes materias asignadas como docente"
+        )
 
+    ids_materias = {m.idmateria for m in materias_docente}
+
+    if nota_in.idevaluacion:
+        evaluacion = (
+            db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == nota_in.idevaluacion).first())
         if not evaluacion:
             raise HTTPException(status_code=404, detail="El plan de evaluación no existe")
 
-        materia = db.query(Materias).filter(Materias.idmateria == evaluacion.idmateria,Materias.activo.is_(True)).first()
-
-        if not materia or materia.docente != ci_docente:
+        if evaluacion.idmateria not in ids_materias:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No estás asignado como docente de esta materia"
+            )
+    else:
+        from sqlalchemy import text
+        row = db.execute(
+            text("""
+                SELECT m.idmateria
+                FROM oferta_seccion os
+                JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+                JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+                JOIN materia m ON m.idmateria = mm.idmateria
+                WHERE os.idseccmo = :idseccmo
+                  AND m.docente = :ci
+                  AND m.activo = true
+                LIMIT 1
+            """),
+            {"idseccmo": nota_in.oferta, "ci": ci_docente}).fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No estás asignado como docente de la materia de esta oferta"
             )
 
     nueva_nota = Notas(
@@ -103,20 +131,44 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
     db.refresh(nueva_nota)
     return nueva_nota
 
+
 def listar_estudiantes_del_docente(ci_docente: str, db: Session):
-    materias = (db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all())
+    from sqlalchemy import text
 
-    ofertas = (db.query(Oferta_seccion, Estudiante).join(Estudiante, Oferta_seccion.estudiante == Estudiante.ciestu).filter(Oferta_seccion.estudiante.isnot(None)).all())
+    filas = db.execute(
+        text("""
+            SELECT
+                os.idseccmo,
+                est.ciestu,
+                est.nombreestu,
+                est.apelliestu,
+                os.idsecc,
+                os.horario,
+                m.idmateria,
+                m.nombremateria
+            FROM oferta_seccion os
+            JOIN estudiante est ON est.ciestu = os.estudiante
+            JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+            JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+            JOIN materia m ON m.idmateria = mm.idmateria
+            WHERE os.estudiante IS NOT NULL
+              AND m.docente = :ci
+              AND m.activo = true
+            ORDER BY m.nombremateria, est.apelliestu, est.nombreestu
+        """),
+        {"ci": ci_docente}
+    ).fetchall()
 
-    resultado = []
-    for oferta, estu in ofertas:
-        resultado.append({
-            "idseccmo": oferta.idseccmo,
-            "ciestu": estu.ciestu,
-            "nombreestu": estu.nombreestu,
-            "apelliestu": estu.apelliestu,
-            "idsecc": oferta.idsecc,
-            "horario": oferta.horario,
-        })
-
-    return resultado
+    return [
+        {
+            "idseccmo": r[0],
+            "ciestu": r[1],
+            "nombreestu": r[2],
+            "apelliestu": r[3],
+            "idsecc": r[4],
+            "horario": r[5],
+            "idmateria": r[6],
+            "nombremateria": r[7],
+        }
+        for r in filas
+    ]
