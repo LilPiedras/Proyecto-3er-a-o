@@ -63,7 +63,6 @@ const CrudNotas = () => {
 
       const promesas = [
         api.get("/Oferta/").catch(() => ({ data: [] })),
-        api.get("/Notas/").catch(() => ({ data: [] })),
         api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
       ];
 
@@ -71,53 +70,43 @@ const CrudNotas = () => {
         promesas.push(
           api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
         );
+        promesas.push(
+          api.get(`/Notas/docente/${ci}/notas`).catch(() => ({ data: [] }))
+        );
       }
 
-      const [resOfertas, resNotas, resPlanes, resEstu] = await Promise.all(promesas);
+      const [resOfertas, resPlanes, resEstu, resNotas] = await Promise.all(promesas);
 
       setOfertas(Array.isArray(resOfertas.data) ? resOfertas.data : []);
-      setNotasLista(Array.isArray(resNotas.data) ? resNotas.data : []);
-      // Por defecto cargamos todos los planes, luego se filtran al seleccionar oferta
       setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []);
       setEstudiantes(resEstu && Array.isArray(resEstu.data) ? resEstu.data : []);
+      setNotasLista(resNotas && Array.isArray(resNotas.data) ? resNotas.data : []);
     } catch (error) {
       console.error(error);
       show_alert("Error al cargar datos de notas", "error");
     }
   };
 
-  // Cargar evaluaciones filtradas por la materia de la oferta seleccionada
-  const manejarCambioOferta = async (eIdSeccMo) => {
-    setOferta(eIdSeccMo);
-    setIdevaluacion("");
-
-    if (!eIdSeccMo) {
-      // Si desmarca, recargamos todos los planes por defecto
-      try {
-        const { data } = await api.get("/plan-evaluacion/");
-        setEvaluaciones(Array.isArray(data) ? data : []);
-      } catch {
-        setEvaluaciones([]);
-      }
-      return;
-    }
-
-    // Buscamos la materia asociada a esta oferta o estudiante asignado
-    const estudianteSeleccionado = estudiantes.find(
-      (est) => String(est.idseccmo) === String(eIdSeccMo)
-    );
-    
-    const idmateria = estudianteSeleccionado?.idmateria;
-
-    if (idmateria) {
-      try {
-        const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
-        setEvaluaciones(Array.isArray(data) ? data : []);
-      } catch {
-        setEvaluaciones([]);
-      }
-    }
-  };
+const manejarCambioOferta = async (eIdSeccMo) => {
+  setOferta(eIdSeccMo);
+  setIdevaluacion("");
+  if (!eIdSeccMo) {
+    setEvaluaciones([]);
+    return;
+  }
+  const est = estudiantes.find((x) => String(x.idseccmo) === String(eIdSeccMo));
+  const idmateria = est?.idmateria;
+  if (!idmateria) {
+    setEvaluaciones([]);
+    return;
+  }
+  try {
+    const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
+    setEvaluaciones(Array.isArray(data) ? data : []);
+  } catch {
+    setEvaluaciones([]);
+  }
+};
 
   useEffect(() => {
     if (rolUsuario === null) return;
@@ -144,8 +133,8 @@ const CrudNotas = () => {
     if (!ci) {
       return show_alert("No se encontró tu cédula en sesión. Vuelve a iniciar sesión.", "warning");
     }
-    if (!oferta || notaValor === "") {
-      return show_alert("Completa oferta y calificación", "warning");
+    if (!oferta || notaValor === "" || !idevaluacion) {
+      return show_alert("Completa oferta, evaluación del plan y calificación", "warning");
     }
 
     const valor = parseFloat(notaValor);
@@ -158,7 +147,7 @@ const CrudNotas = () => {
         notas: valor,
         oferta: parseInt(oferta, 10),
         fechanota: fechanota,
-        idevaluacion: idevaluacion ? parseInt(idevaluacion, 10) : null,
+        idevaluacion: parseInt(idevaluacion, 10), // siempre número
       };
 
       await api.post(`/Notas/docente/${ci}`, payload);
@@ -198,41 +187,40 @@ const CrudNotas = () => {
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-800 border-b border-gray-700 text-yellow-400 text-xs uppercase">
+                <thead className="bg-gray-800 text-yellow-400 text-xs uppercase">
                   <tr>
-                    <th className="p-3">ID Nota</th>
-                    <th className="p-3">Calificación</th>
-                    <th className="p-3">Oferta</th>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Nota</th>
+                    <th className="p-3">Estudiante</th>
+                    <th className="p-3">Materia</th>
                     <th className="p-3">Evaluación</th>
                     <th className="p-3">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {misNotas.length > 0 ? (
-                    misNotas.map((n) => (
-                      <tr
-                        key={n.idnota}
-                        className="border-b border-gray-700 hover:bg-gray-800"
-                      >
-                        <td className="p-3 font-mono text-gray-400">#{n.idnota}</td>
-                        <td className="p-3">
-                          <span
-                            className={`font-bold text-lg ${
-                              n.notas >= 10 ? "text-green-400" : "text-red-400"
-                            }`}
-                          >
-                            {Number(n.notas).toFixed(2)}
-                          </span>
+                  {notasLista.length > 0 ? (
+                    notasLista.map((n) => (
+                      <tr key={n.idnota} className="border-b border-gray-700">
+                        <td className="p-3">#{n.idnota}</td>
+                        <td className="p-3 font-bold text-yellow-400">
+                          {Number(n.notas).toFixed(2)}
                         </td>
-                        <td className="p-3">{n.oferta}</td>
-                        <td className="p-3">{n.idevaluacion ?? "—"}</td>
+                        <td className="p-3">
+                          {n.nombreestu
+                            ? `${n.nombreestu} ${n.apelliestu || ""}`
+                            : `Oferta #${n.oferta}`}
+                        </td>
+                        <td className="p-3">{n.nombremateria || "—"}</td>
+                        <td className="p-3">
+                          {n.titulo_evaluacion || n.idevaluacion || "—"}
+                        </td>
                         <td className="p-3">{n.fechanota}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center p-6 text-gray-500">
-                        Aún no tienes notas registradas.
+                      <td colSpan="6" className="text-center p-6 text-gray-500">
+                        No hay notas registradas.
                       </td>
                     </tr>
                   )}
@@ -286,21 +274,22 @@ const CrudNotas = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2 text-yellow-400">
-                      Plan evaluación (opcional)
-                    </label>
-                    <select
-                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
-                      value={idevaluacion}
-                      onChange={(e) => setIdevaluacion(e.target.value)}
-                    >
-                      <option value="">-- Ninguno --</option>
-                      {evaluaciones.map((ev) => (
-                        <option key={ev.idevaluacion} value={ev.idevaluacion}>
-                          {ev.titulo} ({ev.porcentaje}%)
-                        </option>
-                      ))}
-                    </select>
+                  <label className="block text-sm font-bold mb-2 text-yellow-400">
+                    Plan evaluación (obligatorio)
+                  </label>
+                  <select
+                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
+                    value={idevaluacion}
+                    onChange={(e) => setIdevaluacion(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Seleccionar evaluación --</option>
+                    {evaluaciones.map((ev) => (
+                      <option key={ev.idevaluacion} value={ev.idevaluacion}>
+                        {ev.titulo} ({ev.porcentaje}%)
+                      </option>
+                    ))}
+                  </select>
                     <p className="text-xs text-gray-500 mt-1">
                       Evaluaciones filtradas según la materia seleccionada.
                     </p>

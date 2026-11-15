@@ -17,8 +17,8 @@ class AsignacionSchema(BaseModel):
     ciempleado: Union[int, str]
     idmodulo: Union[int, str]
     idhorario: Union[int, str]
-    idcarrera: Optional[Union[int, str]] = None
-    idsecc: Optional[Union[int, str]] = None
+    idcarrera: Union[int, str]
+    idsecc: Union[int, str]
 
 @hrouter.get("/horarios-materias")
 def obtener_horarios_materias(db: Session = Depends(get_db)):
@@ -30,21 +30,27 @@ def obtener_horarios_materias(db: Session = Depends(get_db)):
                 COALESCE(m.nombremateria, 'Oferta académica #' || os.idseccmo::text) AS materia,
                 COALESCE(mod.nombremodulo, 'Sin módulo') AS modulo,
                 COALESCE(e.nombreempleado || ' ' || e.apellidoempleado, 'Sin docente asignado') AS docente,
+                e.ciempleado,
                 COALESCE(h.dia, 'Por definir') AS dia,
                 COALESCE(h.salon, 'S/N') AS salon,
-                COALESCE(b.horainicio, '--:--') AS horainicio,
-                COALESCE(b.horafin, '--:--') AS horafin,
-                e.ciempleado AS ciempleado
+                COALESCE(b.horainicio::text, '--:--') AS horainicio,
+                COALESCE(b.horafin::text, '--:--') AS horafin,
+                os.idsecc,
+                COALESCE(s.nomsecc, 'Sin sección') AS seccion,
+                os.idcarrera,
+                COALESCE(c.nombrecarrera, 'Sin carrera') AS carrera
             FROM public.oferta_seccion os
             LEFT JOIN public.horario h ON os.horario = h.idhorario
             LEFT JOIN public.bloque b ON h.bloque = b.idbloque
+            LEFT JOIN public.seccion s ON s.idsecc = os.idsecc
+            LEFT JOIN public.carrera c ON c.idcarrera = os.idcarrera
             LEFT JOIN public.carrera_modulo cm ON cm.idcarremo = os.idcarremo
             LEFT JOIN public.materias_modulo mm ON mm.idmatemo = cm.idmatemo
             LEFT JOIN public.materia m ON m.idmateria = mm.idmateria
             LEFT JOIN public.modulo mod ON mod.idmodulo = mm.idmodulo
             LEFT JOIN public.empleado e ON m.docente = e.ciempleado
             WHERE os.horario IS NOT NULL
-            ORDER BY os.idseccmo DESC;
+            ORDER BY os.idseccmo DESC
         """)
         resultado = db.execute(query).fetchall()
 
@@ -55,11 +61,15 @@ def obtener_horarios_materias(db: Session = Depends(get_db)):
                 "materia": row[2],
                 "modulo": row[3],
                 "docente": row[4],
-                "dia": row[5],
-                "salon": row[6],
-                "horainicio": str(row[7]),
-                "horafin": str(row[8]),
-                "ciempleado": row[9],
+                "ciempleado": row[5],
+                "dia": row[6],
+                "salon": row[7],
+                "horainicio": str(row[8]),
+                "horafin": str(row[9]),
+                "idsecc": row[10],
+                "seccion": row[11],
+                "idcarrera": row[12],
+                "carrera": row[13],
             }
             for row in resultado
         ]
@@ -76,113 +86,101 @@ def asignar_horario_materia(datos: AsignacionSchema, db: Session = Depends(get_d
         ciempleado = str(datos.ciempleado).strip()
         idmodulo = int(datos.idmodulo)
         idhorario = int(datos.idhorario)
+        idcarrera = int(datos.idcarrera)
+        idsecc = int(datos.idsecc)
 
         db.execute(
             text("UPDATE materia SET docente = :docente WHERE idmateria = :idmateria"),
-            {"docente": ciempleado, "idmateria": idmateria}
+            {"docente": ciempleado, "idmateria": idmateria},
         )
 
-        matemo = db.execute(
+        mm = db.execute(
             text("""
                 SELECT idmatemo FROM materias_modulo
                 WHERE idmateria = :idmateria AND idmodulo = :idmodulo
                 LIMIT 1
             """),
-            {"idmateria": idmateria, "idmodulo": idmodulo}
+            {"idmateria": idmateria, "idmodulo": idmodulo},
         ).fetchone()
 
-        if matemo:
-            idmatemo = matemo[0]
+        if mm:
+            idmatemo = mm[0]
         else:
-
-            existente = db.execute(text("SELECT idmatemo FROM materias_modulo WHERE idmateria = :idmateria LIMIT 1"), {"idmateria": idmateria}).fetchone()
-
-            if existente:
+            mm_any = db.execute(
+                text("SELECT idmatemo FROM materias_modulo WHERE idmateria = :idmateria LIMIT 1"),
+                {"idmateria": idmateria},
+            ).fetchone()
+            if mm_any:
                 db.execute(
                     text("UPDATE materias_modulo SET idmodulo = :idmodulo WHERE idmatemo = :idmatemo"),
-                    {"idmodulo": idmodulo, "idmatemo": existente[0]}
+                    {"idmodulo": idmodulo, "idmatemo": mm_any[0]},
                 )
-                idmatemo = existente[0]
+                idmatemo = mm_any[0]
             else:
-                row = db.execute(
+                idmatemo = db.execute(
                     text("""
                         INSERT INTO materias_modulo (idmateria, idmodulo)
                         VALUES (:idmateria, :idmodulo)
                         RETURNING idmatemo
                     """),
-                    {"idmateria": idmateria, "idmodulo": idmodulo}).fetchone()
-                idmatemo = row[0]
+                    {"idmateria": idmateria, "idmodulo": idmodulo},
+                ).scalar()
 
-        idcarrera = int(datos.idcarrera) if datos.idcarrera else None
-        idsecc = int(datos.idsecc) if datos.idsecc else None
-
-        if not idcarrera:
-            carrera_row = db.execute(text("SELECT idcarrera FROM carrera LIMIT 1")).fetchone()
-            if not carrera_row:
-                raise Exception("No existen carreras registradas.")
-            idcarrera = carrera_row[0]
-
-        if not idsecc:
-            seccion_row = db.execute(text("SELECT idsecc FROM seccion LIMIT 1")).fetchone()
-            if not seccion_row:
-                raise Exception("No existen secciones registradas.")
-            idsecc = seccion_row[0]
-
-        carremo = db.execute(
+        cm = db.execute(
             text("""
                 SELECT idcarremo FROM carrera_modulo
                 WHERE idmatemo = :idmatemo AND idcarrera = :idcarrera
                 LIMIT 1
             """),
-            {"idmatemo": idmatemo, "idcarrera": idcarrera}
+            {"idmatemo": idmatemo, "idcarrera": idcarrera},
         ).fetchone()
 
-        if carremo:
-            idcarremo = carremo[0]
+        if cm:
+            idcarremo = cm[0]
             db.execute(
-                text("UPDATE carrera_modulo SET activo = true WHERE idcarremo = :idcarremo"),
-                {"idcarremo": idcarremo}
+                text("UPDATE carrera_modulo SET activo = TRUE WHERE idcarremo = :id"),
+                {"id": idcarremo},
             )
         else:
-            row = db.execute(
+            idcarremo = db.execute(
                 text("""
                     INSERT INTO carrera_modulo (idmatemo, idcarrera, activo)
-                    VALUES (:idmatemo, :idcarrera, true)
+                    VALUES (:idmatemo, :idcarrera, TRUE)
                     RETURNING idcarremo
                 """),
-                {"idmatemo": idmatemo, "idcarrera": idcarrera}
-            ).fetchone()
-            idcarremo = row[0]
+                {"idmatemo": idmatemo, "idcarrera": idcarrera},
+            ).scalar()
 
         oferta = db.execute(
             text("""
                 SELECT idseccmo FROM oferta_seccion
                 WHERE idcarrera = :idcarrera
                   AND idsecc = :idsecc
-                  AND (idcarremo = :idcarremo OR idcarremo IS NULL)
-                ORDER BY idseccmo DESC
+                  AND horario = :idhorario
+                  AND idcarremo = :idcarremo
+                  AND estudiante IS NULL
                 LIMIT 1
             """),
-            {"idcarrera": idcarrera, "idsecc": idsecc, "idcarremo": idcarremo}
+            {
+                "idcarrera": idcarrera,
+                "idsecc": idsecc,
+                "idhorario": idhorario,
+                "idcarremo": idcarremo,
+            },
         ).fetchone()
 
         if oferta:
+            idseccmo = oferta[0]
             db.execute(
                 text("""
                     UPDATE oferta_seccion
-                    SET horario = :idhorario,
-                        idcarremo = :idcarremo
+                    SET horario = :idhorario, idcarremo = :idcarremo
                     WHERE idseccmo = :idseccmo
                 """),
-                {
-                    "idhorario": idhorario,
-                    "idcarremo": idcarremo,
-                    "idseccmo": oferta[0],
-                }
+                {"idhorario": idhorario, "idcarremo": idcarremo, "idseccmo": idseccmo},
             )
-            idseccmo = oferta[0]
         else:
-            row = db.execute(
+            idseccmo = db.execute(
                 text("""
                     INSERT INTO oferta_seccion (idcarrera, idsecc, horario, idcarremo)
                     VALUES (:idcarrera, :idsecc, :idhorario, :idcarremo)
@@ -193,48 +191,8 @@ def asignar_horario_materia(datos: AsignacionSchema, db: Session = Depends(get_d
                     "idsecc": idsecc,
                     "idhorario": idhorario,
                     "idcarremo": idcarremo,
-                }
-            ).fetchone()
-            idseccmo = row[0]
-
-        try:
-            ya = db.execute(
-                text("""
-                    SELECT id_asignacion_docente FROM asignacion_docente
-                    WHERE empleado_id = :ci
-                      AND materia_id = :mat
-                      AND seccion_id = :secc
-                    LIMIT 1
-                """),
-                {"ci": ciempleado, "mat": idmateria, "secc": idsecc}
-            ).fetchone()
-
-            if not ya:
-                db.execute(
-                    text("""
-                        INSERT INTO asignacion_docente
-                            (empleado_id, materia_id, seccion_id, fecha_asignacion, horario_id, activo)
-                        VALUES
-                            (:ci, :mat, :secc, CURRENT_DATE::text, :horario, true)
-                    """),
-                    {
-                        "ci": ciempleado,
-                        "mat": idmateria,
-                        "secc": idsecc,
-                        "horario": idhorario,
-                    }
-                )
-            else:
-                db.execute(
-                    text("""
-                        UPDATE asignacion_docente
-                        SET horario_id = :horario, activo = true
-                        WHERE id_asignacion_docente = :id
-                    """),
-                    {"horario": idhorario, "id": ya[0]}
-                )
-        except Exception:
-            pass
+                },
+            ).scalar()
 
         db.commit()
         return JSONResponse(
@@ -244,7 +202,7 @@ def asignar_horario_materia(datos: AsignacionSchema, db: Session = Depends(get_d
                 "idcarremo": idcarremo,
                 "idmatemo": idmatemo,
             },
-            status_code=200
+            status_code=200,
         )
 
     except Exception as e:

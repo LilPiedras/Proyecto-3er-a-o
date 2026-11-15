@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from models.materias_model import Materias
 from models.notas_model import Notas
@@ -74,89 +75,92 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
     if not oferta.estudiante:
         raise HTTPException(
             status_code=400,
-            detail="Esta oferta no tiene estudiante asignado. Asigna un estudiante primero."
+            detail="Esta oferta no tiene estudiante asignado. Asigna un estudiante primero.",
         )
 
-    materias_docente = (db.query(Materias).filter(Materias.docente == ci_docente, Materias.activo.is_(True)).all())
-    if not materias_docente:
+    if not nota_in.idevaluacion:
+        raise HTTPException(
+            status_code=400,
+            detail="Debes indicar una evaluación del plan (idevaluacion).",
+        )
+
+    evaluacion = (db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == nota_in.idevaluacion).first())
+    if not evaluacion:
+        raise HTTPException(status_code=404, detail="El plan de evaluación no existe")
+
+    materia = (db.query(Materias).filter(Materias.idmateria == evaluacion.idmateria, Materias.activo.is_(True)).first())
+    if not materia:
+        raise HTTPException(status_code=404, detail="La materia del plan no existe")
+
+    if materia.docente != ci_docente:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes materias asignadas como docente"
+            detail="No estás asignado como docente de esta materia",
         )
 
-    ids_materias = {m.idmateria for m in materias_docente}
-
-    if nota_in.idevaluacion:
-        evaluacion = (
-            db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == nota_in.idevaluacion).first())
-        if not evaluacion:
-            raise HTTPException(status_code=404, detail="El plan de evaluación no existe")
-
-        if evaluacion.idmateria not in ids_materias:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No estás asignado como docente de esta materia"
-            )
-    else:
-        from sqlalchemy import text
+    if oferta.idcarremo:
         row = db.execute(
             text("""
-                SELECT m.idmateria
-                FROM oferta_seccion os
-                JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+                SELECT mm.idmateria
+                FROM carrera_modulo cm
                 JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
-                JOIN materia m ON m.idmateria = mm.idmateria
-                WHERE os.idseccmo = :idseccmo
-                  AND m.docente = :ci
-                  AND m.activo = true
+                WHERE cm.idcarremo = :idcarremo
                 LIMIT 1
             """),
-            {"idseccmo": nota_in.oferta, "ci": ci_docente}).fetchone()
-
-        if not row:
+            {"idcarremo": oferta.idcarremo},
+        ).fetchone()
+        if row and int(row[0]) != int(evaluacion.idmateria):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No estás asignado como docente de la materia de esta oferta"
+                status_code=400,
+                detail="La evaluación no pertenece a la materia de esta oferta",
             )
+
+    existe = (
+        db.query(Notas).filter(
+            Notas.oferta == nota_in.oferta,
+            Notas.idevaluacion == nota_in.idevaluacion,
+            Notas.activo.is_(True)).first()
+    )
+    if existe:
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe una nota para esta oferta y esta evaluación. Edítala en lugar de crear otra.",
+        )
 
     nueva_nota = Notas(
         oferta=nota_in.oferta,
         notas=nota_in.notas,
         fechanota=nota_in.fechanota,
         idevaluacion=nota_in.idevaluacion,
-        activo=True
+        activo=True,
     )
     db.add(nueva_nota)
     db.commit()
     db.refresh(nueva_nota)
     return nueva_nota
 
-
 def listar_estudiantes_del_docente(ci_docente: str, db: Session):
-    from sqlalchemy import text
-
-    filas = db.execute(
+    rows = db.execute(
         text("""
             SELECT
                 os.idseccmo,
-                est.ciestu,
-                est.nombreestu,
-                est.apelliestu,
+                e.ciestu,
+                e.nombreestu,
+                e.apelliestu,
                 os.idsecc,
                 os.horario,
                 m.idmateria,
                 m.nombremateria
             FROM oferta_seccion os
-            JOIN estudiante est ON est.ciestu = os.estudiante
-            JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
-            JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
-            JOIN materia m ON m.idmateria = mm.idmateria
+            JOIN estudiante e ON e.ciestu = os.estudiante AND e.activo IS TRUE
+            LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+            LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+            LEFT JOIN materia m ON m.idmateria = mm.idmateria AND m.activo IS TRUE
             WHERE os.estudiante IS NOT NULL
               AND m.docente = :ci
-              AND m.activo = true
-            ORDER BY m.nombremateria, est.apelliestu, est.nombreestu
+            ORDER BY e.apelliestu, e.nombreestu
         """),
-        {"ci": ci_docente}
+        {"ci": ci_docente},
     ).fetchall()
 
     return [
@@ -170,5 +174,51 @@ def listar_estudiantes_del_docente(ci_docente: str, db: Session):
             "idmateria": r[6],
             "nombremateria": r[7],
         }
-        for r in filas
+        for r in rows
+    ]
+
+def listar_notas_del_docente(ci_docente: str, db: Session):
+    rows = db.execute(
+        text("""
+            SELECT
+                n.idnota,
+                n.notas,
+                n.oferta,
+                n.idevaluacion,
+                n.fechanota,
+                n.activo,
+                e.ciestu,
+                e.nombreestu,
+                e.apelliestu,
+                pe.titulo AS titulo_evaluacion,
+                m.nombremateria
+            FROM nota n
+            JOIN oferta_seccion os ON os.idseccmo = n.oferta
+            JOIN estudiante e ON e.ciestu = os.estudiante
+            LEFT JOIN plan_evaluacion pe ON pe.idevaluacion = n.idevaluacion
+            LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+            LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+            LEFT JOIN materia m ON m.idmateria = mm.idmateria
+            WHERE n.activo IS TRUE
+              AND m.docente = :ci
+            ORDER BY n.idnota DESC
+        """),
+        {"ci": ci_docente},
+    ).fetchall()
+
+    return [
+        {
+            "idnota": r[0],
+            "notas": float(r[1]) if r[1] is not None else None,
+            "oferta": r[2],
+            "idevaluacion": r[3],
+            "fechanota": r[4].isoformat() if r[4] else None,
+            "activo": r[5],
+            "ciestu": r[6],
+            "nombreestu": r[7],
+            "apelliestu": r[8],
+            "titulo_evaluacion": r[9],
+            "nombremateria": r[10],
+        }
+        for r in rows
     ]

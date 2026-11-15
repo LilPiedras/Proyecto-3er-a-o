@@ -128,20 +128,42 @@ def asignar_estudiante_a_oferta(idseccmo: int, ciestu: str, db: Session):
     if not oferta:
         raise HTTPException(status_code=404, detail="La oferta académica no existe")
 
-    estudiante = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo.is_(True)).first()
+    estudiante = (db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo.is_(True)).first())
     if not estudiante:
         raise HTTPException(status_code=404, detail="El estudiante no existe o está inactivo")
 
-    if oferta.estudiante is not None:
+    ya = (
+        db.query(Oferta_seccion).filter(
+            Oferta_seccion.estudiante == ciestu,
+            Oferta_seccion.idcarrera == oferta.idcarrera,
+            Oferta_seccion.idsecc == oferta.idsecc,
+            Oferta_seccion.idcarremo == oferta.idcarremo,
+            Oferta_seccion.horario == oferta.horario,
+        ).first()
+    )
+    if ya:
         raise HTTPException(
             status_code=409,
-            detail=f"Esta oferta ya tiene asignado al estudiante {oferta.estudiante}"
+            detail="Este estudiante ya está asignado a esta oferta (sección/materia/horario)",
         )
 
-    oferta.estudiante = ciestu
+    if oferta.estudiante is None:
+        oferta.estudiante = ciestu
+        db.commit()
+        db.refresh(oferta)
+        return oferta
+
+    nueva = Oferta_seccion(
+        idcarrera=oferta.idcarrera,
+        idsecc=oferta.idsecc,
+        horario=oferta.horario,
+        idcarremo=oferta.idcarremo,
+        estudiante=ciestu,
+    )
+    db.add(nueva)
     db.commit()
-    db.refresh(oferta)
-    return oferta
+    db.refresh(nueva)
+    return nueva
 
 def desasignar_estudiante(idseccmo: int, db: Session):
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()

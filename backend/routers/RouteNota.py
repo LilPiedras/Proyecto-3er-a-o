@@ -25,11 +25,15 @@ def ver_notas_estudiante(ciestu: str, idmateria: Optional[int] = None, db: Sessi
     return notas_service.obtener_notas_estudiante(ciestu, idmateria, db)
 
 @notas_route.get("/docente/{ci_docente}/estudiantes", status_code=status.HTTP_200_OK)
-def estudiantes_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+def estudiantes_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
     return notas_service.listar_estudiantes_del_docente(ci_docente, db)
 
+@notas_route.get("/docente/{ci_docente}/notas", status_code=status.HTTP_200_OK)
+def notas_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
+    return notas_service.listar_notas_del_docente(ci_docente, db)
+
 @notas_route.post("/docente/{ci_docente}", response_model=NotasSalida, status_code=status.HTTP_201_CREATED)
-def publicar_nota_docente(ci_docente: str, nota: NotasEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+def publicar_nota_docente(ci_docente: str, nota: NotasEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
     return notas_service.crear_nota_validando_docente(nota, ci_docente, db)
 
 @notas_route.get("/", response_model=List[NotasSalida], status_code=status.HTTP_200_OK)
