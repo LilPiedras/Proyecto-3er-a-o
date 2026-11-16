@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pencil, Trash2, Eye } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -158,7 +159,6 @@ const CrudSeccion = () => {
       return;
     }
 
-    // Buscar la carrera a partir del idcarremo seleccionado
     const relacion = carrerasModulos.find(
       (cm) => Number(cm.idcarremo) === idcarremo
     );
@@ -173,7 +173,7 @@ const CrudSeccion = () => {
 
     try {
       const payload = {
-        idcarrera: Number(relacion.idcarrera), // ← ESTE era el que faltaba
+        idcarrera: Number(relacion.idcarrera),
         idcarremo,
         idsecc: Number(selectedSection.idsecc),
         estudiante: studentForm.estudiante,
@@ -419,29 +419,32 @@ const CrudSeccion = () => {
                         </td>
                         <td className="p-3">
                           <div className="flex justify-end gap-2">
+                            {/* Botón azul con icono de Ojo (Eye) */}
                             <button
                               type="button"
-                              title="Estudiantes"
+                              title="Ver Estudiantes"
                               onClick={() => openStudentsModal(s)}
-                              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition"
+                              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition flex items-center justify-center"
                             >
-                              <i className="fa-solid fa-users"></i>
+                              <Eye size={16} />
                             </button>
+                            {/* Botón amarillo con icono de Lápiz */}
                             <button
                               type="button"
                               title="Editar"
                               onClick={() => openModal(2, s)}
-                              className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                              className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center"
                             >
-                              <i className="fa-solid fa-pen"></i>
+                              <Pencil size={16} />
                             </button>
+                            {/* Botón rojo con icono de Papelera */}
                             <button
                               type="button"
                               title="Eliminar"
                               onClick={() => deleteSeccion(s)}
-                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition flex items-center justify-center"
                             >
-                              <i className="fa-solid fa-trash"></i>
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>
@@ -683,9 +686,9 @@ const CrudSeccion = () => {
                           type="button"
                           title="Quitar"
                           onClick={() => eliminarEstudianteDeSeccion(inscrito)}
-                          className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition shrink-0"
+                          className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition shrink-0 flex items-center justify-center"
                         >
-                          <i className="fa-solid fa-trash"></i>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     ))

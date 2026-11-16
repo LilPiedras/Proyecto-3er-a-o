@@ -38,6 +38,7 @@ const CrudNotas = () => {
 
   const esDocenteOAdmin = [1, 2, 4, "1", "2", "4"].includes(rolUsuario);
   const esEstudiante = [5, "5"].includes(rolUsuario);
+  const esRolAdministrador = [1, "1"].includes(rolUsuario);
 
   const cargarNotasEstudiante = async (ci) => {
     try {
@@ -62,51 +63,81 @@ const CrudNotas = () => {
       const ci = localStorage.getItem("ciuser") || "";
 
       const promesas = [
-        api.get("/Oferta/").catch(() => ({ data: [] })),
         api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
       ];
 
-      if (ci) {
+      if (esRolAdministrador) {
+        // El administrador ve todas las ofertas y todas las notas del sistema
+        promesas.push(api.get("/Oferta/").catch(() => ({ data: [] })));
+        promesas.push(api.get("/Notas/").catch(() => ({ data: [] })));
+        if (ci) {
+          promesas.push(
+            api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
+          );
+        } else {
+          promesas.push(Promise.resolve({ data: [] }));
+        }
+      } else {
+        // El docente exclusivo solo carga las ofertas y estudiantes vinculados estrictamente a su cédula
         promesas.push(
-          api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] }))
+          ci ? api.get(`/Oferta/docente/${ci}`).catch(() => api.get("/Oferta/")) : Promise.resolve({ data: [] })
         );
         promesas.push(
-          api.get(`/Notas/docente/${ci}/notas`).catch(() => ({ data: [] }))
+          ci ? api.get(`/Notas/docente/${ci}/notas`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
+        );
+        promesas.push(
+          ci ? api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
         );
       }
 
-      const [resOfertas, resPlanes, resEstu, resNotas] = await Promise.all(promesas);
+      const resultados = await Promise.all(promesas);
 
-      setOfertas(Array.isArray(resOfertas.data) ? resOfertas.data : []);
-      setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []);
-      setEstudiantes(resEstu && Array.isArray(resEstu.data) ? resEstu.data : []);
-      setNotasLista(resNotas && Array.isArray(resNotas.data) ? resNotas.data : []);
+      if (esRolAdministrador) {
+        const [resPlanes, resOfertas, resNotas, resEstu] = resultados;
+        setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []);
+        setOfertas(Array.isArray(resOfertas.data) ? resOfertas.data : []);
+        setNotasLista(resNotas && Array.isArray(resNotas.data) ? resNotas.data : []);
+        setEstudiantes(resEstu && Array.isArray(resEstu.data) ? resEstu.data : []);
+      } else {
+        const [resPlanes, resOfertas, resNotas, resEstu] = resultados;
+        setEvaluaciones(Array.isArray(resPlanes.data) ? resPlanes.data : []);
+        const ofertasData = Array.isArray(resOfertas.data) ? resOfertas.data : [];
+        setOfertas(ofertasData);
+        setNotasLista(resNotas && Array.isArray(resNotas.data) ? resNotas.data : []);
+        
+        let listaEstudiantes = resEstu && Array.isArray(resEstu.data) ? resEstu.data : [];
+        if (listaEstudiantes.length === 0 && ofertasData.length > 0) {
+          listaEstudiantes = ofertasData;
+        }
+        setEstudiantes(listaEstudiantes);
+      }
     } catch (error) {
       console.error(error);
       show_alert("Error al cargar datos de notas", "error");
     }
   };
 
-const manejarCambioOferta = async (eIdSeccMo) => {
-  setOferta(eIdSeccMo);
-  setIdevaluacion("");
-  if (!eIdSeccMo) {
-    setEvaluaciones([]);
-    return;
-  }
-  const est = estudiantes.find((x) => String(x.idseccmo) === String(eIdSeccMo));
-  const idmateria = est?.idmateria;
-  if (!idmateria) {
-    setEvaluaciones([]);
-    return;
-  }
-  try {
-    const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
-    setEvaluaciones(Array.isArray(data) ? data : []);
-  } catch {
-    setEvaluaciones([]);
-  }
-};
+  const manejarCambioOferta = async (eIdSeccMo) => {
+    setOferta(eIdSeccMo);
+    setIdevaluacion("");
+    if (!eIdSeccMo) {
+      setEvaluaciones([]);
+      return;
+    }
+    const est = estudiantes.find((x) => String(x.idseccmo) === String(eIdSeccMo)) ||
+                ofertas.find((x) => String(x.idseccmo) === String(eIdSeccMo));
+    const idmateria = est?.idmateria;
+    if (!idmateria) {
+      setEvaluaciones([]);
+      return;
+    }
+    try {
+      const { data } = await api.get(`/plan-evaluacion/materia/${idmateria}`);
+      setEvaluaciones(Array.isArray(data) ? data : []);
+    } catch {
+      setEvaluaciones([]);
+    }
+  };
 
   useEffect(() => {
     if (rolUsuario === null) return;
@@ -147,7 +178,7 @@ const manejarCambioOferta = async (eIdSeccMo) => {
         notas: valor,
         oferta: parseInt(oferta, 10),
         fechanota: fechanota,
-        idevaluacion: parseInt(idevaluacion, 10), // siempre número
+        idevaluacion: parseInt(idevaluacion, 10),
       };
 
       await api.post(`/Notas/docente/${ci}`, payload);
@@ -252,7 +283,7 @@ const manejarCambioOferta = async (eIdSeccMo) => {
                       {estudiantes.length > 0
                         ? estudiantes.map((e) => (
                             <option key={e.idseccmo} value={e.idseccmo}>
-                              #{e.idseccmo} — {e.nombreestu} {e.apelliestu} ({e.ciestu})
+                              #{e.idseccmo} — {e.nombreestu || e.estudiante || 'Estudiante'} {e.apelliestu || ''} ({e.ciestu || e.ci || 'CI'})
                               {e.nombremateria ? ` — ${e.nombremateria}` : ''} — Secc: {e.idsecc}
                             </option>
                           ))
@@ -268,28 +299,28 @@ const manejarCambioOferta = async (eIdSeccMo) => {
                     {estudiantes.length === 0 &&
                       ofertas.filter((o) => o.estudiante).length === 0 && (
                         <p className="text-xs text-red-400 mt-1">
-                          No hay ofertas con estudiante asignado. Asigna un estudiante a una oferta.
+                          No hay ofertas con estudiante asignado en tus materias.
                         </p>
                       )}
                   </div>
 
                   <div>
-                  <label className="block text-sm font-bold mb-2 text-yellow-400">
-                    Plan evaluación (obligatorio)
-                  </label>
-                  <select
-                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
-                    value={idevaluacion}
-                    onChange={(e) => setIdevaluacion(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Seleccionar evaluación --</option>
-                    {evaluaciones.map((ev) => (
-                      <option key={ev.idevaluacion} value={ev.idevaluacion}>
-                        {ev.titulo} ({ev.porcentaje}%)
-                      </option>
-                    ))}
-                  </select>
+                    <label className="block text-sm font-bold mb-2 text-yellow-400">
+                      Plan evaluación (obligatorio)
+                    </label>
+                    <select
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
+                      value={idevaluacion}
+                      onChange={(e) => setIdevaluacion(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Seleccionar evaluación --</option>
+                      {evaluaciones.map((ev) => (
+                        <option key={ev.idevaluacion} value={ev.idevaluacion}>
+                          {ev.titulo} ({ev.porcentaje}%)
+                        </option>
+                      ))}
+                    </select>
                     <p className="text-xs text-gray-500 mt-1">
                       Evaluaciones filtradas según la materia seleccionada.
                     </p>
@@ -336,11 +367,11 @@ const manejarCambioOferta = async (eIdSeccMo) => {
               </form>
             </div>
 
-            {/* Estudiantes del docente */}
+            {/* Estudiantes asignados a tus materias */}
             {estudiantes.length > 0 && (
               <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-8 shadow-lg">
                 <h3 className="text-xl font-bold text-white mb-4">
-                  Estudiantes asignados
+                  Estudiantes en tus materias asignadas
                 </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
@@ -349,6 +380,7 @@ const manejarCambioOferta = async (eIdSeccMo) => {
                         <th className="p-3">Oferta</th>
                         <th className="p-3">Cédula</th>
                         <th className="p-3">Nombre</th>
+                        <th className="p-3">Materia</th>
                         <th className="p-3">Sección</th>
                         <th className="p-3">Horario</th>
                       </tr>
@@ -357,11 +389,12 @@ const manejarCambioOferta = async (eIdSeccMo) => {
                       {estudiantes.map((e, i) => (
                         <tr key={i} className="border-b border-gray-700">
                           <td className="p-3">#{e.idseccmo}</td>
-                          <td className="p-3">{e.ciestu}</td>
+                          <td className="p-3">{e.ciestu || e.ci || "—"}</td>
                           <td className="p-3">
-                            {e.nombreestu} {e.apelliestu}
+                            {e.nombreestu || e.estudiante || "—"} {e.apelliestu || ""}
                           </td>
-                          <td className="p-3">{e.idsecc}</td>
+                          <td className="p-3 text-yellow-400">{e.nombremateria || "—"}</td>
+                          <td className="p-3">{e.idsecc || "—"}</td>
                           <td className="p-3">{e.horario ?? "—"}</td>
                         </tr>
                       ))}
@@ -371,7 +404,7 @@ const manejarCambioOferta = async (eIdSeccMo) => {
               </div>
             )}
 
-            {/* Lista de notas */}
+            {/* Lista de notas registradas */}
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-4">Notas registradas</h3>
               <div className="overflow-x-auto">

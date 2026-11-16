@@ -28,7 +28,7 @@ const Home = () => {
         >
           Academia Amada Fashion es una institución especializada en la formación integral dentro del diseño de modas y el modelaje. 
           La organización tiene como objetivo fundamental capacitar a nuevas generaciones de talentos, 
-          brindando las herramientas técnicas, creativas y conceptuales necesarias para desarrollar profesionales altamente competitivos en la industria textil y de la moda.[cite: 5]
+          brindando las herramientas técnicas, creativas y conceptuales necesarias para desarrollar profesionales altamente competitivos en la industria textil y de la moda.
         </Motion.p>
 
         <Motion.button 

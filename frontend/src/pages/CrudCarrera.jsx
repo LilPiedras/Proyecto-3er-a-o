@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -300,9 +301,9 @@ const CrudCarrera = () => {
                                 c.precio_usd
                               )
                             }
-                            className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                            className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center"
                           >
-                            <i className="fa-solid fa-pen"></i>
+                            <Pencil size={16} />
                           </button>
                           <button
                             type="button"
@@ -310,9 +311,9 @@ const CrudCarrera = () => {
                             onClick={() =>
                               deleteCarrera(c.idcarrera, c.nombrecarrera)
                             }
-                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition flex items-center justify-center"
                           >
-                            <i className="fa-solid fa-trash"></i>
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>

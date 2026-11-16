@@ -29,6 +29,7 @@ import ResumenCalificaciones from "../pages/ResumenCalificaciones";
 import DashboardDocente from "../pages/DashboardDocente";
 import Auditorias from "../pages/Auditorias";
 import CrudAsistencia from "../pages/CrudAsistencia";
+import ResumenAsistencias from "../pages/ResumenAsistencias";
 
 const AppRoutes = () => {
   return (
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/dashboard-docente" element={<DashboardDocente/>} />
         <Route path="/auditorias" element={<Auditorias />} />
         <Route path="/crudasistencia" element={<CrudAsistencia />} />
+        <Route path="/resumenasistencias" element={<ResumenAsistencias/>} />
         
         <Route path="/perfil" element={<Perfil />} />
         

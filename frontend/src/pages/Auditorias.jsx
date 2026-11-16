@@ -1,20 +1,10 @@
 import { useEffect, useState } from "react";
-import { Printer, RefreshCw, ShieldCheck } from "lucide-react";
+import { Printer, RefreshCw, ShieldCheck, FileDown, QrCode, X } from "lucide-react";
 import api from "../api";
 
 const MESES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
 const formatFecha = (fecha) => {
@@ -27,6 +17,10 @@ const Auditorias = () => {
   const [dia, setDia] = useState("");
   const [hora, setHora] = useState("");
   const [resultado, setResultado] = useState({ filtro: null, auditorias: [], error: "" });
+  
+  // Estado para controlar la ventana modal de opciones de exportación
+  const [modalExportarAbierto, setModalExportarAbierto] = useState(false);
+
   const filtro = `${mes}-${dia}-${hora}`;
 
   useEffect(() => {
@@ -65,6 +59,48 @@ const Auditorias = () => {
     setHora("");
   };
 
+  // 1. Función para Imprimir Físicamente
+  const handleImprimir = () => {
+    setModalExportarAbierto(false);
+    window.print();
+  };
+
+  // 2. Función para Guardar como PDF (Llamando al backend con los filtros actuales)
+  const handleGuardarPDF = async () => {
+    setModalExportarAbierto(false);
+    try {
+      const params = {};
+      if (mes) params.mes = Number(mes);
+      if (dia) params.dia = Number(dia);
+      if (hora !== "") params.hora = Number(hora);
+
+      const response = await api.get("/auditoria/pdf/exportar", {
+        params,
+        responseType: "blob", // Vital para recibir archivos binarios (PDF)
+      });
+
+      // Crear URL temporal y forzar descarga en el navegador
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `reporte-auditorias-${new Date().toISOString().slice(0, 10)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error al generar el PDF:", err);
+      alert("No se pudo generar el PDF del reporte. Inténtalo de nuevo.");
+    }
+  };
+
+  // 3. Función para Mostrar QR
+  const handleMostrarQR = () => {
+    setModalExportarAbierto(false);
+    alert("Aquí puedes integrar tu componente o modal con el código QR generado para el reporte actual.");
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 text-left text-gray-900">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -74,19 +110,87 @@ const Auditorias = () => {
             Control del sistema
           </div>
           <h1 className="text-3xl font-bold">Auditorías</h1>
-          <p className="mt-1 text-gray-600">Consulta los cambios registrados y prepara una copia para imprimir o guardar como PDF.</p>
+          <p className="mt-1 text-gray-600">Consulta los cambios registrados y gestiona la exportación de tus reportes.</p>
         </div>
+        
+        {/* Botón principal que abre el menú modal */}
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => setModalExportarAbierto(true)}
           disabled={cargando || auditorias.length === 0}
           className="no-print inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2 font-semibold text-black transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Printer size={18} />
-          Imprimir / Guardar PDF
+          <FileDown size={18} />
+          Exportar / Imprimir PDF
         </button>
       </div>
 
+      {/* Modal / Ventana de Opciones Separadas */}
+      {modalExportarAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Opciones de Exportación</h3>
+              <button 
+                onClick={() => setModalExportarAbierto(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleImprimir}
+                className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 text-left font-medium text-gray-700 transition hover:bg-amber-50 hover:border-amber-300"
+              >
+                <Printer className="text-amber-600" size={22} />
+                <div>
+                  <p className="font-semibold text-gray-900">Imprimir reporte</p>
+                  <p className="text-xs text-gray-500">Abre el cuadro de diálogo de la impresora física.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGuardarPDF}
+                className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 text-left font-medium text-gray-700 transition hover:bg-amber-50 hover:border-amber-300"
+              >
+                <FileDown className="text-amber-600" size={22} />
+                <div>
+                  <p className="font-semibold text-gray-900">Guardar como PDF</p>
+                  <p className="text-xs text-gray-500">Descarga directamente el archivo PDF con gráficos institucionales.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleMostrarQR}
+                className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 text-left font-medium text-gray-700 transition hover:bg-amber-50 hover:border-amber-300"
+              >
+                <QrCode className="text-amber-600" size={22} />
+                <div>
+                  <p className="font-semibold text-gray-900">Generar código QR</p>
+                  <p className="text-xs text-gray-500">Muestra un código QR asociado al reporte actual.</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setModalExportarAbierto(false)}
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filtros de la vista */}
       <div className="no-print mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto_auto] lg:items-end">
         <label className="flex flex-col gap-1 text-sm font-medium">
           Mes
@@ -134,6 +238,7 @@ const Auditorias = () => {
         </div>
       )}
 
+      {/* Tabla de registros */}
       <div className="auditorias-print overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="auditorias-print-heading">
           <h2>Reporte de auditorías</h2>

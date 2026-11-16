@@ -25,7 +25,7 @@ def listar_todos(db: Session = Depends(get_db), current_user: Usuario = Depends(
     return evaluacion_service.listar_todas_evaluaciones(db)
 
 @plan_evaluacion_router.post("/", response_model=PlanEvaluacionSalida, status_code=status.HTTP_201_CREATED)
-def crear_evaluacion(eval_in: PlanEvaluacionEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+def crear_evaluacion(eval_in: PlanEvaluacionEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3, 4]))):
     return evaluacion_service.crear_plan_evaluacion(eval_in, current_user.ciuser, db)
 
 @plan_evaluacion_router.get("/materia/{idmateria}", response_model=List[PlanEvaluacionSalida])
@@ -33,5 +33,5 @@ def obtener_evaluaciones_materia(idmateria: int, db: Session = Depends(get_db), 
     return evaluacion_service.listar_evaluaciones_por_materia(idmateria, db)
 
 @plan_evaluacion_router.delete("/{idevaluacion}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_evaluacion(idevaluacion: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+def eliminar_evaluacion(idevaluacion: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
     return evaluacion_service.eliminar_evaluacion(idevaluacion, db)

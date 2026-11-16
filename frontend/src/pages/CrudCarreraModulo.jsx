@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FaFilePdf, FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
+import { Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -297,10 +298,11 @@ const CrudCarreraModulo = () => {
                           </div>
                           <button
                             type="button"
+                            title="Quitar"
                             onClick={() => desvincular(rel.idcarremo)}
-                            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-500 cursor-pointer"
+                            className="bg-red-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-red-500 cursor-pointer flex items-center justify-center"
                           >
-                            <i className="fa-solid fa-xmark"></i> Quitar
+                            <Trash2 size={15} />
                           </button>
                         </li>
                       );
@@ -350,10 +352,11 @@ const CrudCarreraModulo = () => {
                         <td className="p-3">
                           <button
                             type="button"
+                            title="Eliminar"
                             onClick={() => desvincular(r.idcarremo)}
-                            className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-500"
+                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-red-500 flex items-center justify-center"
                           >
-                            <i className="fa-solid fa-trash"></i>
+                            <Trash2 size={16} />
                           </button>
                         </td>
                       </tr>

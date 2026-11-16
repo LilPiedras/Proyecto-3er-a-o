@@ -201,6 +201,11 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
+                    <RouterLink to="/resumenasistencias" className="cursor-pointer hover:text-yellow-400">
+                        Resumen de Asistencias
+                    </RouterLink>
+                  </li>
+                  <li>
                     <RouterLink to="/cursosdisponibles" className="cursor-pointer hover:text-yellow-400">
                       Cursos
                     </RouterLink>
@@ -217,15 +222,16 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/crudoferta" className="cursor-pointer hover:text-yellow-400">
-                      Oferta Academica
+                    <RouterLink to="/crudplanevaluacion" className="cursor-pointer hover:text-yellow-400">
+                      Plan Evaluacion
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/crudhorarios" className="cursor-pointer hover:text-yellow-400">
-                      Horarios
+                    <RouterLink to="/crudasistencia" className="cursor-pointer hover:text-yellow-400">
+                      Asistencias
                     </RouterLink>
                   </li>
+                  
                   <li>
                     <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
                       Notas

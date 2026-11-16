@@ -7,7 +7,6 @@ const Perfil = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para la edición del correo
   const [editandoCorreo, setEditandoCorreo] = useState(false);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [mensajeCorreo, setMensajeCorreo] = useState({ tipo: "", texto: "" });

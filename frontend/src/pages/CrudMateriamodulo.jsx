@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FaFilePdf, FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
+import { Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -334,11 +335,23 @@ const CrudModuloMateria = () => {
                 })}
               </select>
               
-              <button onClick={editarModulo} disabled={!idModuloSeleccionado} className="bg-gray-700 text-white px-3 rounded hover:bg-gray-600 disabled:opacity-50 cursor-pointer" title="Editar">
-                <i className="fa-solid fa-pen"></i>
+              <button 
+                type="button"
+                onClick={editarModulo} 
+                disabled={!idModuloSeleccionado} 
+                className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 disabled:opacity-50 cursor-pointer flex items-center justify-center" 
+                title="Editar Módulo"
+              >
+                <Pencil size={16} />
               </button>
-              <button onClick={eliminarModulo} disabled={!idModuloSeleccionado} className="bg-red-600 text-white px-3 rounded hover:bg-red-500 disabled:opacity-50 cursor-pointer" title="Eliminar">
-                <i className="fa-solid fa-trash"></i>
+              <button 
+                type="button"
+                onClick={eliminarModulo} 
+                disabled={!idModuloSeleccionado} 
+                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 disabled:opacity-50 cursor-pointer flex items-center justify-center" 
+                title="Eliminar Módulo"
+              >
+                <Trash2 size={16} />
               </button>
 
               {/* Botón que abre el Modal de Exportar */}
@@ -379,8 +392,22 @@ const CrudModuloMateria = () => {
                       >
                         {estaAsignada ? 'Asignada' : 'Vincular'}
                       </button>
-                      <button onClick={() => editarMateria(mat)} className="text-blue-400 hover:text-blue-300 px-1 text-sm cursor-pointer"><i className="fa-solid fa-pen"></i></button>
-                      <button onClick={() => eliminarMateria(idMat)} className="text-red-400 hover:text-red-300 px-1 text-sm cursor-pointer"><i className="fa-solid fa-trash"></i></button>
+                      <button 
+                        type="button"
+                        onClick={() => editarMateria(mat)} 
+                        className="bg-yellow-400 text-black p-1.5 rounded-lg hover:bg-yellow-300 cursor-pointer flex items-center justify-center" 
+                        title="Editar Materia"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => eliminarMateria(idMat)} 
+                        className="bg-red-600 text-white p-1.5 rounded-lg hover:bg-red-500 cursor-pointer flex items-center justify-center" 
+                        title="Eliminar Materia"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -411,10 +438,12 @@ const CrudModuloMateria = () => {
                           <span className="text-gray-400 text-xs">Docente: {matInfo?.docente || 'Sin asignar'}</span>
                         </div>
                         <button 
+                          type="button"
                           onClick={() => desvincularMateria(idRelacion)}
-                          className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-500 cursor-pointer"
+                          className="bg-red-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-red-500 cursor-pointer flex items-center justify-center"
+                          title="Quitar relación"
                         >
-                          <i className="fa-solid fa-xmark"></i> Quitar
+                          <Trash2 size={15} />
                         </button>
                       </li>
                     );

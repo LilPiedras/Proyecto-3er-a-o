@@ -1,8 +1,8 @@
 from typing import List, Optional
-
+from fastapi.responses import Response
+from analitics.auditorias_pdf import crear_pdf_auditorias
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-
 from database.connection import SessionLocal
 from Schemas.auditoria_esquema import AuditoriaSalida
 from models.usuario_model import Usuario
@@ -39,3 +39,19 @@ def obtener_auditoria(
     current_user: Usuario = Depends(VerificarRoles([1, 2, 3])),
 ):
     return auditoria_service.obtener_auditoria_por_id(idseria, db)
+
+@auditoria_router.get("/pdf/exportar")
+def exportar_pdf_auditorias(
+    mes: Optional[int] = Query(default=None, ge=1, le=12),
+    dia: Optional[int] = Query(default=None, ge=1, le=31),
+    hora: Optional[int] = Query(default=None, ge=0, le=23),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1, 2, 3])),
+):
+    registros = auditoria_service.listar_auditorias(db, mes=mes, dia=dia, hora=hora)
+    pdf_bytes = crear_pdf_auditorias(registros)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=reporte-auditorias.pdf"}
+    )

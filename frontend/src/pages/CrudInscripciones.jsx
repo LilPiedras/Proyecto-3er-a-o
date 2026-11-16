@@ -4,7 +4,7 @@ import { show_alert } from "../components/functions/Showpro_functions";
 import { Search, MapPin, Layers, Award } from "lucide-react";
 
 const CrudInscripciones = () => {
-  // Catálogos
+  
   const [estudiantes, setEstudiantes] = useState([]);
   const [periodos, setPeriodos] = useState([]);
   const [secciones, setSecciones] = useState([]);
@@ -13,13 +13,13 @@ const CrudInscripciones = () => {
   const [materiasModulo, setMateriasModulo] = useState([]);
   const [inscripcionesDetalladas, setInscripcionesDetalladas] = useState([]);
 
-  // Formulario de Inscripción
+  
   const [ciestu, setCiestu] = useState("");
   const [periodoId, setPeriodoId] = useState("");
   const [seccionIds, setSeccionIds] = useState([]);
   const [estado, setEstado] = useState("ACTIVO");
 
-  // Estado para Buscador de Ubicación Académica
+  
   const [cedulaUbicacion, setCedulaUbicacion] = useState("");
   const [resultadoUbicacion, setResultadoUbicacion] = useState(null);
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
@@ -31,7 +31,7 @@ const CrudInscripciones = () => {
     cargarDatos();
   }, []);
 
-  // Función para vincular la sección con su módulo correspondiente
+  
   const obtenerNombreSeccionConModulo = (sec, listaOfertas, listaModulos, listaMatMod) => {
     if (!sec) return "Sección";
     const idSeccion = Number(sec.idsecc || sec.id);

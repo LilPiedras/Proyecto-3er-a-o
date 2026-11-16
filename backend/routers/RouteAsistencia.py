@@ -1,7 +1,8 @@
 from datetime import date
 from typing import List
+from sqlalchemy import text
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Query
 from sqlalchemy.orm import Session
 
 from database.connection import get_db
@@ -97,3 +98,36 @@ def eliminar_asistencia(
 ):
     asistencia_service.eliminar_asistencia(idasis, current_user, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+# (Asegúrate de registrarlo en tu router de asistencias o equivalente)
+@asistencia_router.get("/Asistencias/estudiante/{ci}")
+def obtener_asistencias_estudiante(
+    ci: str, 
+    idmateria: int = Query(...), 
+    db: Session = Depends(get_db)
+):
+    query = text("""
+        SELECT 
+            a.idasistencia,
+            a.fecha,
+            a.estado,
+            a.observacion
+        FROM public.asistencia a
+        WHERE a.estudiante = :ci AND a.idmateria = :idmateria
+        ORDER BY a.fecha DESC
+    """)
+    
+    # Nota: Ajusta los nombres de las tablas y columnas (como a.estudiante, a.idmateria, a.estado) 
+    # exactamente a como los tengas nombrados en tu base de datos de PostgreSQL.
+    resultado = db.execute(query, {"ci": ci, "idmateria": idmateria}).fetchall()
+
+    asistencias = []
+    for row in resultado:
+        asistencias.append({
+            "idasistencia": row[0],
+            "fecha": str(row[1]),
+            "estado": row[2],       # Puede ser booleano, string ("Presente"/"Ausente"), etc.
+            "observacion": row[3]
+        })
+
+    return asistencias

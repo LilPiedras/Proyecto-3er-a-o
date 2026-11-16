@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -402,17 +403,17 @@ const CrudHorarios = () => {
                                   type="button"
                                   title="Editar"
                                   onClick={() => openModalHorario(2, h)}
-                                  className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                                  className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center"
                                 >
-                                  <i className="fa-solid fa-pen"></i>
+                                  <Pencil size={16} />
                                 </button>
                                 <button
                                   type="button"
                                   title="Eliminar"
                                   onClick={() => deleteHorario(h)}
-                                  className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                                  className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition flex items-center justify-center"
                                 >
-                                  <i className="fa-solid fa-trash"></i>
+                                  <Trash2 size={16} />
                                 </button>
                               </div>
                             </td>
@@ -539,17 +540,17 @@ const CrudHorarios = () => {
                                   type="button"
                                   title="Editar"
                                   onClick={() => openModalBloque(2, b)}
-                                  className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                                  className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center"
                                 >
-                                  <i className="fa-solid fa-pen"></i>
+                                  <Pencil size={16} />
                                 </button>
                                 <button
                                   type="button"
                                   title="Eliminar"
                                   onClick={() => deleteBloque(b)}
-                                  className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                                  className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition flex items-center justify-center"
                                 >
-                                  <i className="fa-solid fa-trash"></i>
+                                  <Trash2 size={16} />
                                 </button>
                               </div>
                             </td>

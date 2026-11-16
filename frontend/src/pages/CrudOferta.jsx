@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Trash2 } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -106,7 +107,7 @@ const CrudOferta = () => {
       console.error('Error cargarDatos Oferta:', e);
       show_alert('Error al cargar datos de oferta. Revisa el backend.', 'error');
     } finally {
-      setCargando(false); // SIEMPRE se apaga el loading
+      setCargando(false);
     }
   };
 
@@ -394,10 +395,11 @@ const CrudOferta = () => {
                           <td className="p-3 text-center">
                             <button
                               type="button"
+                              title="Eliminar"
                               onClick={() => eliminarAsignacion(a)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition flex items-center justify-center mx-auto"
                             >
-                              <i className="fa-solid fa-trash" />
+                              <Trash2 size={16} />
                             </button>
                           </td>
                         </tr>
