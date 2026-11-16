@@ -29,21 +29,37 @@ const DashboardDocente = () => {
     try {
       setCargando(true);
       const res = await api
-        .get('/api/horarios-materias')
+        .get("/api/horarios-materias")
         .catch(() => ({ data: [] }));
 
       const lista = Array.isArray(res.data) ? res.data : [];
 
       const misClases = lista.filter((item) => {
-        if (!item || typeof item !== 'object') return false;
-        const itemCi = String(item.ciempleado || '').trim();
+        if (!item || typeof item !== "object") return false;
+        const itemCi = String(item.ciempleado || "").trim();
         return itemCi && itemCi === String(ci).trim();
       });
 
-      setMisAsignaciones(misClases);
+      // Evitar duplicados: misma materia + sección + día + hora + salón
+      const unicos = new Map();
+      misClases.forEach((item) => {
+        const key = [
+          item.idmateria,
+          item.idsecc,
+          item.dia,
+          item.horainicio,
+          item.horafin,
+          item.salon,
+        ].join("|");
+        if (!unicos.has(key)) {
+          unicos.set(key, item);
+        }
+      });
+
+      setMisAsignaciones(Array.from(unicos.values()));
     } catch (error) {
-      console.error('Error al cargar carga académica:', error);
-      show_alert('No se pudo cargar tu información docente', 'error');
+      console.error("Error al cargar carga académica:", error);
+      show_alert("No se pudo cargar tu información docente", "error");
       setMisAsignaciones([]);
     } finally {
       setCargando(false);
@@ -128,11 +144,11 @@ const DashboardDocente = () => {
 
                   <div>
                     <h3 className="text-lg font-bold text-white">
-                      {item.materia || item.nombremateria || 'Materia Asignada'}
+                      {item.materia || item.nombremateria || "Materia Asignada"}
                     </h3>
                     <p className="text-xs text-yellow-300 mt-1">
-                      Salón: {item.salon || 'S/N'} | Día:{' '}
-                      {item.dia || 'Por definir'}
+                      Sección: {item.seccion || item.nomsecc || item.idsecc || "S/N"} | Salón:{" "}
+                      {item.salon || "S/N"} | Día: {item.dia || "Por definir"}
                     </p>
                   </div>
 

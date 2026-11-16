@@ -37,18 +37,117 @@ const CrudPlanEvaluacion = () => {
 
   const cargarCatalogos = async () => {
     try {
-      const [resMat, resSec] = await Promise.all([
-        api.get("/materia/").catch(() => api.get("/materias/").catch(() => ({ data: [] }))),
-        api.get("/seccion/").catch(() => api.get("/secciones/").catch(() => ({ data: [] }))),
-      ]);
+      const ciDocente = String(
+        localStorage.getItem("ciuser") ||
+          localStorage.getItem("ciempleado") ||
+          ""
+      ).trim();
 
-      const mats = Array.isArray(resMat.data) ? resMat.data : [];
-      const secs = Array.isArray(resSec.data) ? resSec.data : [];
+      const rolRaw =
+        localStorage.getItem("idrol") ||
+        localStorage.getItem("user_role") ||
+        localStorage.getItem("role");
+      const rol =
+        rolRaw !== null && rolRaw !== "" && !isNaN(rolRaw)
+          ? parseInt(rolRaw, 10)
+          : rolRaw;
+      const esAdmin = [1, "1"].includes(rol);
 
-      setMaterias(mats.filter((m) => m.activo !== false));
-      setSecciones(secs.filter((s) => s.activo !== false));
+      let mats = [];
+      let secs = [];
+
+      if (ciDocente && !esAdmin) {
+        // Misma fuente que DashboardDocente
+        const { data } = await api.get("/api/horarios-materias").catch(() => ({ data: [] }));
+        const lista = Array.isArray(data) ? data : [];
+
+        const misClases = lista.filter((item) => {
+          if (!item) return false;
+          return String(item.ciempleado || "").trim() === ciDocente;
+        });
+
+        // Materias únicas del docente
+        const materiasMap = new Map();
+        misClases.forEach((a) => {
+          if (a.idmateria != null && !materiasMap.has(a.idmateria)) {
+            materiasMap.set(a.idmateria, {
+              idmateria: a.idmateria,
+              nombremateria: a.materia || a.nombremateria || `Materia #${a.idmateria}`,
+              activo: true,
+            });
+          }
+        });
+        mats = Array.from(materiasMap.values());
+
+        // Secciones únicas del docente
+        const seccionesMap = new Map();
+        misClases.forEach((a) => {
+          if (a.idsecc != null && !seccionesMap.has(a.idsecc)) {
+            seccionesMap.set(a.idsecc, {
+              idsecc: a.idsecc,
+              nomsecc: a.seccion || a.nomsecc || `Sección ${a.idsecc}`,
+              activo: true,
+            });
+          }
+        });
+        secs = Array.from(seccionesMap.values());
+
+        // Fallback: si no hay en horarios, intentar asignacion_docente
+        if (mats.length === 0) {
+          try {
+            const { data: asigs } = await api.get(
+              `/asignacion_docente/docente/${ciDocente}`
+            );
+            const listaA = Array.isArray(asigs) ? asigs : [];
+            listaA.forEach((a) => {
+              if (a.materia_id != null && !materiasMap.has(a.materia_id)) {
+                materiasMap.set(a.materia_id, {
+                  idmateria: a.materia_id,
+                  nombremateria: a.nombremateria || `Materia #${a.materia_id}`,
+                  activo: true,
+                });
+              }
+              if (a.seccion_id != null && !seccionesMap.has(a.seccion_id)) {
+                seccionesMap.set(a.seccion_id, {
+                  idsecc: a.seccion_id,
+                  nomsecc: a.nomsecc || `Sección ${a.seccion_id}`,
+                  activo: true,
+                });
+              }
+            });
+            mats = Array.from(materiasMap.values());
+            secs = Array.from(seccionesMap.values());
+          } catch (_) {
+            /* ignore */
+          }
+        }
+      } else {
+        // Admin: todas las activas
+        const [resMat, resSec] = await Promise.all([
+          api.get("/materia/").catch(() => ({ data: [] })),
+          api.get("/seccion/").catch(() => ({ data: [] })),
+        ]);
+        mats = (Array.isArray(resMat.data) ? resMat.data : []).filter(
+          (m) => m.activo !== false
+        );
+        secs = (Array.isArray(resSec.data) ? resSec.data : []).filter(
+          (s) => s.activo !== false
+        );
+      }
+
+      setMaterias(mats);
+      setSecciones(secs);
+
+      if (!esAdmin && mats.length === 0) {
+        show_alert(
+          "No se encontraron materias asignadas a tu cédula. Revisa Oferta / asignación de horario.",
+          "warning"
+        );
+      }
     } catch (e) {
       console.error(e);
+      setMaterias([]);
+      setSecciones([]);
     }
   };
 
