@@ -155,14 +155,20 @@ const DashboardDocente = () => {
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800">
                     <button
                       type="button"
-                      onClick={() => navigate('/crudasistencia')}
+                      onClick={() =>
+                        navigate(
+                          `/crudasistencia?idsecc=${item.idsecc ?? ""}&idmateria=${item.idmateria ?? ""}`
+                        )
+                      }
                       className="bg-gray-800 hover:bg-yellow-400 hover:text-black text-gray-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <CheckCircle size={14} /> Asistencia
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate('/crudnotas')}
+                      onClick={() =>
+                          navigate(`/crudnotas?idsecc=${item.idsecc ?? ""}&idmateria=${item.idmateria ?? ""}`)
+                        }
                       className="bg-gray-800 hover:bg-yellow-400 hover:text-black text-gray-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Award size={14} /> Notas

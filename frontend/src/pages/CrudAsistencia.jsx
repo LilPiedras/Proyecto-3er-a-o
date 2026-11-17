@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -28,6 +29,9 @@ const CrudAsistencia = () => {
   const [confirmandoAsistencia, setConfirmandoAsistencia] = useState(false);
   const [errorAcceso, setErrorAcceso] = useState('');
   const [actualizacion, setActualizacion] = useState(0);
+  const [searchParams] = useSearchParams();
+  const seccPreferida = searchParams.get('idsecc') || '';
+  const materiaPreferida = searchParams.get('idmateria') || '';
 
   useEffect(() => {
     let vigente = true;
@@ -36,7 +40,13 @@ const CrudAsistencia = () => {
         if (!vigente) return;
         const lista = Array.isArray(data) ? data : [];
         setSecciones(lista);
-        if (lista.length) setIdsecc(String(lista[0].idsecc));
+        if (!lista.length) return;
+
+        // Preferir la sección de la URL si existe en la lista
+        const match = seccPreferida
+          ? lista.find((s) => String(s.idsecc) === String(seccPreferida))
+          : null;
+        setIdsecc(String(match ? match.idsecc : lista[0].idsecc));
       })
       .catch((error) => {
         if (vigente) setErrorAcceso(detalleError(error, 'No se pudieron cargar las secciones'));
@@ -45,7 +55,7 @@ const CrudAsistencia = () => {
         if (vigente) setCargandoSecciones(false);
       });
     return () => { vigente = false; };
-  }, []);
+  }, [seccPreferida]);
 
   useEffect(() => {
     if (!idsecc) {
@@ -66,7 +76,12 @@ const CrudAsistencia = () => {
         if (!vigente) return;
         const lista = Array.isArray(data) ? data : [];
         setMaterias(lista);
-        if (lista.length) setIdmateria(String(lista[0].idmateria));
+        if (!lista.length) return;
+
+        const match = materiaPreferida
+          ? lista.find((m) => String(m.idmateria) === String(materiaPreferida))
+          : null;
+        setIdmateria(String(match ? match.idmateria : lista[0].idmateria));
       })
       .catch((error) => {
         if (vigente) show_alert(detalleError(error, 'No se pudieron cargar las materias de la sección'), 'error');
@@ -75,7 +90,7 @@ const CrudAsistencia = () => {
         if (vigente) setCargandoMaterias(false);
       });
     return () => { vigente = false; };
-  }, [idsecc]);
+  }, [idsecc, materiaPreferida]);
 
   useEffect(() => {
     if (!idsecc || !idmateria || !fecha) {

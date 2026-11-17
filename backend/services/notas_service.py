@@ -148,11 +148,19 @@ def listar_estudiantes_del_docente(ci_docente: str, db: Session):
                 e.nombreestu,
                 e.apelliestu,
                 os.idsecc,
+                COALESCE(s.nomsecc, 'Sección ' || os.idsecc::text) AS nomsecc,
                 os.horario,
+                COALESCE(h.dia, '') AS dia,
+                COALESCE(h.salon, '') AS salon,
+                COALESCE(b.horainicio::text, '') AS horainicio,
+                COALESCE(b.horafin::text, '') AS horafin,
                 m.idmateria,
                 m.nombremateria
             FROM oferta_seccion os
             JOIN estudiante e ON e.ciestu = os.estudiante AND e.activo IS TRUE
+            LEFT JOIN seccion s ON s.idsecc = os.idsecc
+            LEFT JOIN horario h ON h.idhorario = os.horario
+            LEFT JOIN bloque b ON b.idbloque = h.bloque
             LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
             LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
             LEFT JOIN materia m ON m.idmateria = mm.idmateria AND m.activo IS TRUE
@@ -170,12 +178,25 @@ def listar_estudiantes_del_docente(ci_docente: str, db: Session):
             "nombreestu": r[2],
             "apelliestu": r[3],
             "idsecc": r[4],
-            "horario": r[5],
-            "idmateria": r[6],
-            "nombremateria": r[7],
+            "nomsecc": r[5],
+            "horario": r[6],
+            "dia": r[7],
+            "salon": r[8],
+            "horainicio": r[9],
+            "horafin": r[10],
+            "idmateria": r[11],
+            "nombremateria": r[12],
+            # Texto listo para la UI
+            "horario_texto": (
+                f"{r[7]} {r[9]}-{r[10]}"
+                + (f" · Aula {r[8]}" if r[8] else "")
+            ).strip()
+            if (r[7] or r[9])
+            else "Sin horario",
         }
         for r in rows
     ]
+
 
 def listar_notas_del_docente(ci_docente: str, db: Session):
     rows = db.execute(

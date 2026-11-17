@@ -19,6 +19,9 @@ const CrudNotas = () => {
   const [fechanota, setFechanota] = useState(
     new Date().toISOString().slice(0, 10)
   );
+  const [busquedaOferta, setBusquedaOferta] = useState("");
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [ofertaSeleccionadaLabel, setOfertaSeleccionadaLabel] = useState("");
 
   const obtenerRol = () => {
     const saved =
@@ -139,6 +142,80 @@ const CrudNotas = () => {
     }
   };
 
+  const listaOfertasDisponibles =
+    estudiantes.length > 0
+      ? estudiantes
+      : ofertas.filter((o) => o.estudiante);
+
+  const etiquetaOferta = (e) => {
+    const nombre = `${e.nombreestu || e.estudiante || ""} ${e.apelliestu || ""}`.trim();
+    const ci = e.ciestu || e.ci || e.estudiante || "";
+    const materia = e.nombremateria || "";
+    const secc = e.nomsecc || e.seccion || e.idsecc || "";
+    const horario =
+      e.horario_texto ||
+      (e.dia
+        ? `${e.dia} ${e.horainicio || ""}-${e.horafin || ""}`
+        : "");
+    return [
+      ci && `CI ${ci}`,
+      nombre,
+      materia,
+      secc && `Secc. ${secc}`,
+      horario,
+    ]
+      .filter(Boolean)
+      .join(" — ");
+  };
+
+  const normalizar = (t) =>
+    String(t || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const sugerenciasOferta = (() => {
+    const q = normalizar(busquedaOferta);
+    if (!q || q.length < 2) return [];
+    return listaOfertasDisponibles
+      .filter((e) => {
+        const ci = normalizar(e.ciestu || e.ci || e.estudiante);
+        const nombre = normalizar(
+          `${e.nombreestu || ""} ${e.apelliestu || ""} ${e.estudiante || ""}`
+        );
+        const materia = normalizar(e.nombremateria);
+        const secc = normalizar(e.nomsecc || e.seccion || e.idsecc);
+        // Prioriza cédula; también permite nombre/materia/sección
+        return (
+          ci.includes(q) ||
+          nombre.includes(q) ||
+          materia.includes(q) ||
+          secc.includes(q) ||
+          String(e.idseccmo).includes(q)
+        );
+      })
+      .slice(0, 12);
+  })();
+
+  const seleccionarOferta = (item) => {
+    const id = String(item.idseccmo);
+    setOferta(id);
+    setOfertaSeleccionadaLabel(etiquetaOferta(item));
+    setBusquedaOferta(etiquetaOferta(item));
+    setMostrarSugerencias(false);
+    manejarCambioOferta(id);
+  };
+
+  const limpiarOferta = () => {
+    setOferta("");
+    setOfertaSeleccionadaLabel("");
+    setBusquedaOferta("");
+    setIdevaluacion("");
+    setEvaluaciones([]);
+    setMostrarSugerencias(false);
+  };
+
   useEffect(() => {
     if (rolUsuario === null) return;
 
@@ -162,15 +239,63 @@ const CrudNotas = () => {
     const ci = localStorage.getItem("ciuser");
 
     if (!ci) {
-      return show_alert("No se encontró tu cédula en sesión. Vuelve a iniciar sesión.", "warning");
+      return show_alert(
+        "No se encontró tu cédula en sesión. Vuelve a iniciar sesión.",
+        "warning"
+      );
     }
-    if (!oferta || notaValor === "" || !idevaluacion) {
-      return show_alert("Completa oferta, evaluación del plan y calificación", "warning");
+
+    // Debe haber elegido una oferta de la lista (no texto libre)
+    if (!oferta) {
+      return show_alert(
+        "Debes buscar y seleccionar un estudiante de la lista (por cédula o nombre). No se acepta texto escrito a mano.",
+        "warning"
+      );
+    }
+
+    const ofertaValida = listaOfertasDisponibles.find(
+      (x) => String(x.idseccmo) === String(oferta)
+    );
+    if (!ofertaValida) {
+      return show_alert(
+        "La oferta seleccionada no es válida o no pertenece a tus materias.",
+        "error"
+      );
+    }
+
+    // Si escribió algo distinto a lo seleccionado, invalidar
+    if (
+      busquedaOferta.trim() &&
+      ofertaSeleccionadaLabel &&
+      normalizar(busquedaOferta) !== normalizar(ofertaSeleccionadaLabel)
+    ) {
+      return show_alert(
+        "Modificaste el texto después de seleccionar. Vuelve a elegir un estudiante de la lista.",
+        "warning"
+      );
+    }
+
+    if (!idevaluacion) {
+      return show_alert("Selecciona una evaluación del plan.", "warning");
+    }
+
+    if (notaValor === "" || notaValor === null) {
+      return show_alert("Ingresa la calificación.", "warning");
     }
 
     const valor = parseFloat(notaValor);
     if (isNaN(valor) || valor < 0 || valor > 20) {
-      return show_alert("La nota debe estar entre 0 y 20", "warning");
+      return show_alert("La nota debe ser un número entre 0 y 20.", "warning");
+    }
+
+    if (!fechanota) {
+      return show_alert("Indica la fecha de la nota.", "warning");
+    }
+
+    // Opcional: no permitir fechas futuras
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (fechanota > hoy) {
+      return show_alert("La fecha no puede ser futura.", "warning");
     }
 
     try {
@@ -184,8 +309,7 @@ const CrudNotas = () => {
       await api.post(`/Notas/docente/${ci}`, payload);
       show_alert("Nota publicada correctamente", "success");
 
-      setOferta("");
-      setIdevaluacion("");
+      limpiarOferta();
       setNotaValor("");
       setFechanota(new Date().toISOString().slice(0, 10));
       await cargarDatosDocente();
@@ -269,39 +393,87 @@ const CrudNotas = () => {
               <h3 className="text-xl font-bold text-white mb-4">Publicar nota</h3>
               <form onSubmit={publicarNota}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-bold mb-2 text-yellow-400">
-                      Oferta (estudiante / sección)
+                      Oferta (buscar por cédula o nombre)
                     </label>
-                    <select
-                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
-                      value={oferta}
-                      onChange={(e) => manejarCambioOferta(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Seleccionar --</option>
-                      {estudiantes.length > 0
-                        ? estudiantes.map((e) => (
-                            <option key={e.idseccmo} value={e.idseccmo}>
-                              #{e.idseccmo} — {e.nombreestu || e.estudiante || 'Estudiante'} {e.apelliestu || ''} ({e.ciestu || e.ci || 'CI'})
-                              {e.nombremateria ? ` — ${e.nombremateria}` : ''} — Secc: {e.idsecc}
-                            </option>
-                          ))
-                        : ofertas
-                            .filter((o) => o.estudiante)
-                            .map((o) => (
-                              <option key={o.idseccmo} value={o.idseccmo}>
-                                #{o.idseccmo} — Est: {o.estudiante} — Secc: {o.idsecc}
-                              </option>
-                            ))}
-                    </select>
-
-                    {estudiantes.length === 0 &&
-                      ofertas.filter((o) => o.estudiante).length === 0 && (
-                        <p className="text-xs text-red-400 mt-1">
-                          No hay ofertas con estudiante asignado en tus materias.
-                        </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white outline-none"
+                        placeholder="Ej. V-12345678"
+                        value={busquedaOferta}
+                        autoComplete="off"
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setBusquedaOferta(v);
+                          setMostrarSugerencias(true);
+                          // Si borra o edita, invalidar selección previa
+                          if (
+                            oferta &&
+                            normalizar(v) !== normalizar(ofertaSeleccionadaLabel)
+                          ) {
+                            setOferta("");
+                            setOfertaSeleccionadaLabel("");
+                            setIdevaluacion("");
+                          }
+                        }}
+                        onFocus={() => setMostrarSugerencias(true)}
+                        onBlur={() => {
+                          // Pequeño delay para permitir click en la lista
+                          setTimeout(() => setMostrarSugerencias(false), 150);
+                        }}
+                      />
+                      {oferta && (
+                        <button
+                          type="button"
+                          onClick={limpiarOferta}
+                          className="px-3 rounded bg-gray-700 text-gray-200 hover:bg-gray-600 text-sm"
+                          title="Limpiar"
+                        >
+                          ✕
+                        </button>
                       )}
+                    </div>
+
+                    {mostrarSugerencias && busquedaOferta.trim().length >= 2 && (
+                      <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded border border-gray-600 bg-gray-900 shadow-lg">
+                        {sugerenciasOferta.length > 0 ? (
+                          sugerenciasOferta.map((item) => (
+                            <li key={item.idseccmo}>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-yellow-400 hover:text-black"
+                                onMouseDown={(ev) => ev.preventDefault()}
+                                onClick={() => seleccionarOferta(item)}
+                              >
+                                {etiquetaOferta(item)}
+                              </button>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="px-3 py-2 text-sm text-gray-500">
+                            Sin coincidencias. Prueba con la cédula completa.
+                          </li>
+                        )}
+                      </ul>
+                    )}
+
+                    {oferta ? (
+                      <p className="text-xs text-emerald-400 mt-1">
+                        Seleccionado: oferta #{oferta}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Escribe al menos 2 caracteres y elige un resultado de la lista.
+                      </p>
+                    )}
+
+                    {listaOfertasDisponibles.length === 0 && (
+                      <p className="text-xs text-red-400 mt-1">
+                        No hay ofertas con estudiante asignado en tus materias.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -394,8 +566,8 @@ const CrudNotas = () => {
                             {e.nombreestu || e.estudiante || "—"} {e.apelliestu || ""}
                           </td>
                           <td className="p-3 text-yellow-400">{e.nombremateria || "—"}</td>
-                          <td className="p-3">{e.idsecc || "—"}</td>
-                          <td className="p-3">{e.horario ?? "—"}</td>
+                          <td className="p-3">{e.nomsecc || e.seccion || `Sección ${e.idsecc}`}</td>
+                          <td className="p-3">{e.horario_texto || (e.dia? `${e.dia} ${e.horainicio || ""}-${e.horafin || ""}${e.salon ? ` · Aula ${e.salon}` : ""}`: e.horario? `Horario #${e.horario}`: "—")}</td>
                         </tr>
                       ))}
                     </tbody>
