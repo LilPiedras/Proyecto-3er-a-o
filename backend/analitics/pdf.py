@@ -180,3 +180,108 @@ def crear_pdf_mensualidades(registros: list[dict]) -> bytes:
         pdf.ln()
 
     return bytes(pdf.output())
+
+class PDFHorarioDocente(FPDF):
+    def header(self):
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(251, 191, 36)
+        self.cell(0, 10, "ACADEMIA AMADA FASHION", 0, 1, "C")
+        self.set_font("Helvetica", "I", 10)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 5, "Horario academico del docente", 0, 1, "C")
+        self.ln(4)
+
+    def footer(self):
+        self.set_y(-12)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 8, f"Pagina {self.page_no()}", 0, 0, "C")
+
+
+def crear_pdf_horario_docente(ci_docente: str, clases: list[dict]) -> bytes:
+    pdf = PDFHorarioDocente(orientation="L", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=True, margin=14)
+    pdf.add_page()
+
+    pdf.set_text_color(35, 35, 35)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.cell(0, 6, f"Cedula docente: {ci_docente}", 0, 1, "L")
+    pdf.cell(0, 6, f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1, "L")
+    pdf.ln(4)
+
+    # Deduplicar
+    vistos = set()
+    unicos = []
+    for c in clases:
+        key = (
+            str(c.get("idmateria")),
+            str(c.get("idsecc")),
+            str(c.get("dia")),
+            str(c.get("horainicio")),
+            str(c.get("horafin")),
+            str(c.get("salon")),
+        )
+        if key in vistos:
+            continue
+        vistos.add(key)
+        unicos.append(c)
+
+    if not unicos:
+        pdf.set_font("Helvetica", "I", 12)
+        pdf.cell(0, 10, "No hay clases asignadas para este docente.", 0, 1)
+        return bytes(pdf.output())
+
+    encabezados = ["Dia", "Hora", "Materia", "Seccion", "Salon", "Modulo"]
+    anchos = [32, 40, 70, 30, 30, 50]
+
+    def escribir_encabezados():
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_fill_color(31, 41, 55)
+        pdf.set_text_color(255, 255, 255)
+        for h, w in zip(encabezados, anchos):
+            pdf.cell(w, 9, h, border=1, align="C", fill=True)
+        pdf.ln()
+        pdf.set_text_color(35, 35, 35)
+        pdf.set_font("Helvetica", "", 9)
+
+    def ajustar(texto: str, ancho: float) -> str:
+        original = str(texto or "")
+        t = original
+        while t and pdf.get_string_width(t) > ancho - 2:
+            t = t[:-1]
+        if t != original and len(t) > 3:
+            t = t[:-3] + "..."
+        return t
+
+    orden_dias = {
+        "lunes": 1, "martes": 2, "miercoles": 3, "miércoles": 3,
+        "jueves": 4, "viernes": 5, "sabado": 6, "sábado": 6,
+    }
+    unicos.sort(
+        key=lambda x: (
+            orden_dias.get(str(x.get("dia") or "").lower().strip(), 99),
+            str(x.get("horainicio") or ""),
+        )
+    )
+
+    escribir_encabezados()
+    for c in unicos:
+        if pdf.get_y() > 185:
+            pdf.add_page()
+            escribir_encabezados()
+
+        hora = f"{c.get('horainicio') or ''} - {c.get('horafin') or ''}".strip(" -")
+        valores = [
+            str(c.get("dia") or ""),
+            hora,
+            str(c.get("materia") or c.get("nombremateria") or ""),
+            str(c.get("seccion") or c.get("nomsecc") or c.get("idsecc") or ""),
+            str(c.get("salon") or "S/N"),
+            str(c.get("modulo") or c.get("nombremodulo") or ""),
+        ]
+        pdf.set_fill_color(250, 250, 250)
+        for valor, ancho in zip(valores, anchos):
+            pdf.cell(ancho, 8, ajustar(valor, ancho), border=1, align="L", fill=True)
+        pdf.ln()
+
+    return bytes(pdf.output())

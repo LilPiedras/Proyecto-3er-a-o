@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
-import { BookOpen, Users, CheckCircle, Award, Clock, CalendarDays } from 'lucide-react';
+import { BookOpen, Users, CheckCircle, Award, Clock, CalendarDays, Printer } from 'lucide-react';
 import HorarioVisual from '../components/HorarioVisual';
 
 const DashboardDocente = () => {
@@ -80,6 +80,26 @@ const DashboardDocente = () => {
     [misAsignaciones]
   );
 
+  const imprimirHorarioPDF = async () => {
+    try {
+      const res = await api.get('/analitics/horario-docente/pdf', {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `horario_${ciDocente || 'docente'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      show_alert('No se pudo generar el PDF del horario', 'error');
+    }
+  };
+
   if (cargando) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-black text-white">
@@ -111,10 +131,21 @@ const DashboardDocente = () => {
 
         {/* Horario visual */}
         <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <CalendarDays className="text-yellow-400" size={20} />
-            Mi horario semanal
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <CalendarDays className="text-yellow-400" size={20} />
+              Mi horario semanal
+            </h2>
+            <button
+              type="button"
+              onClick={imprimirHorarioPDF}
+              disabled={!misAsignaciones.length}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Printer size={16} />
+              Imprimir horario (PDF)
+            </button>
+          </div>
           <HorarioVisual horarios={horariosParaGrid} />
         </section>
 

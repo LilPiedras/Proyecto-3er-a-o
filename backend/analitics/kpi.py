@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from analitics.pdf import crear_pdf_mensualidades
+from analitics.pdf import crear_pdf_mensualidades, crear_pdf_horario_docente
 from database.connection import SessionLocal
 from models.usuario_model import Usuario
 from tokensitos.auth_depencias import VerificarRoles
@@ -87,4 +87,51 @@ def descargar_reporte_mensualidades(
         content=pdf_content,
         media_type="application/pdf",
         headers={"Content-Disposition": 'attachment; filename="reporte_mensualidades.pdf"'},
+    )
+
+@router.get("/horario-docente/pdf", response_class=Response)
+def descargar_horario_docente(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
+    ci = str(getattr(current_user, "ciuser", None) or getattr(current_user, "empleado", None) or "").strip()
+
+    if not ci:
+        return Response(
+            content=b"No se encontro cedula del docente",
+            status_code=400,
+        )
+
+    rows = db.execute(
+        text("""
+            SELECT
+                m.idmateria,
+                COALESCE(m.nombremateria, 'Sin materia') AS materia,
+                COALESCE(mod.nombremodulo, 'Sin modulo') AS modulo,
+                COALESCE(h.dia, 'Por definir') AS dia,
+                COALESCE(h.salon, 'S/N') AS salon,
+                COALESCE(b.horainicio::text, '') AS horainicio,
+                COALESCE(b.horafin::text, '') AS horafin,
+                os.idsecc,
+                COALESCE(s.nomsecc, 'Sin seccion') AS seccion,
+                e.ciempleado
+            FROM public.oferta_seccion os
+            LEFT JOIN public.horario h ON os.horario = h.idhorario
+            LEFT JOIN public.bloque b ON h.bloque = b.idbloque
+            LEFT JOIN public.seccion s ON s.idsecc = os.idsecc
+            LEFT JOIN public.carrera_modulo cm ON cm.idcarremo = os.idcarremo
+            LEFT JOIN public.materias_modulo mm ON mm.idmatemo = cm.idmatemo
+            LEFT JOIN public.materia m ON m.idmateria = mm.idmateria
+            LEFT JOIN public.modulo mod ON mod.idmodulo = mm.idmodulo
+            LEFT JOIN public.empleado e ON m.docente = e.ciempleado
+            WHERE os.horario IS NOT NULL
+              AND e.ciempleado = :ci
+            ORDER BY h.dia, b.horainicio
+        """),
+        {"ci": ci},
+    ).mappings().all()
+
+    pdf_content = crear_pdf_horario_docente(ci, [dict(r) for r in rows])
+    filename = f"horario_docente_{ci}.pdf"
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
