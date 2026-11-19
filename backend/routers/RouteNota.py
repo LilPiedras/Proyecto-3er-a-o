@@ -25,8 +25,8 @@ def ver_notas_estudiante(ciestu: str, idmateria: Optional[int] = None, db: Sessi
     return notas_service.obtener_notas_estudiante(ciestu, idmateria, db)
 
 @notas_route.get("/docente/{ci_docente}/estudiantes", status_code=status.HTTP_200_OK)
-def estudiantes_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
-    return notas_service.listar_estudiantes_del_docente(ci_docente, db)
+def estudiantes_del_docente(ci_docente: str, idmateria: Optional[int] = None, idsecc: Optional[int] = None, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
+    return notas_service.listar_estudiantes_del_docente(ci_docente, db, idmateria=idmateria, idsecc=idsecc)
 
 @notas_route.get("/docente/{ci_docente}/notas", status_code=status.HTTP_200_OK)
 def notas_del_docente(ci_docente: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):

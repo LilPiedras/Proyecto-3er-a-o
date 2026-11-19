@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class SeccionSalida(BaseModel):
@@ -9,7 +9,7 @@ class SeccionSalida(BaseModel):
         from_attributes = True
 
 class SeccionEntrada(BaseModel):
-    nomsecc: str
+    nomsecc: str = Field(..., min_length=1, max_length=10)
 
 class SeccionActualizar(BaseModel):
-    nomsecc: Optional[str] = None
+    nomsecc: Optional[str] = Field(None, min_length=1, max_length=10)

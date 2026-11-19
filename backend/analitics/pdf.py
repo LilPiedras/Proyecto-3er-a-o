@@ -286,3 +286,89 @@ def crear_pdf_horario_docente(ci_docente: str, clases: list[dict]) -> bytes:
         pdf.ln()
 
     return bytes(pdf.output())
+
+class PDFNominaDocente(FPDF):
+    def header(self):
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(251, 191, 36)
+        self.cell(0, 10, "ACADEMIA AMADA FASHION", 0, 1, "C")
+        self.set_font("Helvetica", "I", 10)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 5, "Nomina de estudiantes por materia / seccion", 0, 1, "C")
+        self.ln(4)
+
+    def footer(self):
+        self.set_y(-12)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 8, f"Pagina {self.page_no()}", 0, 0, "C")
+
+
+def crear_pdf_nomina_docente(
+    ci_docente: str,
+    estudiantes: list[dict],
+    materia: str | None = None,
+    seccion: str | None = None,
+) -> bytes:
+    pdf = PDFNominaDocente(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=True, margin=14)
+    pdf.add_page()
+
+    pdf.set_text_color(35, 35, 35)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.cell(0, 6, f"Cedula docente: {ci_docente}", 0, 1)
+    if materia:
+        pdf.cell(0, 6, f"Materia: {materia}", 0, 1)
+    if seccion:
+        pdf.cell(0, 6, f"Seccion: {seccion}", 0, 1)
+    pdf.cell(0, 6, f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1)
+    pdf.cell(0, 6, f"Total estudiantes: {len(estudiantes)}", 0, 1)
+    pdf.ln(4)
+
+    if not estudiantes:
+        pdf.set_font("Helvetica", "I", 12)
+        pdf.cell(0, 10, "No hay estudiantes para los filtros seleccionados.", 0, 1)
+        return bytes(pdf.output())
+
+    encabezados = ["N°", "Cedula", "Apellidos", "Nombres", "Seccion", "Horario"]
+    anchos = [12, 28, 40, 40, 25, 45]
+
+    def escribir_encabezados():
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_fill_color(31, 41, 55)
+        pdf.set_text_color(255, 255, 255)
+        for h, w in zip(encabezados, anchos):
+            pdf.cell(w, 8, h, border=1, align="C", fill=True)
+        pdf.ln()
+        pdf.set_text_color(35, 35, 35)
+        pdf.set_font("Helvetica", "", 9)
+
+    def ajustar(texto: str, ancho: float) -> str:
+        original = str(texto or "")
+        t = original
+        while t and pdf.get_string_width(t) > ancho - 2:
+            t = t[:-1]
+        if t != original and len(t) > 3:
+            t = t[:-3] + "..."
+        return t
+
+    escribir_encabezados()
+    for i, e in enumerate(estudiantes, start=1):
+        if pdf.get_y() > 270:
+            pdf.add_page()
+            escribir_encabezados()
+
+        valores = [
+            str(i),
+            str(e.get("ciestu") or ""),
+            str(e.get("apelliestu") or ""),
+            str(e.get("nombreestu") or ""),
+            str(e.get("nomsecc") or e.get("idsecc") or ""),
+            str(e.get("horario_texto") or "Sin horario"),
+        ]
+        pdf.set_fill_color(250, 250, 250)
+        for valor, ancho in zip(valores, anchos):
+            pdf.cell(ancho, 7, ajustar(valor, ancho), border=1, align="L", fill=True)
+        pdf.ln()
+
+    return bytes(pdf.output())

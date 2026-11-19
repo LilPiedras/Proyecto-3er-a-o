@@ -31,7 +31,7 @@ def crear_estudiante(estudiante: EstuEntrada, escritor_id: str, db: Session):
     )
     db.add(estudiante)
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(estudiante)
     return estudiante
@@ -44,7 +44,7 @@ def actualizar_estudiante_completo(ciestu: str, estu_updata: EstuEntrada, escrit
     for key, value in estu_updata.model_dump(exclude_unset=True).items():
         setattr(db_estu, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_estu)
     return db_estu
@@ -58,7 +58,7 @@ def actualizar_estudiante_parcial(ciestu: str, estu_updata: EstudianteActualizar
     for key, value in update_data.items():
         setattr(db_estu, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_estu)
     return db_estu
@@ -70,7 +70,7 @@ def eliminar_estudiante(ciestu: str, escritor_id: str, db: Session):
     
     db_estu.activo = False
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     return None
 
@@ -84,7 +84,7 @@ def restaurar_estudiante(ciestu: str, escritor_id: str, db: Session):
     
     db_estu.activo = True
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_estu)
     return db_estu

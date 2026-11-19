@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from typing import List, Optional
 
 from models.materias_model import Materias
 from models.notas_model import Notas
@@ -139,37 +140,46 @@ def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Ses
     db.refresh(nueva_nota)
     return nueva_nota
 
-def listar_estudiantes_del_docente(ci_docente: str, db: Session):
-    rows = db.execute(
-        text("""
-            SELECT
-                os.idseccmo,
-                e.ciestu,
-                e.nombreestu,
-                e.apelliestu,
-                os.idsecc,
-                COALESCE(s.nomsecc, 'Sección ' || os.idsecc::text) AS nomsecc,
-                os.horario,
-                COALESCE(h.dia, '') AS dia,
-                COALESCE(h.salon, '') AS salon,
-                COALESCE(b.horainicio::text, '') AS horainicio,
-                COALESCE(b.horafin::text, '') AS horafin,
-                m.idmateria,
-                m.nombremateria
-            FROM oferta_seccion os
-            JOIN estudiante e ON e.ciestu = os.estudiante AND e.activo IS TRUE
-            LEFT JOIN seccion s ON s.idsecc = os.idsecc
-            LEFT JOIN horario h ON h.idhorario = os.horario
-            LEFT JOIN bloque b ON b.idbloque = h.bloque
-            LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
-            LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
-            LEFT JOIN materia m ON m.idmateria = mm.idmateria AND m.activo IS TRUE
-            WHERE os.estudiante IS NOT NULL
-              AND m.docente = :ci
-            ORDER BY e.apelliestu, e.nombreestu
-        """),
-        {"ci": ci_docente},
-    ).fetchall()
+def listar_estudiantes_del_docente(ci_docente: str, db: Session, idmateria: int | None = None, idsecc: int | None = None):
+    sql = """
+        SELECT
+            os.idseccmo,
+            e.ciestu,
+            e.nombreestu,
+            e.apelliestu,
+            os.idsecc,
+            COALESCE(s.nomsecc, 'Sección ' || os.idsecc::text) AS nomsecc,
+            os.horario,
+            COALESCE(h.dia, '') AS dia,
+            COALESCE(h.salon, '') AS salon,
+            COALESCE(b.horainicio::text, '') AS horainicio,
+            COALESCE(b.horafin::text, '') AS horafin,
+            m.idmateria,
+            m.nombremateria
+        FROM oferta_seccion os
+        JOIN estudiante e ON e.ciestu = os.estudiante AND e.activo IS TRUE
+        LEFT JOIN seccion s ON s.idsecc = os.idsecc
+        LEFT JOIN horario h ON h.idhorario = os.horario
+        LEFT JOIN bloque b ON b.idbloque = h.bloque
+        LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+        LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+        LEFT JOIN materia m ON m.idmateria = mm.idmateria AND m.activo IS TRUE
+        WHERE os.estudiante IS NOT NULL
+          AND m.docente = :ci
+    """
+    params = {"ci": ci_docente}
+
+    if idmateria is not None:
+        sql += " AND m.idmateria = :idmateria"
+        params["idmateria"] = idmateria
+
+    if idsecc is not None:
+        sql += " AND os.idsecc = :idsecc"
+        params["idsecc"] = idsecc
+
+    sql += " ORDER BY m.nombremateria, s.nomsecc, e.apelliestu, e.nombreestu"
+
+    rows = db.execute(text(sql), params).fetchall()
 
     return [
         {
@@ -186,7 +196,6 @@ def listar_estudiantes_del_docente(ci_docente: str, db: Session):
             "horafin": r[10],
             "idmateria": r[11],
             "nombremateria": r[12],
-            # Texto listo para la UI
             "horario_texto": (
                 f"{r[7]} {r[9]}-{r[10]}"
                 + (f" · Aula {r[8]}" if r[8] else "")

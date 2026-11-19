@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class HorarioSalida(BaseModel):
@@ -12,9 +12,9 @@ class HorarioSalida(BaseModel):
         from_attributes = True
 
 class HorarioEntrada(BaseModel):
-    dia: str
-    bloque: int
-    salon: str
+    dia: str = Field(..., min_length=1, max_length=20)
+    bloque: int = Field(..., gt=0)
+    salon: str = Field(..., min_length=1, max_length=30)
 
 class HorarioActualizar(BaseModel):
     dia: Optional[str] = None

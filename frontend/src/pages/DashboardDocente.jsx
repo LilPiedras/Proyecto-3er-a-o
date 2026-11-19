@@ -10,6 +10,9 @@ const DashboardDocente = () => {
   const [cargando, setCargando] = useState(true);
   const [misAsignaciones, setMisAsignaciones] = useState([]);
   const [ciDocente, setCiDocente] = useState('');
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [filtroMateria, setFiltroMateria] = useState('');
+  const [filtroSeccion, setFiltroSeccion] = useState('');
 
   useEffect(() => {
     const ci =
@@ -57,6 +60,13 @@ const DashboardDocente = () => {
       });
 
       setMisAsignaciones(Array.from(unicos.values()));
+      try {
+      const resEst = await api.get(`/Notas/docente/${ci}/estudiantes`);
+      setEstudiantes(Array.isArray(resEst.data) ? resEst.data : []);
+    } catch {
+      setEstudiantes([]);
+    }
+
     } catch (error) {
       console.error("Error al cargar carga académica:", error);
       show_alert("No se pudo cargar tu información docente", "error");
@@ -79,6 +89,61 @@ const DashboardDocente = () => {
       })),
     [misAsignaciones]
   );
+
+  const materiasUnicas = useMemo(() => {
+    const map = new Map();
+    estudiantes.forEach((e) => {
+      if (e.idmateria && !map.has(e.idmateria)) {
+        map.set(e.idmateria, e.nombremateria || `Materia ${e.idmateria}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
+  }, [estudiantes]);
+
+  const seccionesUnicas = useMemo(() => {
+    const map = new Map();
+    estudiantes
+      .filter((e) => !filtroMateria || String(e.idmateria) === String(filtroMateria))
+      .forEach((e) => {
+        if (e.idsecc != null && !map.has(e.idsecc)) {
+          map.set(e.idsecc, e.nomsecc || `Sección ${e.idsecc}`);
+        }
+      });
+    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
+  }, [estudiantes, filtroMateria]);
+
+  const listaFiltrada = useMemo(() => {
+    return estudiantes.filter((e) => {
+      if (filtroMateria && String(e.idmateria) !== String(filtroMateria)) return false;
+      if (filtroSeccion && String(e.idsecc) !== String(filtroSeccion)) return false;
+      return true;
+    });
+  }, [estudiantes, filtroMateria, filtroSeccion]);
+
+  const generarNominaPDF = async () => {
+    try {
+      const params = {};
+      if (filtroMateria) params.idmateria = filtroMateria;
+      if (filtroSeccion) params.idsecc = filtroSeccion;
+
+      const res = await api.get('/analitics/nomina-docente/pdf', {
+        params,
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nomina_${ciDocente || 'docente'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      show_alert('No se pudo generar la nómina en PDF', 'error');
+    }
+  };
 
   const imprimirHorarioPDF = async () => {
     try {
@@ -219,6 +284,93 @@ const DashboardDocente = () => {
               </div>
             )}
           </div>
+
+          {/* ===== NÓMINA DE ESTUDIANTES ===== */}
+          <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Users className="text-yellow-400" size={20} />
+              Nómina de estudiantes
+            </h2>
+
+            <div className="flex flex-wrap gap-3">
+              <select
+                value={filtroMateria}
+                onChange={(e) => {
+                  setFiltroMateria(e.target.value);
+                  setFiltroSeccion('');
+                }}
+                className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white"
+              >
+                <option value="">Todas las materias</option>
+                {materiasUnicas.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filtroSeccion}
+                onChange={(e) => setFiltroSeccion(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white"
+              >
+                <option value="">Todas las secciones</option>
+                {seccionesUnicas.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={generarNominaPDF}
+                disabled={!listaFiltrada.length}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Printer size={16} />
+                Generar nómina (PDF)
+              </button>
+            </div>
+
+            <div className="overflow-x-auto border border-gray-800 rounded-xl">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-800 text-yellow-400 text-xs uppercase">
+                  <tr>
+                    <th className="p-3">Cédula</th>
+                    <th className="p-3">Estudiante</th>
+                    <th className="p-3">Materia</th>
+                    <th className="p-3">Sección</th>
+                    <th className="p-3">Horario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listaFiltrada.length > 0 ? (
+                    listaFiltrada.map((e) => (
+                      <tr
+                        key={`${e.ciestu}-${e.idseccmo}`}
+                        className="border-b border-gray-800 hover:bg-gray-800/50"
+                      >
+                        <td className="p-3 font-mono text-gray-300">{e.ciestu}</td>
+                        <td className="p-3 text-gray-200">
+                          {e.apelliestu} {e.nombreestu}
+                        </td>
+                        <td className="p-3">{e.nombremateria || '—'}</td>
+                        <td className="p-3">{e.nomsecc || e.idsecc || '—'}</td>
+                        <td className="p-3 text-gray-400">{e.horario_texto || 'Sin horario'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-6 text-center text-gray-500">
+                        No hay estudiantes con esos filtros.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
     </div>

@@ -2,6 +2,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from analitics.pdf import crear_pdf_nomina_docente
+from services import notas_service
 
 from analitics.pdf import crear_pdf_mensualidades, crear_pdf_horario_docente
 from database.connection import SessionLocal
@@ -134,4 +136,32 @@ def descargar_horario_docente(db: Session = Depends(get_db), current_user: Usuar
         content=pdf_content,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+@router.get("/nomina-docente/pdf")
+def nomina_docente_pdf(
+    idmateria: int | None = None,
+    idsecc: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1, 2, 4])),
+):
+    ci = current_user.ciuser
+    lista = notas_service.listar_estudiantes_del_docente(
+        ci, db, idmateria=idmateria, idsecc=idsecc
+    )
+    materia_nombre = lista[0]["nombremateria"] if lista else None
+    seccion_nombre = lista[0]["nomsecc"] if lista and idsecc else None
+
+    pdf_bytes = crear_pdf_nomina_docente(
+        ci_docente=ci,
+        estudiantes=lista,
+        materia=materia_nombre,
+        seccion=seccion_nombre,
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="nomina_{ci}.pdf"'
+        },
     )

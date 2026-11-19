@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import date
 
@@ -12,8 +12,8 @@ class AsistenciaSalida(BaseModel):
     verificar: bool
 
 class AsistenciaEntrada(BaseModel):
-    asisestu: str
-    idmateria: int
+    asisestu: str = Field(..., min_length=6, max_length=30)
+    idmateria: int = Field(..., gt=0)
     fecha: date
     verificar: bool = False
 

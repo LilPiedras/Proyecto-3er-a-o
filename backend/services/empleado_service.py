@@ -31,7 +31,7 @@ def crear_empleado(empleado: EmpleadoEntrada, escritor_id: str, db:Session):
                      correoempleado = empleado.correoempleado)
     db.add(empleado)
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(empleado)
     return empleado
@@ -45,7 +45,7 @@ def actualizar_empleado_completo(ciempleado: str, emple_update: EmpleadoUpdate, 
     for key, value in update_data.items():
         setattr(db_empleado, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_empleado)
     return db_empleado
@@ -59,7 +59,7 @@ def actualizar_empleado_parcial(ciempleado: str, empleado_update: EmpleadoUpdate
     for key, value in update_data.items():
         setattr(db_empleado, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_empleado)
     return db_empleado
@@ -71,7 +71,7 @@ def eliminar_empleado(ciempleado: str, escritor_id: str, db: Session):
     
     db_empleado.activo = False
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     return None
 
@@ -86,7 +86,7 @@ def restaurar_empleado(ciempleado: str, escritor_id: str, db: Session):
     
     db_empleado.activo = True
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_empleado)
     return db_empleado
