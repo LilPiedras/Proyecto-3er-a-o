@@ -4,20 +4,19 @@ from fastapi import HTTPException, status
 from datetime import datetime
 
 def parse_hora(hora_str: str):
-    """Convierte string de hora a time. Soporta muchos formatos comunes."""
     if not hora_str:
         return None
 
     hora_str = str(hora_str).strip().upper()
 
     formatos = [
-        "%I:%M %p",      # 7:45 AM
-        "%I:%M%p",       # 7:45AM
-        "%H:%M",         # 07:45 o 19:45
-        "%H:%M:%S",      # 07:45:00
-        "%I:%M:%S %p",   # 7:45:00 AM
-        "%H.%M",         # 7.45
-        "%I.%M %p",      # 7.45 AM
+        "%I:%M %p",
+        "%I:%M%p",
+        "%H:%M",
+        "%H:%M:%S",
+        "%I:%M:%S %p",
+        "%H.%M",
+        "%I.%M %p",
     ]
 
     for fmt in formatos:
@@ -28,20 +27,24 @@ def parse_hora(hora_str: str):
 
     raise HTTPException(
         status_code=400,
-        detail=f"Formato de hora inválido: '{hora_str}'. Formatos aceptados: 7:45 AM, 07:45, 19:45, etc."
+        detail=f"Formato de hora inválido: '{hora_str}'"
     )
 
 def se_solapan(inicio1, fin1, inicio2, fin2) -> bool:
     return inicio1 < fin2 and inicio2 < fin1
 
-def validar_choque_horario_docente(db: Session, ci_docente: str, idhorario: int, excluir_asignacion_id: int | None = None):
-
+def validar_choque_horario_docente(
+    db: Session,
+    ci_docente: str,
+    idhorario: int,
+    excluir_idseccmo: int | None = None
+):
     horario_nuevo = db.execute(
         text("""
             SELECT h.idhorario, h.dia, h.salon, b.horainicio, b.horafin
             FROM horario h
             JOIN bloque b ON h.bloque = b.idbloque
-            WHERE h.idhorario = :idhorario AND h.activo = TRUE
+            WHERE h.idhorario = :idhorario AND COALESCE(h.activo, TRUE) = TRUE
         """),
         {"idhorario": idhorario}
     ).fetchone()
@@ -54,30 +57,31 @@ def validar_choque_horario_docente(db: Session, ci_docente: str, idhorario: int,
     fin_nuevo = parse_hora(horario_nuevo.horafin)
 
     query = """
-        SELECT
-            ad.id_asignacion_docente,
-            h.idhorario,
+        SELECT 
+            os.idseccmo,
             h.dia,
             h.salon,
             b.horainicio,
             b.horafin,
-            m.nombremateria,
-            s.nomsecc
-        FROM asignacion_docente ad
-        JOIN horario h ON ad.horario_id = h.idhorario
+            COALESCE(m.nombremateria, 'Sin nombre') AS nombremateria,
+            COALESCE(s.nomsecc, 'Sin sección') AS nomsecc
+        FROM oferta_seccion os
+        JOIN horario h ON os.horario = h.idhorario
         JOIN bloque b ON h.bloque = b.idbloque
-        JOIN materia m ON ad.materia_id = m.idmateria
-        JOIN seccion s ON ad.seccion_id = s.idsecc
-        WHERE ad.empleado_id = :ci_docente
-          AND ad.activo = TRUE
-          AND h.activo = TRUE
+        LEFT JOIN carrera_modulo cm ON cm.idcarremo = os.idcarremo
+        LEFT JOIN materias_modulo mm ON mm.idmatemo = cm.idmatemo
+        LEFT JOIN materia m ON m.idmateria = mm.idmateria
+        LEFT JOIN seccion s ON s.idsecc = os.idsecc
+        WHERE m.docente = :ci_docente
+          AND COALESCE(h.activo, TRUE) = TRUE
           AND h.dia = :dia
+          AND os.horario IS NOT NULL
     """
     params = {"ci_docente": ci_docente, "dia": dia_nuevo}
 
-    if excluir_asignacion_id:
-        query += " AND ad.id_asignacion_docente != :excluir_id"
-        params["excluir_id"] = excluir_asignacion_id
+    if excluir_idseccmo:
+        query += " AND os.idseccmo != :excluir_id"
+        params["excluir_id"] = excluir_idseccmo
 
     choques = db.execute(text(query), params).fetchall()
 

@@ -83,7 +83,6 @@ def obtener_horarios_materias(db: Session = Depends(get_db)):
 @hrouter.post("/asignar-horario")
 def asignar_horario_materia(datos: AsignacionSchema, db: Session = Depends(get_db)):
     try:
-        
         idmateria = int(datos.idmateria)
         ciempleado = str(datos.ciempleado).strip()
         idmodulo = int(datos.idmodulo)
