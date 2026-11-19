@@ -38,7 +38,7 @@ def actualizar_bloque_completo(idbloque: int, bloque_data: BloqueEntrada, db: Se
 
 @bloque_route.patch("/{idbloque}", response_model=BloqueSalida)
 def actualizar_bloque_parcial(idbloque: int, bloque_data: BloqueActualizar, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    return bloque_service.actualizar_curso_parcial(idbloque, bloque_data, db)
+    return bloque_service.actualizar_horario_parcial(idbloque, bloque_data, db)
 
 @bloque_route.delete("/{idbloque}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_bloque(idbloque: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):

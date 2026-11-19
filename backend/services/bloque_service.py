@@ -4,6 +4,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
 
+def _existe_bloque_duplicado(db: Session, horainicio: str, horafin: str, excluir_id: int | None = None):
+    query = db.query(Bloque).filter(
+        Bloque.horainicio == horainicio,
+        Bloque.horafin == horafin,
+        Bloque.activo == True
+    )
+    if excluir_id is not None:
+        query = query.filter(Bloque.idbloque != excluir_id)
+    return query.first() is not None
 
 def obtener_bloque_por_id(idbloque: int, db: Session):
     bloque = db.query(Bloque).filter(Bloque.idbloque == idbloque, Bloque.activo == True).first()
@@ -16,19 +25,21 @@ def listar_bloques_horarios(db: Session):
     return db.query(Bloque).filter(Bloque.activo == True).all()
 
 def crear_bloque(bloque_data: BloqueEntrada, db: Session):
-    try:
-        bloque = Bloque(
-            horainicio=bloque_data.horainicio,
-            horafin=bloque_data.horafin,
-            activo=True
+    if _existe_bloque_duplicado(db, bloque_data.horainicio, bloque_data.horafin):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ya existe un bloque activo de {bloque_data.horainicio} a {bloque_data.horafin}."
         )
-        db.add(bloque)
-        db.commit()
-        db.refresh(bloque)
-        return bloque
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error al crear el bloque de horario")
+
+    nuevo = Bloque(
+        horainicio=bloque_data.horainicio,
+        horafin=bloque_data.horafin,
+        activo=True
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return nuevo
 
 
 def actualizar_horario_completo(idbloque: int, bloque_data: BloqueEntrada, db: Session):
