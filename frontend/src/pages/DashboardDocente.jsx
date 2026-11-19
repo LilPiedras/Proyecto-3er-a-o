@@ -60,12 +60,13 @@ const DashboardDocente = () => {
       });
 
       setMisAsignaciones(Array.from(unicos.values()));
+
       try {
-      const resEst = await api.get(`/Notas/docente/${ci}/estudiantes`);
-      setEstudiantes(Array.isArray(resEst.data) ? resEst.data : []);
-    } catch {
-      setEstudiantes([]);
-    }
+        const resEst = await api.get(`/Notas/docente/${ci}/estudiantes`);
+        setEstudiantes(Array.isArray(resEst.data) ? resEst.data : []);
+      } catch {
+        setEstudiantes([]);
+      }
 
     } catch (error) {
       console.error("Error al cargar carga académica:", error);

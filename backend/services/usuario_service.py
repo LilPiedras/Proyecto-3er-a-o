@@ -35,7 +35,7 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
             usuario_existente.empleado = usuario.empleado
             usuario_existente.estudiante = usuario.estudiante
             
-            db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+            db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
             db.commit()
             db.refresh(usuario_existente)
             return usuario_existente
@@ -62,7 +62,7 @@ def registrar_usuario(usuario: UsuarioEntrada, admin_id: str, db: Session):
     )
     db.add(nuevo_usuario)
     
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
     db.refresh(nuevo_usuario)
     return nuevo_usuario
@@ -79,7 +79,7 @@ def actualizar_usuario_completo(ciuser: str, usuario_updata: UsuarioUpdata, admi
     for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
@@ -96,7 +96,7 @@ def actualizar_usuario_parcial(ciuser: str, usuario_updata: UsuarioUpdata, admin
     for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
@@ -120,7 +120,7 @@ def eliminar_usuario(ciuser: str, admin_id: str, db: Session):
         if hasattr(preg, "activo"):
             preg.activo = False
         
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
 
 def listar_usuarios_inactivos(db: Session):
@@ -151,7 +151,7 @@ def restaurar_usuario(ciuser: str, admin_id: str, db: Session):
         if hasattr(preg, "activo"):
             preg.activo = True
 
-    db.execute(text(f"SET LOCAL app.current_admin_id = '{admin_id}'"))
+    db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
