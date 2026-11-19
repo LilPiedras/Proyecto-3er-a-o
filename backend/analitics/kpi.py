@@ -138,14 +138,20 @@ def descargar_horario_docente(db: Session = Depends(get_db), current_user: Usuar
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
-@router.get("/nomina-docente/pdf")
-def nomina_docente_pdf(
-    idmateria: int | None = None,
-    idsecc: int | None = None,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1, 2, 4])),
-):
-    ci = current_user.ciuser
+@router.get("/nomina-docente/pdf", response_class=Response)
+def nomina_docente_pdf(idmateria: int | None = None, idsecc: int | None = None, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 4]))):
+    ci = str(
+        getattr(current_user, "ciuser", None)
+        or getattr(current_user, "empleado", None)
+        or ""
+    ).strip()
+
+    if not ci:
+        return Response(
+            content=b"No se encontro cedula del docente",
+            status_code=400,
+        )
+
     lista = notas_service.listar_estudiantes_del_docente(
         ci, db, idmateria=idmateria, idsecc=idsecc
     )
