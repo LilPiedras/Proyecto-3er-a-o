@@ -137,14 +137,6 @@ export default function LoginForm() {
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/registro')}
-            className="w-full py-4 rounded-xl border border-gray-200 text-white text-lg font-bold hover:bg-gray-800 transition-colors cursor-pointer"
-          >
-            Crear Cuenta
-          </button>
         </div>
       </form>
     </div>

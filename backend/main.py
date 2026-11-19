@@ -69,7 +69,7 @@ from routers.RouteUsuarioLogin import usuariolog_router
 from routers.auditoria_router import auditoria_router
 from routers.RoutePlan_evaluacion import plan_evaluacion_router
 from analitics.kpi import router as analitics_router 
-from routers.horarios_oferta import hrouter # O como se llame tu archivo de horarios_oferta
+from routers.horarios_oferta import hrouter
 from routers.RouteIncscipcion import inscripcion_alias_router, inscripcion_router
 from routers.RouteDetalles import detalle_router
 from routers.periodo_router import periodo_router

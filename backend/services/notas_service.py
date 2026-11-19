@@ -10,8 +10,10 @@ from models.oferta_seccion_model import Oferta_seccion
 from models.plan_evaluacion_model import PlanEvaluacion
 from models.estudiante_model import Estudiante
 from Schemas.notas_schema import NotaActualizar, NotasEntrada
+from services.validaciones_periodo import validar_periodo_abierto
 
 def obtener_notas_por_id(idnota: int, db: Session):
+    validar_periodo_abierto(db)
     nota = db.query(Notas).filter(Notas.idnota == idnota, Notas.activo.is_(True)).first()
     if nota is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La nota no fue encontrada")
@@ -21,6 +23,7 @@ def listar_notas(db: Session):
     return db.query(Notas).filter(Notas.activo.is_(True)).all()
 
 def crear_nota(nota: NotasEntrada, db: Session):
+    validar_periodo_abierto(db)
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == nota.oferta).first()
     if not oferta:
         raise HTTPException(status_code=404, detail="La oferta indicada no existe")
@@ -38,6 +41,7 @@ def crear_nota(nota: NotasEntrada, db: Session):
     return nueva_nota
 
 def actualizar_nota_completo(idnota: int, nota_up: NotaActualizar, db: Session):
+    validar_periodo_abierto(db)
     db_nota = db.query(Notas).filter(Notas.idnota == idnota, Notas.activo.is_(True)).first()
     if not db_nota:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La nota no fue encontrada")
@@ -51,9 +55,11 @@ def actualizar_nota_completo(idnota: int, nota_up: NotaActualizar, db: Session):
 
 
 def actualizar_nota_parcial(idnota: int, nota_up: NotaActualizar, db: Session):
+    validar_periodo_abierto(db)
     return actualizar_nota_completo(idnota, nota_up, db)
 
 def eliminar_nota(idnota: int, db: Session):
+    validar_periodo_abierto(db)
     db_nota = db.query(Notas).filter(Notas.idnota == idnota, Notas.activo.is_(True)).first()
     if not db_nota:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La nota no fue encontrada")
@@ -69,6 +75,7 @@ def obtener_notas_estudiante(ciestu: str, idmateria: Optional[int], db: Session)
     return query.all()
 
 def crear_nota_validando_docente(nota_in: NotasEntrada, ci_docente: str, db: Session):
+    validar_periodo_abierto(db)
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == nota_in.oferta).first()
     if not oferta:
         raise HTTPException(status_code=404, detail="La oferta indicada no existe")

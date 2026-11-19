@@ -1,11 +1,12 @@
 import traceback
-from typing import Union, Optional
+from typing import Union
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from database.connection import get_db
+from services.validaciones_horario import validar_choque_horario_docente
 
 hrouter = APIRouter(
     prefix="/api",
@@ -82,12 +83,19 @@ def obtener_horarios_materias(db: Session = Depends(get_db)):
 @hrouter.post("/asignar-horario")
 def asignar_horario_materia(datos: AsignacionSchema, db: Session = Depends(get_db)):
     try:
+        
         idmateria = int(datos.idmateria)
         ciempleado = str(datos.ciempleado).strip()
         idmodulo = int(datos.idmodulo)
         idhorario = int(datos.idhorario)
         idcarrera = int(datos.idcarrera)
         idsecc = int(datos.idsecc)
+
+        validar_choque_horario_docente(
+            db=db,
+            ci_docente=ciempleado,
+            idhorario=idhorario
+        )
 
         db.execute(
             text("UPDATE materia SET docente = :docente WHERE idmateria = :idmateria"),

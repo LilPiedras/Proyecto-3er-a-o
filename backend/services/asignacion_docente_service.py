@@ -5,6 +5,8 @@ from Schemas.asignacion_docente_schema import (
     AsigmentDocEntrada,
     AsigmentDocUpdate,
 )
+from services.validaciones_horario import validar_choque_horario_docente
+
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 
@@ -23,11 +25,26 @@ def listar_docentes_asignados(db: Session):
 
 def crear_nueva_asignacion(asig: AsigmentDocEntrada, db: Session):
     existe = (
-        db.query(Asignacion_Docente).filter(Asignacion_Docente.empleado_id == asig.empleado_id, Asignacion_Docente.materia_id == asig.materia_id, Asignacion_Docente.seccion_id == asig.seccion_id, Asignacion_Docente.activo.is_(True)).first())
+        db.query(Asignacion_Docente)
+        .filter(
+            Asignacion_Docente.empleado_id == asig.empleado_id,
+            Asignacion_Docente.materia_id == asig.materia_id,
+            Asignacion_Docente.seccion_id == asig.seccion_id,
+            Asignacion_Docente.activo.is_(True)
+        )
+        .first()
+    )
     if existe:
         raise HTTPException(
             status_code=400,
             detail="Ya existe una asignación activa para ese docente + materia + sección",
+        )
+
+    if asig.horario_id:
+        validar_choque_horario_docente(
+            db=db,
+            ci_docente=asig.empleado_id,
+            idhorario=asig.horario_id
         )
 
     nueva = Asignacion_Docente(

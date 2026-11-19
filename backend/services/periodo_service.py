@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
 
-
 def obtener_periodo_id(id: int, db: Session):
     periodo = db.query(Periodo).filter(Periodo.id == id, Periodo.activo == True).first()
     if periodo is None:
@@ -71,3 +70,23 @@ def eliminar_periodo(id: int, db: Session):
     db_periodo.activo = False
     db.commit()
     return None
+
+def cerrar_periodo(id: int, db: Session):
+    periodo = db.query(Periodo).filter(Periodo.id == id).first()
+    if not periodo:
+        raise HTTPException(status_code=404, detail="Periodo no encontrado")
+
+    periodo.cerrado = True
+    db.commit()
+    db.refresh(periodo)
+    return periodo
+
+def abrir_periodo(id: int, db: Session):
+    periodo = db.query(Periodo).filter(Periodo.id == id).first()
+    if not periodo:
+        raise HTTPException(status_code=404, detail="Periodo no encontrado")
+
+    periodo.cerrado = False
+    db.commit()
+    db.refresh(periodo)
+    return periodo

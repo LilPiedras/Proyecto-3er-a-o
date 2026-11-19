@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from database.connection import SessionLocal
 from Schemas.periodo_schema import *
 from services import periodo_service
-from models.usuario_model import Usuario     
-from tokensitos.auth_depencias import VerificarRoles 
+from models.usuario_model import Usuario
+from tokensitos.auth_depencias import VerificarRoles
 
 periodo_router = APIRouter(
     prefix="/periodo",
@@ -45,10 +45,14 @@ def actualizar_periodo(
     return periodo_service.actualizar_periodo_completo(id, cur_updata, db)
 
 @periodo_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_curso_logico(
-    idcurso: int, 
-    db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(VerificarRoles([1,2,3]))
-):
+def eliminar_curso_logico(idcurso: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     periodo_service.eliminar_periodo(id, db)
     return None
+
+@periodo_router.patch("/{id}/cerrar", response_model=PeriodoSalida)
+def cerrar_periodo(id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+    return periodo_service.cerrar_periodo(id, db)
+
+@periodo_router.patch("/{id}/abrir", response_model=PeriodoSalida)
+def abrir_periodo(id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
+    return periodo_service.abrir_periodo(id, db)

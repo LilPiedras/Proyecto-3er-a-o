@@ -18,6 +18,7 @@ from Schemas.asistencia_schema import (
     AsistenciaEntrada,
     AsistenciaLoteEntrada,
 )
+from services.validaciones_periodo import validar_periodo_abierto
 
 def _es_docente(usuario: Usuario) -> bool:
     roles = getattr(usuario, "roles_activos", None)
@@ -194,6 +195,7 @@ def listar_asistencia_por_materia(
 
 
 def guardar_asistencia(asistencia_in: AsistenciaEntrada, usuario: Usuario, db: Session):
+    validar_periodo_abierto(db)
     _verificar_materia(asistencia_in.idmateria, usuario, db)
     if not _estudiante_inscrito(asistencia_in.idmateria, asistencia_in.asisestu, db):
         raise HTTPException(
@@ -222,11 +224,8 @@ def guardar_asistencia(asistencia_in: AsistenciaEntrada, usuario: Usuario, db: S
     return asistencia
 
 
-def confirmar_asistencia_lote(
-    lote: AsistenciaLoteEntrada,
-    usuario: Usuario,
-    db: Session,
-):
+def confirmar_asistencia_lote(lote: AsistenciaLoteEntrada, usuario: Usuario, db: Session):
+    validar_periodo_abierto(db)
     _verificar_materia(lote.idmateria, usuario, db)
     estudiantes = [
         fila[0]
@@ -294,6 +293,7 @@ def actualizar_asistencia(
     usuario: Usuario,
     db: Session,
 ):
+    validar_periodo_abierto(db)
     asistencia = db.query(Asistencias).filter(Asistencias.idasis == idasis).first()
     if asistencia is None or asistencia.idmateria is None:
         raise HTTPException(
@@ -314,6 +314,7 @@ def actualizar_asistencia(
 
 
 def eliminar_asistencia(idasis: int, usuario: Usuario, db: Session) -> None:
+    validar_periodo_abierto(db)
     asistencia = db.query(Asistencias).filter(Asistencias.idasis == idasis).first()
     if asistencia is None or asistencia.idmateria is None:
         raise HTTPException(
@@ -327,7 +328,7 @@ def eliminar_asistencia(idasis: int, usuario: Usuario, db: Session) -> None:
 
 def obtener_asistencias_estudiante_service(ci: str, idmateria: int, usuario: Usuario, db: Session):
     roles = getattr(usuario, "roles_activos", []) or []
-    
+
     # Si el usuario es estrictamente un estudiante (rol 5 sin roles administrativos/docentes)
     if 5 in roles and not any(r in roles for r in [1, 2, 3, 4]):
         ci_usuario = str(getattr(usuario, "ciuser", "") or "").strip()
@@ -346,7 +347,7 @@ def obtener_asistencias_estudiante_service(ci: str, idmateria: int, usuario: Usu
         WHERE asisestu = :ci AND idmateria = :idmateria
         ORDER BY fecha DESC
     """)
-    
+
     resultado = db.execute(query, {"ci": ci, "idmateria": idmateria}).fetchall()
 
     asistencias = []

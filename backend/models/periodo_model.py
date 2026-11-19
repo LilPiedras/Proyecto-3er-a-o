@@ -12,6 +12,7 @@ class Periodo(Base):
     fecha_inicio: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    cerrado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     def __repr__(self) -> str:
-        return f"<Periodo id={self.id} nombre='{self.nombre}'>"
+        return f"<Periodo id={self.id} nombre='{self.nombre}' cerrado={self.cerrado}>"

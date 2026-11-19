@@ -5,9 +5,10 @@ from models.plan_evaluacion_model import PlanEvaluacion
 from models.materias_model import Materias
 from models.asignacion_docente_model import Asignacion_Docente
 from Schemas.plan_evaluacion_schema import PlanEvaluacionEntrada
-
+from services.validaciones_periodo import validar_periodo_abierto
 
 def crear_plan_evaluacion(eval_in: PlanEvaluacionEntrada, ci_usuario: str, db: Session):
+    validar_periodo_abierto(db)
     materia = (db.query(Materias).filter(Materias.idmateria == eval_in.idmateria, Materias.activo.is_(True)).first())
 
     if not materia:
@@ -59,6 +60,7 @@ def obtener_evaluacion_por_id(idevaluacion: int, db: Session):
     return evaluacion
 
 def eliminar_evaluacion(idevaluacion: int, db: Session):
+    validar_periodo_abierto(db)
     evaluacion = db.query(PlanEvaluacion).filter(PlanEvaluacion.idevaluacion == idevaluacion).first()
 
     if not evaluacion:
