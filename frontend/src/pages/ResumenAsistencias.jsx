@@ -52,9 +52,8 @@ const ResumenAsistencias = () => {
         setNombreMateria(mat?.nombremateria || `Materia #${materiaSeleccionada}`);
         setProfesor(mat?.docente || "—");
 
-        // Llamada al endpoint de asistencias del estudiante filtrado por materia
-        // (Asegúrate de que tu backend tenga un endpoint similar a /Asistencias/estudiante/{ci}?idmateria=...)
-        const { data } = await api.get(`/Asistencias/estudiante/${ci}`, {
+        // Petición ajustada con el prefijo en minúsculas /asistencias/
+        const { data } = await api.get(`/asistencias/estudiante/${ci}`, {
           params: { idmateria: materiaSeleccionada },
         }).catch(() => ({ data: [] }));
 
@@ -68,15 +67,12 @@ const ResumenAsistencias = () => {
     cargarAsistenciasMateria();
   }, [materiaSeleccionada, ci, materias]);
 
-  // Contadores estadísticos rápidos (Presente, Ausente, etc.)
+  // Contadores estadísticos usando el campo booleano 'verificar'
   const estadisticas = useMemo(() => {
     const total = asistencias.length;
     if (total === 0) return { total: 0, presentes: 0, ausencias: 0, porcentaje: 0 };
 
-    const presentes = asistencias.filter(
-      (a) => String(a.estado || a.asistio).toLowerCase() === "presente" || a.estado === true || a.asistio === 1
-    ).length;
-
+    const presentes = asistencias.filter((a) => a.verificar === true).length;
     const ausencias = total - presentes;
     const porcentaje = ((presentes / total) * 100).toFixed(1);
 
@@ -94,7 +90,7 @@ const ResumenAsistencias = () => {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-black text-white pt-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Título principal */}
+        {/* Título principal estilo SAREC */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-center">
           <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide text-yellow-400">
             Control y Registro de Asistencias
@@ -170,45 +166,34 @@ const ResumenAsistencias = () => {
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-800 text-yellow-400 text-xs uppercase">
-                    <th className="p-3 border border-gray-700">Fecha</th>
+                    <th className="p-3 border border-gray-700">Fecha de Clase</th>
                     <th className="p-3 border border-gray-700 text-center">Estado</th>
-                    <th className="p-3 border border-gray-700">Observación / Detalle</th>
                   </tr>
                 </thead>
                 <tbody>
                   {asistencias.length > 0 ? (
-                    asistencias.map((a, idx) => {
-                      const esPresente = 
-                        String(a.estado || a.asistio).toLowerCase() === "presente" || 
-                        a.estado === true || 
-                        a.asistio === 1;
-
-                      return (
-                        <tr key={a.idasistencia || idx} className="border-b border-gray-700 hover:bg-gray-800/60">
-                          <td className="p-3 border border-gray-700 font-medium">
-                            {a.fecha || a.fechaclase || "—"}
-                          </td>
-                          <td className="p-3 border border-gray-700 text-center">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                esPresente
-                                  ? "bg-green-900/40 text-green-400 border border-green-700"
-                                  : "bg-red-900/40 text-red-400 border border-red-700"
-                              }`}
-                            >
-                              {esPresente ? "Presente" : "Ausente"}
-                            </span>
-                          </td>
-                          <td className="p-3 border border-gray-700 text-gray-300">
-                            {a.observacion || a.detalle || "Sin observaciones"}
-                          </td>
-                        </tr>
-                      );
-                    })
+                    asistencias.map((a) => (
+                      <tr key={a.idasistencia} className="border-b border-gray-700 hover:bg-gray-800/60">
+                        <td className="p-3 border border-gray-700 font-medium">
+                          {a.fecha}
+                        </td>
+                        <td className="p-3 border border-gray-700 text-center">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              a.verificar
+                                ? "bg-green-900/40 text-green-400 border border-green-700"
+                                : "bg-red-900/40 text-red-400 border border-red-700"
+                            }`}
+                          >
+                            {a.verificar ? "Presente" : "Ausente"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td
-                        colSpan="3"
+                        colSpan="2"
                         className="p-8 text-center text-gray-500 border border-gray-700"
                       >
                         No hay registros de asistencia cargados para esta materia.

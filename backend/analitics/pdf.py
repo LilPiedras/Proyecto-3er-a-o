@@ -115,7 +115,8 @@ def crear_pdf_mensualidades(registros: list[dict]) -> bytes:
         list(por_estado),
         list(por_estado.values()),
         (251, 191, 36),
-    )
+    ) 
+    #Grafica de veces que Candymar le pego a SMick: 100%
     grafico_periodos = _crear_grafico_barras(
         "Registros por periodo academico",
         list(por_periodo),

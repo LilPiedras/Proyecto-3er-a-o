@@ -47,3 +47,11 @@ def update_usuario_parcial(ciuser: str, usuario_updata: UsuarioUpdata, db: Sessi
 def delete_usuario_logico(ciuser: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
     # Se añade current_user.ciuser para la auditoría
     return usuario_service.eliminar_usuario(ciuser, current_user.ciuser, db)
+
+@usuario_router.get("/inactivos", response_model=List[UsuarioSalida], status_code=status.HTTP_200_OK)
+def listar_usuarios_inactivos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return usuario_service.listar_usuarios_inactivos(db)
+
+@usuario_router.patch("/{ciuser}/restaurar", response_model=UsuarioSalida)
+def restaurar_usuario_logico(ciuser: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+    return usuario_service.restaurar_usuario(ciuser, current_user.ciuser, db)

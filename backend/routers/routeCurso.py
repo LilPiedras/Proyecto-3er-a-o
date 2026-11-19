@@ -20,10 +20,18 @@ def get_db():
     finally:
         db.close()
 
+# Listar inactivos (Debe ir antes de /{idcurso})
+@curso_route.get("/inactivos", response_model=List[CursoSalida], status_code=status.HTTP_200_OK)
+def listar_cursos_inactivos(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1]))
+):
+    return curso_service.listar_cursos_inactivos(db)
+
 @curso_route.get("/", response_model=List[CursoSalida], status_code=status.HTTP_200_OK)
 def listar_cursos(
     db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(VerificarRoles([5 ,4, 3, 2, 1]))
+    current_user: Usuario = Depends(VerificarRoles([5, 4, 3, 2, 1]))
 ):
     return curso_service.listar_curso(db)
 
@@ -38,11 +46,20 @@ def crear_curso(
 @curso_route.put("/{idcurso}", response_model=CursoSalida)
 def actualizar_curso_completo(
     idcurso: int, 
-    cur_updata: CursoActualizar, # 👈 Cambiado a CursoActualizar para permitir actualizaciones flexibles
+    cur_updata: CursoActualizar,
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(VerificarRoles([1]))
 ):
     return curso_service.actualizar_curso_completo(idcurso, cur_updata, db)
+
+# Restaurar curso lógico
+@curso_route.patch("/{idcurso}/restaurar", response_model=CursoSalida)
+def restaurar_curso_logico(
+    idcurso: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1]))
+):
+    return curso_service.restaurar_curso(idcurso, db)
 
 @curso_route.delete("/{idcurso}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_curso_logico(

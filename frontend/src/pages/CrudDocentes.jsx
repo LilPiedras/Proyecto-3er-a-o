@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search, RotateCcw, Trash, Users } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -9,6 +9,7 @@ const CrudDocentes = () => {
   const [docentes, setDocentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [vistaInactivos, setVistaInactivos] = useState(false); // Estado para alternar papelera
 
   const [nacionalidad, setNacionalidad] = useState('V');
   const [ciempleadoNum, setCiempleadoNum] = useState('');
@@ -26,16 +27,21 @@ const CrudDocentes = () => {
   const cargarDocentes = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/empleado/');
+      const endpoint = vistaInactivos ? '/empleado/inactivos' : '/empleado/';
+      const { data } = await api.get(endpoint);
       setDocentes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
-      const detail = error.response?.data?.detail;
-      show_alert(
-        typeof detail === 'string' ? detail : 'Error al cargar docentes',
-        'error'
-      );
-      setDocentes([]);
+      if (error.response?.status === 404) {
+        setDocentes([]);
+      } else {
+        const detail = error.response?.data?.detail;
+        show_alert(
+          typeof detail === 'string' ? detail : 'Error al cargar docentes',
+          'error'
+        );
+        setDocentes([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -43,7 +49,7 @@ const CrudDocentes = () => {
 
   useEffect(() => {
     cargarDocentes();
-  }, []);
+  }, [vistaInactivos]);
 
   const docentesFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -170,16 +176,18 @@ const CrudDocentes = () => {
         await api.put(`/empleado/${ciempleadoPath}`, parametros);
       } else if (metodo === 'DELETE') {
         await api.delete(`/empleado/${parametros.ciempleado}`);
+      } else if (metodo === 'RESTORE') {
+        await api.patch(`/empleado/${parametros.ciempleado}/restaurar`);
       }
 
-      const msg =
-        metodo === 'DELETE'
-          ? 'Docente eliminado correctamente'
-          : metodo === 'POST'
-            ? 'Docente registrado correctamente'
-            : 'Docente actualizado correctamente';
+      const msgs = {
+        DELETE: 'Docente enviado a la papelera correctamente',
+        RESTORE: 'Docente restaurado exitosamente',
+        POST: 'Docente registrado correctamente',
+        PUT: 'Docente actualizado correctamente',
+      };
 
-      show_alert(msg, 'success');
+      show_alert(msgs[metodo] || 'Operación exitosa', 'success');
       setIsModalOpen(false);
       limpiarFormulario();
       await cargarDocentes();
@@ -204,8 +212,8 @@ const CrudDocentes = () => {
   const deleteDocente = (ciempleado, nom) => {
     const MySwal = withReactContent(Swal);
     MySwal.fire({
-      title: `¿Seguro de eliminar al docente "${nom}"?`,
-      text: 'No se podrá dar marcha atrás',
+      title: `¿Enviar al docente "${nom}" a la papelera?`,
+      text: 'Quedará inactivo en el sistema',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
@@ -216,6 +224,23 @@ const CrudDocentes = () => {
         enviarSolicitud('DELETE', { ciempleado });
       } else {
         show_alert('El docente no fue eliminado', 'info');
+      }
+    });
+  };
+
+  const restaurarDocente = (ciempleado, nom) => {
+    const MySwal = withReactContent(Swal);
+    MySwal.fire({
+      title: `¿Desea restaurar al docente "${nom}"?`,
+      text: 'Volverá a estar activo en el sistema',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, restaurar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#10b981',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        enviarSolicitud('RESTORE', { ciempleado });
       }
     });
   };
@@ -236,17 +261,38 @@ const CrudDocentes = () => {
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24">
       <div className="container mx-auto max-w-6xl">
-        <h2 className="text-3xl font-bold text-yellow-400 mb-2 text-center">
-          Gestión de Docentes
-        </h2>
-        <p className="text-center text-gray-400 text-sm mb-8">
-          Personal académico registrado en el sistema
-        </p>
+        
+        {/* Cabecera con Botón de Papelera */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+          <button
+            type="button"
+            className={`font-bold px-4 py-2.5 rounded-lg transition border flex items-center gap-2 cursor-pointer ${
+              vistaInactivos
+                ? 'bg-gray-800 text-yellow-400 border-yellow-400 hover:bg-gray-700'
+                : 'bg-red-900/40 text-red-400 border-red-700 hover:bg-red-900/60'
+            }`}
+            onClick={() => setVistaInactivos(!vistaInactivos)}
+          >
+            {vistaInactivos ? <Users size={18} /> : <Trash size={18} />}
+            {vistaInactivos ? 'Ver Docentes Activos' : 'Ver Papelera (Inactivos)'}
+          </button>
+
+          <div className="text-center sm:text-right">
+            <h2 className="text-3xl font-bold text-yellow-400 mb-1">
+              {vistaInactivos ? 'Papelera de Docentes' : 'Gestión de Docentes'}
+            </h2>
+            <p className="text-gray-400 text-sm">
+              {vistaInactivos ? 'Personal académico inactivo en el sistema' : 'Personal académico registrado en el sistema'}
+            </p>
+          </div>
+        </div>
 
         {/* Resumen */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
-            <p className="text-xs uppercase text-gray-400 mb-1">Total docentes</p>
+            <p className="text-xs uppercase text-gray-400 mb-1">
+              {vistaInactivos ? 'Total en papelera' : 'Total docentes'}
+            </p>
             <p className="text-2xl font-bold text-yellow-400">{docentes.length}</p>
           </div>
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
@@ -254,14 +300,20 @@ const CrudDocentes = () => {
             <p className="text-2xl font-bold text-white">{docentesFiltrados.length}</p>
           </div>
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => openModal(1)}
-              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Plus size={18} />
-              Añadir docente
-            </button>
+            {!vistaInactivos ? (
+              <button
+                type="button"
+                onClick={() => openModal(1)}
+                className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Plus size={18} />
+                Añadir docente
+              </button>
+            ) : (
+              <div className="text-center text-gray-400 text-xs uppercase font-bold tracking-wider">
+                Modo Papelera Activo
+              </div>
+            )}
           </div>
         </div>
 
@@ -284,7 +336,9 @@ const CrudDocentes = () => {
 
         {/* Tabla / lista */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-white mb-4">Listado de docentes</h3>
+          <h3 className="text-xl font-bold text-white mb-4">
+            {vistaInactivos ? 'Listado de inactivos' : 'Listado de docentes'}
+          </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[720px]">
@@ -342,35 +396,50 @@ const CrudDocentes = () => {
                         <td className="p-3 text-sm text-gray-300">{fecha}</td>
                         <td className="p-3">
                           <div className="flex justify-end gap-2">
-                            {/* Botón Editar (Amarillo con Lápiz) */}
-                            <button
-                              type="button"
-                              title="Editar"
-                              onClick={() =>
-                                openModal(
-                                  2,
-                                  d.ciempleado,
-                                  nom,
-                                  ape,
-                                  d.telefempleado || d.telefono,
-                                  d.correoempleado || d.correo,
-                                  d.cargo,
-                                  d.fechacontra
-                                )
-                              }
-                              className="bg-yellow-400 text-black p-2 rounded-lg hover:bg-yellow-300 transition cursor-pointer flex items-center justify-center"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            {/* Botón Eliminar (Rojo con Papelera) */}
-                            <button
-                              type="button"
-                              title="Eliminar"
-                              onClick={() => deleteDocente(d.ciempleado, nom)}
-                              className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-500 transition cursor-pointer flex items-center justify-center"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            {vistaInactivos ? (
+                              <button
+                                type="button"
+                                title="Restaurar"
+                                onClick={() =>
+                                  restaurarDocente(d.ciempleado, `${nom} ${ape}`)
+                                }
+                                className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-500 transition flex items-center gap-1 text-xs font-bold cursor-pointer"
+                              >
+                                <RotateCcw size={16} /> Restaurar
+                              </button>
+                            ) : (
+                              <>
+                                {/* Botón Editar (Amarillo con Lápiz) */}
+                                <button
+                                  type="button"
+                                  title="Editar"
+                                  onClick={() =>
+                                    openModal(
+                                      2,
+                                      d.ciempleado,
+                                      nom,
+                                      ape,
+                                      d.telefempleado || d.telefono,
+                                      d.correoempleado || d.correo,
+                                      d.cargo,
+                                      d.fechacontra
+                                    )
+                                  }
+                                  className="bg-yellow-400 text-black p-2 rounded-lg hover:bg-yellow-300 transition cursor-pointer flex items-center justify-center"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                {/* Botón Eliminar (Rojo con Papelera) */}
+                                <button
+                                  type="button"
+                                  title="Eliminar"
+                                  onClick={() => deleteDocente(d.ciempleado, nom)}
+                                  className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-500 transition cursor-pointer flex items-center justify-center"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -381,6 +450,8 @@ const CrudDocentes = () => {
                     <td colSpan="6" className="text-center p-10 text-gray-500">
                       {busqueda
                         ? 'No hay docentes que coincidan con la búsqueda.'
+                        : vistaInactivos
+                        ? 'No hay docentes en la papelera.'
                         : 'No hay docentes registrados.'}
                     </td>
                   </tr>

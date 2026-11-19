@@ -8,6 +8,8 @@ class AuditoriaSalida(BaseModel):
     idseria: int
     usuario_escritor_id: str
     usuario_objeto_id: str
+    usuario_escritor_nombre: Optional[str] = None
+    usuario_objeto_nombre: Optional[str] = None
     accion: str
     datos_anteriores: Optional[str] = None
     datos_nuevos: Optional[str] = None

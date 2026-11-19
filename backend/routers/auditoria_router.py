@@ -1,8 +1,8 @@
 from typing import List, Optional
-from fastapi.responses import Response
-from analitics.auditorias_pdf import crear_pdf_auditorias
-from fastapi import APIRouter, Depends, Query, status
+
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
+
 from database.connection import SessionLocal
 from Schemas.auditoria_esquema import AuditoriaSalida
 from models.usuario_model import Usuario
@@ -14,13 +14,15 @@ auditoria_router = APIRouter(
     tags=["Auditorias"]
 )
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-        
+
+
 @auditoria_router.get("/", response_model=List[AuditoriaSalida], status_code=status.HTTP_200_OK)
 def listar_auditorias(
     mes: Optional[int] = Query(default=None, ge=1, le=12),
@@ -32,16 +34,8 @@ def listar_auditorias(
     return auditoria_service.listar_auditorias(db, mes=mes, dia=dia, hora=hora)
 
 
-@auditoria_router.get("/{idseria}", response_model=AuditoriaSalida)
-def obtener_auditoria(
-    idseria: int,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1, 2, 3])),
-):
-    return auditoria_service.obtener_auditoria_por_id(idseria, db)
-
-@auditoria_router.get("/pdf/exportar")
-def exportar_pdf_auditorias(
+@auditoria_router.get("/pdf", status_code=status.HTTP_200_OK)
+def exportar_auditorias_pdf(
     mes: Optional[int] = Query(default=None, ge=1, le=12),
     dia: Optional[int] = Query(default=None, ge=1, le=31),
     hora: Optional[int] = Query(default=None, ge=0, le=23),
@@ -49,9 +43,20 @@ def exportar_pdf_auditorias(
     current_user: Usuario = Depends(VerificarRoles([1, 2, 3])),
 ):
     registros = auditoria_service.listar_auditorias(db, mes=mes, dia=dia, hora=hora)
-    pdf_bytes = crear_pdf_auditorias(registros)
+    pdf_bytes = auditoria_service.crear_pdf_auditorias(registros)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=reporte-auditorias.pdf"}
+        headers={
+            "Content-Disposition": 'attachment; filename="reporte_auditorias.pdf"'
+        },
     )
+
+
+@auditoria_router.get("/{idseria}", response_model=AuditoriaSalida)
+def obtener_auditoria(
+    idseria: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1, 2, 3])),
+):
+    return auditoria_service.obtener_auditoria_por_id(idseria, db)

@@ -1,6 +1,5 @@
 from datetime import date
 from typing import List
-from sqlalchemy import text
 
 from fastapi import APIRouter, Depends, Response, status, Query
 from sqlalchemy.orm import Session
@@ -21,7 +20,12 @@ from services import asistencia_service
 from tokensitos.auth_depencias import VerificarRoles
 
 asistencia_router = APIRouter(prefix="/asistencias", tags=["Asistencias"])
+
+# Roles administrativos y docentes (Permisos completos: GET, POST, PATCH, DELETE)
 roles_asistencia = VerificarRoles([1, 2, 3, 4])
+
+# Rol exclusivo para estudiantes (SOLO lectura de su propio historial)
+roles_estudiante_asistencia = VerificarRoles([5])
 
 
 @asistencia_router.get("/materias", response_model=List[AsistenciaMateriaSalida])
@@ -99,35 +103,13 @@ def eliminar_asistencia(
     asistencia_service.eliminar_asistencia(idasis, current_user, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# (Asegúrate de registrarlo en tu router de asistencias o equivalente)
-@asistencia_router.get("/Asistencias/estudiante/{ci}")
-def obtener_asistencias_estudiante(
+
+# Ruta protegida exclusivamente para el rol 5 (Estudiante)
+@asistencia_router.get("/estudiante/{ci}")
+def obtener_asistencias_estudiante_route(
     ci: str, 
     idmateria: int = Query(...), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(roles_estudiante_asistencia),
 ):
-    query = text("""
-        SELECT 
-            a.idasistencia,
-            a.fecha,
-            a.estado,
-            a.observacion
-        FROM public.asistencia a
-        WHERE a.estudiante = :ci AND a.idmateria = :idmateria
-        ORDER BY a.fecha DESC
-    """)
-    
-    # Nota: Ajusta los nombres de las tablas y columnas (como a.estudiante, a.idmateria, a.estado) 
-    # exactamente a como los tengas nombrados en tu base de datos de PostgreSQL.
-    resultado = db.execute(query, {"ci": ci, "idmateria": idmateria}).fetchall()
-
-    asistencias = []
-    for row in resultado:
-        asistencias.append({
-            "idasistencia": row[0],
-            "fecha": str(row[1]),
-            "estado": row[2],       # Puede ser booleano, string ("Presente"/"Ausente"), etc.
-            "observacion": row[3]
-        })
-
-    return asistencias
+    return asistencia_service.obtener_asistencias_estudiante_service(ci, idmateria, current_user, db)

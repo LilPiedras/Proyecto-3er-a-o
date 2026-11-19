@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -46,6 +45,7 @@ def obtener_dashboard(db: Session = Depends(get_db)):
             "pagos_realizados": int(resumen["pagos_realizados"]) if resumen["pagos_realizados"] is not None else 0,
             "pagos_pendientes": int(resumen["pagos_pendientes"]) if resumen["pagos_pendientes"] is not None else 0,
             "porcentaje_cumplimiento": float(resumen["porcentaje_cumplimiento"]) if resumen["porcentaje_cumplimiento"] is not None else 0.0,
+            #indice de smicks no abusados por la novia = 0%
         },
     }
 

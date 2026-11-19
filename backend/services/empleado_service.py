@@ -16,6 +16,11 @@ def listar_empleados(db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de empleado vacia")
     return empleado
 
+# Nueva función: Listar empleados inactivos (Papelera)
+def listar_empleados_inactivos(db: Session):
+    empleados = db.query(Empleado).filter(Empleado.activo == False).all()
+    return empleados
+
 def crear_empleado(empleado: EmpleadoEntrada, escritor_id: str, db:Session):
     empleado= Empleado(ciempleado = empleado.ciempleado,
                      nombreempleado = empleado.nombreempleado,
@@ -63,9 +68,25 @@ def eliminar_empleado(ciempleado: str, escritor_id: str, db: Session):
     db_empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado, Empleado.activo==True).first()
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
-    # Aki en lugar de db.delete(db_cliente), hacemos que ese maldito cambie su estado civil a desaperecido
+    
     db_empleado.activo = False
     
     db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
     db.commit()
     return None
+
+# Nueva función: Restaurar empleado inactivo
+def restaurar_empleado(ciempleado: str, escritor_id: str, db: Session):
+    db_empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado, Empleado.activo == False).first()
+    if not db_empleado:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="El empleado no existe o ya se encuentra activo"
+        )
+    
+    db_empleado.activo = True
+    
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.commit()
+    db.refresh(db_empleado)
+    return db_empleado

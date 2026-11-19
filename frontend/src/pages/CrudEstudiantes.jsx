@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pencil, Trash2, Plus, Search, RotateCcw, Trash, Users } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -8,6 +9,7 @@ const CrudEstudiantes = () => {
   const [estudiantes, setEstudiantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [vistaInactivos, setVistaInactivos] = useState(false); // Estado para alternar papelera
 
   const [nacionalidad, setNacionalidad] = useState('V');
   const [ciestuNum, setCiestuNum] = useState('');
@@ -23,7 +25,8 @@ const CrudEstudiantes = () => {
   const cargarEstudiantes = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/estudiantes/');
+      const endpoint = vistaInactivos ? '/estudiantes/inactivos' : '/estudiantes/';
+      const { data } = await api.get(endpoint);
       setEstudiantes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
@@ -44,7 +47,7 @@ const CrudEstudiantes = () => {
 
   useEffect(() => {
     cargarEstudiantes();
-  }, []);
+  }, [vistaInactivos]);
 
   const estudiantesFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -155,16 +158,18 @@ const CrudEstudiantes = () => {
         await api.put(`/estudiantes/${ciestuPath}`, parametros);
       } else if (metodo === 'DELETE') {
         await api.delete(`/estudiantes/${parametros.ciestu}`);
+      } else if (metodo === 'RESTORE') {
+        await api.patch(`/estudiantes/${parametros.ciestu}/restaurar`);
       }
 
-      const msg =
-        metodo === 'DELETE'
-          ? 'Estudiante eliminado correctamente'
-          : metodo === 'POST'
-            ? 'Estudiante registrado correctamente'
-            : 'Estudiante actualizado correctamente';
+      const msgs = {
+        DELETE: 'Estudiante enviado a la papelera correctamente',
+        RESTORE: 'Estudiante restaurado exitosamente',
+        POST: 'Estudiante registrado correctamente',
+        PUT: 'Estudiante actualizado correctamente',
+      };
 
-      show_alert(msg, 'success');
+      show_alert(msgs[metodo] || 'Operación exitosa', 'success');
       setIsModalOpen(false);
       limpiarFormulario();
       await cargarEstudiantes();
@@ -181,8 +186,8 @@ const CrudEstudiantes = () => {
   const deleteEstudiante = (ciestu, nombre) => {
     const MySwal = withReactContent(Swal);
     MySwal.fire({
-      title: `¿Seguro de eliminar al estudiante "${nombre}"?`,
-      text: 'No se podrá dar marcha atrás',
+      title: `¿Seguro de enviar al estudiante "${nombre}" a la papelera?`,
+      text: 'El estudiante quedará inactivo en el sistema',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
@@ -193,6 +198,23 @@ const CrudEstudiantes = () => {
         enviarSolicitud('DELETE', { ciestu });
       } else {
         show_alert('El estudiante no fue eliminado', 'info');
+      }
+    });
+  };
+
+  const restaurarEstudiante = (ciestu, nombre) => {
+    const MySwal = withReactContent(Swal);
+    MySwal.fire({
+      title: `¿Desea restaurar al estudiante "${nombre}"?`,
+      text: 'Volverá a estar activo en el sistema',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, restaurar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#10b981',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        enviarSolicitud('RESTORE', { ciestu });
       }
     });
   };
@@ -215,18 +237,37 @@ const CrudEstudiantes = () => {
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24">
       <div className="container mx-auto max-w-6xl">
-        <h2 className="text-3xl font-bold text-yellow-400 mb-2 text-center">
-          Gestión de Estudiantes
-        </h2>
-        <p className="text-center text-gray-400 text-sm mb-8">
-          Alumnos registrados en el sistema
-        </p>
+        
+        {/* Encabezado con alternador de Papelera */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+          <button
+            type="button"
+            className={`font-bold px-4 py-2.5 rounded-lg transition border flex items-center gap-2 ${
+              vistaInactivos
+                ? 'bg-gray-800 text-yellow-400 border-yellow-400 hover:bg-gray-700'
+                : 'bg-red-900/40 text-red-400 border-red-700 hover:bg-red-900/60'
+            }`}
+            onClick={() => setVistaInactivos(!vistaInactivos)}
+          >
+            {vistaInactivos ? <Users size={18} /> : <Trash size={18} />}
+            {vistaInactivos ? 'Ver Estudiantes Activos' : 'Ver Papelera (Inactivos)'}
+          </button>
+
+          <div className="text-center sm:text-right">
+            <h2 className="text-3xl font-bold text-yellow-400 mb-1">
+              {vistaInactivos ? 'Papelera de Estudiantes' : 'Gestión de Estudiantes'}
+            </h2>
+            <p className="text-gray-400 text-sm">
+              {vistaInactivos ? 'Alumnos inactivos en el sistema' : 'Alumnos registrados en el sistema'}
+            </p>
+          </div>
+        </div>
 
         {/* Resumen */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
             <p className="text-xs uppercase text-gray-400 mb-1">
-              Total estudiantes
+              {vistaInactivos ? 'Total en papelera' : 'Total estudiantes'}
             </p>
             <p className="text-2xl font-bold text-yellow-400">
               {estudiantes.length}
@@ -241,14 +282,20 @@ const CrudEstudiantes = () => {
             </p>
           </div>
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => openModal(1)}
-              className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-circle-plus"></i>
-              Añadir estudiante
-            </button>
+            {!vistaInactivos ? (
+              <button
+                type="button"
+                onClick={() => openModal(1)}
+                className="w-full bg-yellow-400 text-black font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+              >
+                <Plus size={18} />
+                Añadir estudiante
+              </button>
+            ) : (
+              <div className="text-center text-gray-400 text-xs uppercase font-bold tracking-wider">
+                Modo Papelera Activo
+              </div>
+            )}
           </div>
         </div>
 
@@ -258,7 +305,7 @@ const CrudEstudiantes = () => {
             Buscar
           </label>
           <div className="relative">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
               className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400 transition"
@@ -272,7 +319,7 @@ const CrudEstudiantes = () => {
         {/* Tabla */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">
-            Listado de estudiantes
+            {vistaInactivos ? 'Listado de inactivos' : 'Listado de estudiantes'}
           </h3>
 
           <div className="overflow-x-auto">
@@ -318,33 +365,48 @@ const CrudEstudiantes = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            title="Editar"
-                            onClick={() =>
-                              openModal(
-                                2,
-                                e.ciestu,
-                                e.nombreestu,
-                                e.apelliestu,
-                                e.teleestu,
-                                e.correoestu
-                              )
-                            }
-                            className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
-                          >
-                            <i className="fa-solid fa-pen"></i>
-                          </button>
-                          <button
-                            type="button"
-                            title="Eliminar"
-                            onClick={() =>
-                              deleteEstudiante(e.ciestu, e.nombreestu)
-                            }
-                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
-                          >
-                            <i className="fa-solid fa-trash"></i>
-                          </button>
+                          {vistaInactivos ? (
+                            <button
+                              type="button"
+                              title="Restaurar"
+                              onClick={() =>
+                                restaurarEstudiante(e.ciestu, `${e.nombreestu} ${e.apelliestu}`)
+                              }
+                              className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-500 transition flex items-center gap-1 text-xs font-bold"
+                            >
+                              <RotateCcw size={16} /> Restaurar
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                title="Editar"
+                                onClick={() =>
+                                  openModal(
+                                    2,
+                                    e.ciestu,
+                                    e.nombreestu,
+                                    e.apelliestu,
+                                    e.teleestu,
+                                    e.correoestu
+                                  )
+                                }
+                                className="bg-yellow-400 text-black px-3 py-1.5 rounded-lg hover:bg-yellow-300 transition"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                title="Eliminar"
+                                onClick={() =>
+                                  deleteEstudiante(e.ciestu, `${e.nombreestu} ${e.apelliestu}`)
+                                }
+                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-500 transition"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -354,6 +416,8 @@ const CrudEstudiantes = () => {
                     <td colSpan="4" className="text-center p-10 text-gray-500">
                       {busqueda
                         ? 'No hay estudiantes que coincidan con la búsqueda.'
+                        : vistaInactivos
+                        ? 'No hay estudiantes en la papelera.'
                         : 'No hay estudiantes registrados.'}
                     </td>
                   </tr>

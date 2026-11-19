@@ -1,10 +1,10 @@
 from models.estudiante_model import *
-from Schemas.estudiante_schema import  EstuEntrada, EstudianteSalida, EstudianteActualizar
+from Schemas.estudiante_schema import EstuEntrada, EstudianteSalida, EstudianteActualizar
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 from sqlalchemy import text # Agregado para el Trigger
 
-def obtener_estudiante_por_id(ciestu:str, db:Session):
+def obtener_estudiante_por_id(ciestu: str, db: Session):
     estudiante = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo == True).first()
     if estudiante is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El estudiante no fue encontrado")
@@ -16,12 +16,19 @@ def listar_estudiantes(db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de estudiante vacia")
     return estudiante
 
-def crear_estudiante(estudiante: EstuEntrada, escritor_id: str, db:Session):
-    estudiante= Estudiante(ciestu = estudiante.ciestu,
-                     nombreestu = estudiante.nombreestu,
-                     apelliestu = estudiante.apelliestu,
-                     teleestu = estudiante.teleestu,
-                     correoestu = estudiante.correoestu)
+# Nueva función: Listar estudiantes inactivos (Papelera)
+def listar_estudiantes_inactivos(db: Session):
+    estudiantes = db.query(Estudiante).filter(Estudiante.activo == False).all()
+    return estudiantes
+
+def crear_estudiante(estudiante: EstuEntrada, escritor_id: str, db: Session):
+    estudiante = Estudiante(
+        ciestu=estudiante.ciestu,
+        nombreestu=estudiante.nombreestu,
+        apelliestu=estudiante.apelliestu,
+        teleestu=estudiante.teleestu,
+        correoestu=estudiante.correoestu
+    )
     db.add(estudiante)
     
     db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
@@ -57,12 +64,27 @@ def actualizar_estudiante_parcial(ciestu: str, estu_updata: EstudianteActualizar
     return db_estu
 
 def eliminar_estudiante(ciestu: str, escritor_id: str, db: Session):
-    db_estu = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo==True).first()
+    db_estu = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo == True).first()
     if not db_estu:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    # Aki en lugar de db.delete(db_cliente), hacemos que ese maldito cambie su estado civil a desaperecido
+    
     db_estu.activo = False
     
     db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
     db.commit()
     return None
+
+def restaurar_estudiante(ciestu: str, escritor_id: str, db: Session):
+    db_estu = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo == False).first()
+    if not db_estu:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="El estudiante no existe o ya se encuentra activo"
+        )
+    
+    db_estu.activo = True
+    
+    db.execute(text(f"SET LOCAL app.current_admin_id = '{escritor_id}'"))
+    db.commit()
+    db.refresh(db_estu)
+    return db_estu

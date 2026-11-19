@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 from fastapi import HTTPException, status
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -323,3 +323,38 @@ def eliminar_asistencia(idasis: int, usuario: Usuario, db: Session) -> None:
     _verificar_materia(asistencia.idmateria, usuario, db)
     db.delete(asistencia)
     db.commit()
+
+
+def obtener_asistencias_estudiante_service(ci: str, idmateria: int, usuario: Usuario, db: Session):
+    roles = getattr(usuario, "roles_activos", []) or []
+    
+    # Si el usuario es estrictamente un estudiante (rol 5 sin roles administrativos/docentes)
+    if 5 in roles and not any(r in roles for r in [1, 2, 3, 4]):
+        ci_usuario = str(getattr(usuario, "ciuser", "") or "").strip()
+        if ci_usuario and ci_usuario != ci.strip():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No puedes consultar las asistencias de otro estudiante",
+            )
+
+    query = text("""
+        SELECT 
+            idasis,
+            fecha,
+            verificar
+        FROM public.asistencias
+        WHERE asisestu = :ci AND idmateria = :idmateria
+        ORDER BY fecha DESC
+    """)
+    
+    resultado = db.execute(query, {"ci": ci, "idmateria": idmateria}).fetchall()
+
+    asistencias = []
+    for row in resultado:
+        asistencias.append({
+            "idasistencia": row[0],
+            "fecha": str(row[1]),
+            "verificar": row[2]
+        })
+
+    return asistencias

@@ -24,7 +24,7 @@ class AsignacionSchema(BaseModel):
 def obtener_horarios_materias(db: Session = Depends(get_db)):
     try:
         query = text("""
-            SELECT DISTINCT ON (m.idmateria, os.idsecc, os.horario)
+            SELECT
                 os.idseccmo,
                 m.idmateria,
                 COALESCE(m.nombremateria, 'Oferta académica #' || os.idseccmo::text) AS materia,
@@ -50,7 +50,7 @@ def obtener_horarios_materias(db: Session = Depends(get_db)):
             LEFT JOIN public.modulo mod ON mod.idmodulo = mm.idmodulo
             LEFT JOIN public.empleado e ON m.docente = e.ciempleado
             WHERE os.horario IS NOT NULL
-            ORDER BY m.idmateria, os.idsecc, os.horario, os.idseccmo DESC
+            ORDER BY os.idseccmo DESC
         """)
         resultado = db.execute(query).fetchall()
 
