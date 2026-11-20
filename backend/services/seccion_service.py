@@ -3,14 +3,22 @@ from Schemas.seccion_schema import SeccionEntrada, SeccionActualizar
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
-
+from sqlalchemy import func
 
 def listar_secciones(db: Session):
     return db.query(Seccion).all()
 
 def crear_seccion(secc: SeccionEntrada, db: Session):
+    nombre = secc.nomsecc.strip()
+    existe = db.query(Seccion).filter(func.lower(func.trim(Seccion.nomsecc)) == nombre.lower()).first()
+    if existe:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una sección con el nombre '{nombre}'"
+        )
+
     try:
-        nueva_seccion = Seccion(nomsecc=secc.nomsecc)
+        nueva_seccion = Seccion(nomsecc=nombre)
         db.add(nueva_seccion)
         db.commit()
         db.refresh(nueva_seccion)
@@ -28,6 +36,20 @@ def actualizar_seccion_parcial(idsecc: int, secci: SeccionActualizar, db: Sessio
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sección no encontrada")
 
     update_data = secci.model_dump(exclude_unset=True)
+
+    if "nomsecc" in update_data and update_data["nomsecc"]:
+        nombre = update_data["nomsecc"].strip()
+        existe = db.query(Seccion).filter(
+            func.lower(func.trim(Seccion.nomsecc)) == nombre.lower(),
+            Seccion.idsecc != idsecc
+        ).first()
+        if existe:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe una sección con el nombre '{nombre}'"
+            )
+        update_data["nomsecc"] = nombre
+
     for key, value in update_data.items():
         setattr(db_secc, key, value)
 

@@ -2,6 +2,7 @@ from models.carrera_model import Carrera
 from Schemas.carrera_schema import CarreraEntrada, CarreraUpdata
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
+from sqlalchemy import func
 
 def obtener_carrera_por_id(idcarrera: int, db: Session):
     carri = db.query(Carrera).filter(Carrera.idcarrera == idcarrera, Carrera.activo == True).first()
@@ -14,10 +15,21 @@ def listar_carrera(db: Session):
     return carri
 
 def crear_carrera(carri: CarreraEntrada, db: Session):
+    nombre = carri.nombrecarrera.strip()
+    existe = db.query(Carrera).filter(
+        func.lower(func.trim(Carrera.nombrecarrera)) == nombre.lower(),
+        Carrera.activo == True
+    ).first()
+    if existe:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una carrera con el nombre '{nombre}'"
+        )
+
     nueva_carrera = Carrera(
-        nombrecarrera = carri.nombrecarrera,
-        descripcion = carri.descripcion,
-        precio_usd = carri.precio_usd,
+        nombrecarrera=nombre,
+        descripcion=carri.descripcion.strip(),
+        precio_usd=carri.precio_usd,
     )
     db.add(nueva_carrera)
     db.commit()
@@ -30,6 +42,21 @@ def actualizar_carrera_parcial(idcarrera: int, carrera_update: CarreraUpdata, db
         raise HTTPException(status_code=404, detail="Carrera no encontrada")
 
     update_data = carrera_update.model_dump(exclude_unset=True)
+
+    if "nombrecarrera" in update_data and update_data["nombrecarrera"]:
+        nombre = update_data["nombrecarrera"].strip()
+        existe = db.query(Carrera).filter(
+            func.lower(func.trim(Carrera.nombrecarrera)) == nombre.lower(),
+            Carrera.activo == True,
+            Carrera.idcarrera != idcarrera
+        ).first()
+        if existe:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe una carrera con el nombre '{nombre}'"
+            )
+        update_data["nombrecarrera"] = nombre
+
     for key, value in update_data.items():
         setattr(db_car, key, value)
 

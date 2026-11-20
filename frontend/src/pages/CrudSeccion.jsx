@@ -32,7 +32,12 @@ const CrudSeccion = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const contarEstudiantes = (idsecc) =>
-    ofertas.filter((o) => Number(o.idsecc) === Number(idsecc)).length;
+    ofertas.filter(
+      (o) =>
+        Number(o.idsecc) === Number(idsecc) &&
+        o.estudiante != null &&
+        String(o.estudiante).trim() !== ''
+    ).length;
 
   const cargarSecciones = async () => {
     try {
@@ -83,8 +88,14 @@ const CrudSeccion = () => {
 
   const openStudentsModal = (seccion) => {
     setSelectedSection(seccion);
+
     const lista = ofertas
-      .filter((oferta) => Number(oferta.idsecc) === Number(seccion.idsecc))
+      .filter(
+        (oferta) =>
+          Number(oferta.idsecc) === Number(seccion.idsecc) &&
+          oferta.estudiante != null &&
+          String(oferta.estudiante).trim() !== ''
+      )
       .map((oferta) => {
         const estudiante = estudiantes.find(
           (item) => item.ciestu === oferta.estudiante
@@ -93,7 +104,7 @@ const CrudSeccion = () => {
           ...oferta,
           nombreCompleto: estudiante
             ? `${estudiante.nombreestu ?? ''} ${estudiante.apelliestu ?? ''}`.trim()
-            : '(sin estudiante)',
+            : oferta.estudiante, // por si no está en el catálogo
           estudianteData: estudiante ?? null,
         };
       });

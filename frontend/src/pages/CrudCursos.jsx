@@ -223,6 +223,10 @@ const CrudCursos = () => {
       show_alert('Escribe el nivel del curso', 'warning');
       return;
     }
+    if (!['Basico', 'Intermedio', 'Avanzado'].includes(nivelcur)) {
+      show_alert('Selecciona el nivel: Basico, Intermedio o Avanzado', 'warning');
+      return;
+    }
 
     const parametros = {
       nomcurso: nomcurso.trim(),
@@ -489,18 +493,24 @@ const CrudCursos = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-yellow-400">
-                    Nivel
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white outline-none focus:border-yellow-400"
-                    placeholder="Básico / Intermedio / Avanzado"
-                    value={nivelcur}
-                    onChange={(e) => setNivelcur(e.target.value)}
-                  />
+              <div>
+                <label className="block text-sm font-bold mb-2 text-yellow-400">
+                  Nivel
+                </label>
+                <div className="flex flex-col gap-2">
+                  {['Basico', 'Intermedio', 'Avanzado'].map((nivel) => (
+                    <label key={nivel} className="flex items-center gap-2 cursor-pointer text-white">
+                      <input
+                        type="checkbox"
+                        checked={nivelcur === nivel}
+                        onChange={() => setNivelcur(nivel)}
+                        className="w-4 h-4 accent-yellow-400"
+                      />
+                      {nivel}
+                    </label>
+                  ))}
                 </div>
+              </div>
                 <div>
                   <label className="block text-sm font-bold mb-2 text-yellow-400">
                     Precio
