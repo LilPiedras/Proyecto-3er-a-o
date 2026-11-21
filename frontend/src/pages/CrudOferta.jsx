@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { Trash2 } from 'lucide-react';
+import { Trash2, FileSpreadsheet } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
 
@@ -29,6 +29,7 @@ const CrudOferta = () => {
   const [estudiantes, setEstudiantes] = useState([]);
   const [idOfertaAsignar, setIdOfertaAsignar] = useState('');
   const [ciEstudiante, setCiEstudiante] = useState('');
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   useEffect(() => {
     const saved =
@@ -203,6 +204,35 @@ const CrudOferta = () => {
     }
   };
 
+  const descargarExcelOferta = async () => {
+    setDownloadingExcel(true);
+    try {
+      const { data } = await api.get('/Oferta/excel', { responseType: 'blob' });
+      const blob =
+        data instanceof Blob
+          ? data
+          : new Blob([data], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = 'oferta_academica.xlsx';
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'No se pudo generar el Excel de oferta académica',
+        'error'
+      );
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   if (cargando) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-black text-white">
@@ -359,6 +389,19 @@ const CrudOferta = () => {
 
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-4">Horarios y Materias Asignadas</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                {esGestion && (
+                  <button
+                    type="button"
+                    onClick={descargarExcelOferta}
+                    disabled={downloadingExcel}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500 px-4 py-2 font-semibold text-emerald-300 transition hover:bg-emerald-950 disabled:cursor-wait disabled:opacity-50"
+                  >
+                    <FileSpreadsheet size={18} />
+                    {downloadingExcel ? 'Generando Excel...' : 'Exportar Excel'}
+                  </button>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead className="bg-gray-800 border-b border-gray-700 text-yellow-400 text-xs uppercase">

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
-import { BookOpen, Users, CheckCircle, Award, Clock, CalendarDays, Printer } from 'lucide-react';
+import { BookOpen, Users, CheckCircle, Award, Clock, CalendarDays, Printer, FileSpreadsheet } from 'lucide-react';
 import HorarioVisual from '../components/HorarioVisual';
 
 const DashboardDocente = () => {
@@ -13,6 +13,7 @@ const DashboardDocente = () => {
   const [estudiantes, setEstudiantes] = useState([]);
   const [filtroMateria, setFiltroMateria] = useState('');
   const [filtroSeccion, setFiltroSeccion] = useState('');
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   useEffect(() => {
     const ci =
@@ -143,6 +144,46 @@ const DashboardDocente = () => {
     } catch (err) {
       console.error(err);
       show_alert('No se pudo generar la nómina en PDF', 'error');
+    }
+  };
+
+  const generarNominaExcel = async () => {
+    if (!filtroMateria || !filtroSeccion) {
+      show_alert('Selecciona materia y sección para exportar Excel', 'warning');
+      return;
+    }
+    setDownloadingExcel(true);
+    try {
+      const res = await api.get('/estudiantes/excel', {
+        params: {
+          idmateria: filtroMateria,
+          idsecc: filtroSeccion,
+        },
+        responseType: 'blob',
+      });
+      const blob =
+        res.data instanceof Blob
+          ? res.data
+          : new Blob([res.data], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nomina_materia_${filtroMateria}_seccion_${filtroSeccion}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      const detail = err.response?.data?.detail;
+      show_alert(
+        typeof detail === 'string' ? detail : 'No se pudo generar la nómina en Excel',
+        'error'
+      );
+    } finally {
+      setDownloadingExcel(false);
     }
   };
 
@@ -332,6 +373,17 @@ const DashboardDocente = () => {
                 <Printer size={16} />
                 Generar nómina (PDF)
               </button>
+
+              <button
+                type="button"
+                onClick={generarNominaExcel}
+                disabled={downloadingExcel || !filtroMateria || !filtroSeccion}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileSpreadsheet size={16} />
+                {downloadingExcel ? 'Generando…' : 'Excel'}
+              </button>
+
             </div>
 
             <div className="overflow-x-auto border border-gray-800 rounded-xl">

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from typing import List
 from models.usuario_model import Usuario
 from tokensitos.auth_depencias import VerificarRoles
+from fastapi import Response
 
 oferta_router = APIRouter(
     prefix="/Oferta",
@@ -43,3 +44,12 @@ def desasignar_estudiante(idseccmo: int, db: Session = Depends(get_db), current_
 @oferta_router.get("/estudiante/{ciestu}", response_model=List[OfertaSalida])
 def ver_ofertas_del_estudiante(ciestu: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
     return oferta_seccion_service.obtener_oferta_estudiante(ciestu, db)
+
+@oferta_router.get("/excel", status_code=status.HTTP_200_OK)
+def exportar_oferta_excel(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2, 3]))):
+    excel_bytes = oferta_seccion_service.exportar_oferta_excel(db)
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="oferta_academica.xlsx"'},
+    )

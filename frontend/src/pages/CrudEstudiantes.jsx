@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { Pencil, Trash2, Plus, Search, RotateCcw, Trash, Users } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search, RotateCcw, Trash, Users, FileSpreadsheet } from 'lucide-react';
 import api from '../api';
 import { show_alert } from '../components/functions/Showpro_functions';
+
 
 const CrudEstudiantes = () => {
   const [estudiantes, setEstudiantes] = useState([]);
@@ -21,6 +22,7 @@ const CrudEstudiantes = () => {
   const [title, setTitle] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ciestuOriginal, setCiestuOriginal] = useState('');
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   const cargarEstudiantes = async () => {
     try {
@@ -219,6 +221,40 @@ const CrudEstudiantes = () => {
     });
   };
 
+const descargarNominaExcel = async () => {
+  setDownloadingExcel(true);
+  try {
+    const { data } = await api.get('/estudiantes/excel', {
+      params: { incluir_inactivos: vistaInactivos },
+      responseType: 'blob',
+    });
+    const blob =
+      data instanceof Blob
+        ? data
+        : new Blob([data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = vistaInactivos
+      ? 'nomina_estudiantes_inactivos.xlsx'
+      : 'nomina_estudiantes.xlsx';
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    const detail = error.response?.data?.detail;
+    show_alert(
+      typeof detail === 'string' ? detail : 'No se pudo generar la nómina en Excel',
+      'error'
+    );
+  } finally {
+    setDownloadingExcel(false);
+  }
+};
+
   const inicial = (e) => {
     const n = (e.nombreestu || '?').trim();
     return n.charAt(0).toUpperCase();
@@ -240,18 +276,30 @@ const CrudEstudiantes = () => {
         
         {/* Encabezado con alternador de Papelera */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-          <button
-            type="button"
-            className={`font-bold px-4 py-2.5 rounded-lg transition border flex items-center gap-2 ${
-              vistaInactivos
-                ? 'bg-gray-800 text-yellow-400 border-yellow-400 hover:bg-gray-700'
-                : 'bg-red-900/40 text-red-400 border-red-700 hover:bg-red-900/60'
-            }`}
-            onClick={() => setVistaInactivos(!vistaInactivos)}
-          >
-            {vistaInactivos ? <Users size={18} /> : <Trash size={18} />}
-            {vistaInactivos ? 'Ver Estudiantes Activos' : 'Ver Papelera (Inactivos)'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={`font-bold px-4 py-2.5 rounded-lg transition border flex items-center gap-2 ${
+                vistaInactivos
+                  ? 'bg-gray-800 text-yellow-400 border-yellow-400 hover:bg-gray-700'
+                  : 'bg-red-900/40 text-red-400 border-red-700 hover:bg-red-900/60'
+              }`}
+              onClick={() => setVistaInactivos(!vistaInactivos)}
+            >
+              {vistaInactivos ? <Users size={18} /> : <Trash size={18} />}
+              {vistaInactivos ? 'Ver Estudiantes Activos' : 'Ver Papelera (Inactivos)'}
+            </button>
+
+            <button
+              type="button"
+              onClick={descargarNominaExcel}
+              disabled={downloadingExcel}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500 px-4 py-2.5 font-semibold text-emerald-300 transition hover:bg-emerald-950 disabled:cursor-wait disabled:opacity-50"
+            >
+              <FileSpreadsheet size={18} />
+              {downloadingExcel ? 'Generando...' : 'Exportar Excel'}
+            </button>
+          </div>
 
           <div className="text-center sm:text-right">
             <h2 className="text-3xl font-bold text-yellow-400 mb-1">
