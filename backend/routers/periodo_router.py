@@ -45,7 +45,7 @@ def actualizar_periodo(
     return periodo_service.actualizar_periodo_completo(id, cur_updata, db)
 
 @periodo_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_curso_logico(idcurso: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
+def eliminar_periodo(id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1, 2]))):
     periodo_service.eliminar_periodo(id, db)
     return None
 

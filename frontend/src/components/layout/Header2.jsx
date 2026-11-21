@@ -345,6 +345,9 @@ const Header = () => {
                         <RouterLink to="/auditorias" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
                           Auditorías
                         </RouterLink>
+                        <RouterLink to="/crudperiodo" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                          Periodos
+                        </RouterLink>
                       </div>
                     )}
                   </div>
@@ -503,6 +506,7 @@ const Header = () => {
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
                           <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>Mensualidades</RouterLink>
                           <RouterLink to="/auditorias" onClick={() => setToggle(false)}>Auditorías</RouterLink>
+                          <RouterLink to="/crudperiodo" onClick={() => setToggle(false)}>Periodos</RouterLink>
                         </div>
                       )}
                     </div>
