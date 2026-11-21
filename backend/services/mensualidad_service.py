@@ -13,6 +13,9 @@ from models.carrera_model import Carrera
 from models.oferta_seccion_model import Oferta_seccion
 from Schemas.mensualidad_schema import MensualidadActualizar, MensualidadEntrada
 from sqlalchemy.orm import Session
+from models.metodo_pago_model import MetodoPago
+from models.moneda_pago_model import MonedaPago
+from analitics.mensualidad_excel import generar_excel_mensualidades
 
 CENTAVOS = Decimal("0.01")
 PRECISION_TASA = Decimal("0.000001")
@@ -318,3 +321,10 @@ def marcar_pagos_vencidos(db: Session, hoy: date | None = None) -> int:
     if resultado.rowcount is None:
         raise RuntimeError("La base de datos no informó cuántos pagos se actualizaron")
     return resultado.rowcount
+
+def exportar_mensualidades_excel(db: Session) -> bytes:
+    mensualidades = listar_mensualidades(db)
+    periodos = {p.id: p.nombre for p in db.query(Periodo).all()}
+    metodos = {m.idmetodopago: m.metodousado for m in db.query(MetodoPago).all()}
+    monedas = {c.idmoneda: c.tipomoneda for c in db.query(MonedaPago).all()}
+    return generar_excel_mensualidades(mensualidades, periodos, metodos, monedas)

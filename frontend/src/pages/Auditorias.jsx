@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { BarChart3, Eye, FileDown, Printer, RefreshCw, ShieldCheck, X } from "lucide-react";
+import {
+  BarChart3,
+  Eye,
+  FileDown,
+  FileSpreadsheet,
+  Printer,
+  RefreshCw,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import api from "../api";
 import {
   MESES,
@@ -47,7 +56,7 @@ const construirParametrosFiltro = ({ mes, dia, hora }) => {
   return params;
 };
 
-const extraerDetalleErrorBlob = async (requestError) => {
+const extraerDetalleErrorBlob = async (requestError, mensajePorDefecto) => {
   const respuesta = requestError.response?.data;
   if (respuesta instanceof Blob) {
     try {
@@ -59,7 +68,7 @@ const extraerDetalleErrorBlob = async (requestError) => {
     }
   }
   if (typeof respuesta?.detail === "string") return respuesta.detail;
-  return "No se pudo generar el PDF de auditorías. Intenta de nuevo.";
+  return mensajePorDefecto;
 };
 
 const Auditorias = () => {
@@ -69,7 +78,8 @@ const Auditorias = () => {
   const [auditoriaSeleccionada, setAuditoriaSeleccionada] = useState(null);
   const [graficaAbierta, setGraficaAbierta] = useState(false);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
-  const [errorPdf, setErrorPdf] = useState("");
+  const [descargandoExcel, setDescargandoExcel] = useState(false);
+  const [errorExportacion, setErrorExportacion] = useState("");
   const [resultado, setResultado] = useState({ filtro: null, auditorias: [], error: "" });
   const filtro = `${mes}-${dia}-${hora}`;
 
@@ -123,7 +133,7 @@ const Auditorias = () => {
     setMes("");
     setDia("");
     setHora("");
-    setErrorPdf("");
+    setErrorExportacion("");
   };
 
   const handleImprimir = () => {
@@ -131,9 +141,9 @@ const Auditorias = () => {
   };
 
   const handleGuardarPdf = async () => {
-    if (descargandoPdf || cargando || auditorias.length === 0) return;
+    if (descargandoPdf || descargandoExcel || cargando || auditorias.length === 0) return;
     setDescargandoPdf(true);
-    setErrorPdf("");
+    setErrorExportacion("");
 
     try {
       const params = construirParametrosFiltro({ mes, dia, hora });
@@ -152,10 +162,50 @@ const Auditorias = () => {
       enlace.remove();
       window.URL.revokeObjectURL(url);
     } catch (requestError) {
-      const mensaje = await extraerDetalleErrorBlob(requestError);
-      setErrorPdf(mensaje);
+      const mensaje = await extraerDetalleErrorBlob(
+        requestError,
+        "No se pudo generar el PDF de auditorías. Intenta de nuevo."
+      );
+      setErrorExportacion(mensaje);
     } finally {
       setDescargandoPdf(false);
+    }
+  };
+
+  const handleGuardarExcel = async () => {
+    if (descargandoExcel || descargandoPdf || cargando || auditorias.length === 0) return;
+    setDescargandoExcel(true);
+    setErrorExportacion("");
+
+    try {
+      const params = construirParametrosFiltro({ mes, dia, hora });
+      const { data } = await api.get("/auditoria/excel", {
+        params,
+        responseType: "blob",
+      });
+
+      const blob =
+        data instanceof Blob
+          ? data
+          : new Blob([data], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "reporte_auditorias.xlsx";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      const mensaje = await extraerDetalleErrorBlob(
+        requestError,
+        "No se pudo generar el Excel de auditorías. Intenta de nuevo."
+      );
+      setErrorExportacion(mensaje);
+    } finally {
+      setDescargandoExcel(false);
     }
   };
 
@@ -169,7 +219,7 @@ const Auditorias = () => {
           </div>
           <h1 className="text-3xl font-bold">Auditorías</h1>
           <p className="mt-1 text-gray-600">
-            Consulta los cambios registrados, visualiza la gráfica, imprime o guarda el PDF.
+            Consulta los cambios registrados, visualiza la gráfica, imprime o exporta a PDF o Excel.
           </p>
         </div>
 
@@ -197,11 +247,21 @@ const Auditorias = () => {
           <button
             type="button"
             onClick={handleGuardarPdf}
-            disabled={cargando || descargandoPdf || auditorias.length === 0}
+            disabled={cargando || descargandoPdf || descargandoExcel || auditorias.length === 0}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2 font-semibold text-black transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <FileDown size={18} />
             {descargandoPdf ? "Guardando PDF..." : "Guardar PDF"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGuardarExcel}
+            disabled={cargando || descargandoExcel || descargandoPdf || auditorias.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FileSpreadsheet size={18} />
+            {descargandoExcel ? "Guardando Excel..." : "Guardar Excel"}
           </button>
         </div>
       </div>
@@ -271,9 +331,9 @@ const Auditorias = () => {
         </div>
       )}
 
-      {errorPdf && (
+      {errorExportacion && (
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-          {errorPdf}
+          {errorExportacion}
         </div>
       )}
 

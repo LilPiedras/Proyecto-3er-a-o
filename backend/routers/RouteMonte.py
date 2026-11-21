@@ -3,12 +3,11 @@ from models.mensualidad_model import *
 from Schemas.mensualidad_schema import *
 from services import mensualidad_service
 from sqlalchemy.orm import Session
-from sqlalchemy import text  # 👈 Importante: agregar esta importación
-from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import text 
+from fastapi import APIRouter, Depends, Query, Response, status
 from typing import List
 from models.usuario_model import Usuario     
 from tokensitos.auth_depencias import VerificarRoles 
-from models.usuario_model import Usuario
 
 mensualidad_route = APIRouter(
     prefix="/mensualidad",
@@ -22,18 +21,16 @@ def get_db():
     finally:
         db.close()
 
-# --- ENDPOINT DE ESTUDIANTES MOROSOS (VISTA SQL) ---
 @mensualidad_route.get("/morosos", status_code=status.HTTP_200_OK)
 def obtener_estudiantes_morosos(
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(VerificarRoles([1])) # Permiso solo para administradores
+    current_user: Usuario = Depends(VerificarRoles([1]))
 ):
     query = text("SELECT * FROM public.v_estudiantes_morosos;")
     resultado = db.execute(query)
     morosos = [dict(row._mapping) for row in resultado]
     return morosos
 
-# --- RESTO DE ENDPOINTS DE MENSUALIDAD ---
 @mensualidad_route.post("/verificar-vencimientos", status_code=status.HTTP_200_OK)
 def verificar_vencimientos(
     db: Session = Depends(get_db),
@@ -60,6 +57,20 @@ def obtener_cotizacion_mensualidad(
     current_user: Usuario = Depends(VerificarRoles([1])),
 ):
     return mensualidad_service.obtener_cotizacion_carreras(estudiante.strip(), periodo_id, db)
+
+@mensualidad_route.get("/excel", status_code=status.HTTP_200_OK)
+def exportar_mensualidades_excel(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1])),
+):
+    excel_bytes = mensualidad_service.exportar_mensualidades_excel(db)
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": 'attachment; filename="reporte_mensualidades.xlsx"'
+        },
+    )
 
 @mensualidad_route.get("/{idmensualidad}", response_model=MensualidadSalida)
 def obtener_men(idmensualidad: int, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):

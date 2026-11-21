@@ -19,6 +19,7 @@ const CrudMensualidad = () => {
   const [errorCarga, setErrorCarga] = useState('');
   const [checkingExpirations, setCheckingExpirations] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [cotizacion, setCotizacion] = useState(null);
   const [cargandoCotizacion, setCargandoCotizacion] = useState(false);
   const [errorCotizacion, setErrorCotizacion] = useState('');
@@ -299,6 +300,31 @@ const CrudMensualidad = () => {
     }
   };
 
+  const descargarExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      const { data } = await api.get('/mensualidad/excel', { responseType: 'blob' });
+      const blob = data instanceof Blob
+        ? data
+        : new Blob([data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          });
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = 'reporte_mensualidades.xlsx';
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      show_alert(typeof detail === 'string' ? detail : 'No se pudo generar el reporte Excel de mensualidades', 'error');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   const eliminar = async (mensualidad) => {
     const result = await MySwal.fire({
       title: `¿Desactivar la mensualidad ${obtenerNombrePeriodo(mensualidad.periodo_id)}?`,
@@ -411,11 +437,20 @@ const CrudMensualidad = () => {
             <button
               type="button"
               onClick={descargarReporte}
-              disabled={downloadingReport}
+              disabled={downloadingReport || downloadingExcel}
               className="rounded border border-red-500 px-4 py-2 font-semibold text-red-300 transition hover:bg-red-950 disabled:cursor-wait disabled:opacity-50"
             >
               <i className="fa-solid fa-file-pdf mr-2" aria-hidden="true" />
               {downloadingReport ? 'Generando PDF...' : 'Reporte PDF'}
+            </button>
+            <button
+              type="button"
+              onClick={descargarExcel}
+              disabled={downloadingExcel || downloadingReport}
+              className="rounded border border-emerald-500 px-4 py-2 font-semibold text-emerald-300 transition hover:bg-emerald-950 disabled:cursor-wait disabled:opacity-50"
+            >
+              <i className="fa-solid fa-file-excel mr-2" aria-hidden="true" />
+              {downloadingExcel ? 'Generando Excel...' : 'Reporte Excel'}
             </button>
             <button
               type="button"

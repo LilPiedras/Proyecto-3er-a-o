@@ -7,6 +7,11 @@ from unicodedata import normalize
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fpdf import FPDF
+from openpyxl import Workbook
+from openpyxl.chart import PieChart, Reference
+from openpyxl.chart.label import DataLabelList
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import extract
 from sqlalchemy.orm import Session, aliased
@@ -78,7 +83,6 @@ def _crear_grafico_barras(
 
 def crear_pdf_auditorias(registros: list) -> bytes:
     total = len(registros)
-
     por_accion: dict[str, int] = {}
     por_usuario: dict[str, int] = {}
 
@@ -194,6 +198,175 @@ def crear_pdf_auditorias(registros: list) -> bytes:
     return bytes(pdf.output())
 
 
+def crear_excel_auditorias(registros: list) -> bytes:
+    total = len(registros)
+    por_accion: dict[str, int] = {}
+    por_usuario: dict[str, int] = {}
+
+    for reg in registros:
+        if isinstance(reg, dict):
+            accion = str(reg.get("accion") or "Desconocida")
+            escritor = str(
+                reg.get("usuario_escritor_nombre")
+                or reg.get("usuario_escritor_id")
+                or "Sistema"
+            )
+        else:
+            accion = str(getattr(reg, "accion", None) or "Desconocida")
+            escritor = str(getattr(reg, "usuario_escritor_id", None) or "Sistema")
+
+        por_accion[accion] = por_accion.get(accion, 0) + 1
+        por_usuario[escritor] = por_usuario.get(escritor, 0) + 1
+
+    wb = Workbook()
+
+    # --- HOJA 1: DETALLE DE REGISTROS ---
+    ws_detalle = wb.active
+    ws_detalle.title = "Detalle Auditorias"
+    ws_detalle.views.sheetView[0].showGridLines = True
+
+    fill_oscuro = PatternFill(start_color="1F2937", end_color="1F2937", fill_type="solid")
+    fill_ambar = PatternFill(start_color="FBBF24", end_color="FBBF24", fill_type="solid")
+    fill_tarjeta = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+    fill_zebra = PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid")
+
+    font_titulo = Font(name="Calibri", size=14, bold=True, color="FBBF24")
+    font_subtitulo = Font(name="Calibri", size=10, italic=True, color="E5E7EB")
+    font_th = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    font_td = Font(name="Calibri", size=10, color="1F2937")
+    font_kpi_lbl = Font(name="Calibri", size=9, bold=True, color="4B5563")
+    font_kpi_val = Font(name="Calibri", size=13, bold=True, color="111827")
+
+    borde_fino = Border(
+        left=Side(style="thin", color="D1D5DB"),
+        right=Side(style="thin", color="D1D5DB"),
+        top=Side(style="thin", color="D1D5DB"),
+        bottom=Side(style="thin", color="D1D5DB"),
+    )
+
+    ws_detalle.merge_cells("A1:E1")
+    ws_detalle["A1"] = "ACADEMIA AMADA FASHION"
+    ws_detalle["A1"].font = font_titulo
+    ws_detalle["A1"].fill = fill_oscuro
+    ws_detalle["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws_detalle.row_dimensions[1].height = 26
+
+    ws_detalle.merge_cells("A2:E2")
+    ws_detalle["A2"] = f"Reporte de auditorías y control del sistema · Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    ws_detalle["A2"].font = font_subtitulo
+    ws_detalle["A2"].fill = fill_oscuro
+    ws_detalle["A2"].alignment = Alignment(horizontal="center", vertical="center")
+    ws_detalle.row_dimensions[2].height = 18
+
+    kpis = [
+        ("A", "Total Registros", total),
+        ("C", "Acciones Registradas", len(por_accion)),
+        ("E", "Usuarios Activos", len(por_usuario)),
+    ]
+    ws_detalle.row_dimensions[4].height = 18
+    ws_detalle.row_dimensions[5].height = 24
+    for col, etiqueta, valor in kpis:
+        ws_detalle[f"{col}4"] = etiqueta
+        ws_detalle[f"{col}4"].font = font_kpi_lbl
+        ws_detalle[f"{col}4"].fill = fill_tarjeta
+        ws_detalle[f"{col}4"].alignment = Alignment(horizontal="center", vertical="center")
+        ws_detalle[f"{col}4"].border = borde_fino
+
+        ws_detalle[f"{col}5"] = valor
+        ws_detalle[f"{col}5"].font = font_kpi_val
+        ws_detalle[f"{col}5"].fill = fill_ambar
+        ws_detalle[f"{col}5"].alignment = Alignment(horizontal="center", vertical="center")
+        ws_detalle[f"{col}5"].border = borde_fino
+
+    encabezados = ["Fecha", "Hora", "Acción", "Usuario Escritor", "Usuario Afectado"]
+    fila_inicio_tabla = 7
+    ws_detalle.row_dimensions[fila_inicio_tabla].height = 22
+    for idx, titulo_col in enumerate(encabezados, start=1):
+        celda = ws_detalle.cell(row=fila_inicio_tabla, column=idx, value=titulo_col)
+        celda.font = font_th
+        celda.fill = fill_oscuro
+        celda.alignment = Alignment(horizontal="center", vertical="center")
+        celda.border = borde_fino
+
+    for i, reg in enumerate(registros, start=fila_inicio_tabla + 1):
+        if isinstance(reg, dict):
+            fec = str(reg.get("fecha") or "")
+            hor = str(reg.get("hora") or "")[:8]
+            acc = str(reg.get("accion") or "")
+            esc = str(reg.get("usuario_escritor_nombre") or reg.get("usuario_escritor_id") or "Sistema")
+            obj = str(reg.get("usuario_objeto_nombre") or reg.get("usuario_objeto_id") or "—")
+        else:
+            fec = str(getattr(reg, "fecha", None) or "")
+            hor = str(getattr(reg, "hora", None) or "")[:8]
+            acc = str(getattr(reg, "accion", None) or "")
+            esc = str(getattr(reg, "usuario_escritor_id", None) or "Sistema")
+            obj = str(getattr(reg, "usuario_objeto_id", None) or "—")
+
+        fila_valores = [fec, hor, acc, esc, obj]
+        ws_detalle.row_dimensions[i].height = 19
+        for col_idx, val in enumerate(fila_valores, start=1):
+            celda = ws_detalle.cell(row=i, column=col_idx, value=val)
+            celda.font = font_td
+            celda.border = borde_fino
+            celda.alignment = Alignment(
+                horizontal="center" if col_idx in (1, 2) else "left",
+                vertical="center",
+            )
+            if i % 2 == 0:
+                celda.fill = fill_zebra
+
+    anchos = [15, 13, 34, 32, 32]
+    for col_idx, ancho in enumerate(anchos, start=1):
+        ws_detalle.column_dimensions[get_column_letter(col_idx)].width = ancho
+
+    ws_detalle.freeze_panes = f"A{fila_inicio_tabla + 1}"
+
+    # --- HOJA 2: RESUMEN Y GRÁFICO DE TORTA ---
+    ws_resumen = wb.create_sheet(title="Resumen y Grafica")
+    ws_resumen["A1"] = "Distribución de Auditorías por Acción"
+    ws_resumen["A1"].font = Font(name="Calibri", size=13, bold=True, color="1F2937")
+
+    ws_resumen["A3"] = "Acción"
+    ws_resumen["B3"] = "Cantidad"
+    for col_idx in (1, 2):
+        c = ws_resumen.cell(row=3, column=col_idx)
+        c.font = font_th
+        c.fill = fill_oscuro
+        c.alignment = Alignment(horizontal="center")
+        c.border = borde_fino
+
+    acciones_ordenadas = sorted(por_accion.items(), key=lambda x: x[1], reverse=True)
+    for idx, (accion_nombre, cant) in enumerate(acciones_ordenadas, start=4):
+        c_acc = ws_resumen.cell(row=idx, column=1, value=accion_nombre)
+        c_cnt = ws_resumen.cell(row=idx, column=2, value=cant)
+        c_acc.font = font_td
+        c_cnt.font = font_td
+        c_acc.border = borde_fino
+        c_cnt.border = borde_fino
+
+    ws_resumen.column_dimensions["A"].width = 36
+    ws_resumen.column_dimensions["B"].width = 14
+
+    if acciones_ordenadas:
+        torta = PieChart()
+        torta.title = "Auditorías por tipo de acción"
+        torta.style = 10
+        datos_ref = Reference(ws_resumen, min_col=2, min_row=3, max_row=3 + len(acciones_ordenadas))
+        etiquetas_ref = Reference(ws_resumen, min_col=1, min_row=4, max_row=3 + len(acciones_ordenadas))
+        torta.add_data(datos_ref, titles_from_data=True)
+        torta.set_categories(etiquetas_ref)
+        torta.dataLabels = DataLabelList()
+        torta.dataLabels.showPercent = True
+        torta.width = 16
+        torta.height = 10
+        ws_resumen.add_chart(torta, "D3")
+
+    salida = BytesIO()
+    wb.save(salida)
+    salida.seek(0)
+    return salida.getvalue()
+
+
 def registrar_auditoria_txt(db: Session, escritor_id: str, objeto_id: str, accion: str, dato_viejo=None, dato_nuevo=None):
     momento = datetime.now()
     txt_viejo = json.dumps(jsonable_encoder(dato_viejo)) if dato_viejo else None
@@ -229,6 +402,26 @@ def listar_auditorias(
         Auditoria.idseria.desc(),
     ).all()
     return [_auditoria_con_nombres(*fila) for fila in filas]
+
+
+def obtener_pdf_auditorias(
+    db: Session,
+    mes: Optional[int] = None,
+    dia: Optional[int] = None,
+    hora: Optional[int] = None,
+) -> bytes:
+    registros = listar_auditorias(db, mes=mes, dia=dia, hora=hora)
+    return crear_pdf_auditorias(registros)
+
+
+def obtener_excel_auditorias(
+    db: Session,
+    mes: Optional[int] = None,
+    dia: Optional[int] = None,
+    hora: Optional[int] = None,
+) -> bytes:
+    registros = listar_auditorias(db, mes=mes, dia=dia, hora=hora)
+    return crear_excel_auditorias(registros)
 
 
 def obtener_auditoria_por_id(idseria: int, db: Session):
