@@ -7,20 +7,18 @@ const About = () => {
       <div className="main-about lg:min-h-screen h-full w-full flex flex-col justify-center py-10 bg-linear-to-tr from-yellow-300 via-yellow-400 to-black" id="About">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center gap-10">
-            
-            {/* Imagen */}
+
             <Motion.div className="w-full md:w-1/2 flex justify-center"
             initial={{opacity:0,x:-100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:0.9,ease:easeInOut, stiffness:60}}>
-              <img 
-                src={Image} 
-                alt="About Us" 
-                className="w-96 rounded-2xl shadow-lg" 
+              <img
+                src={Image}
+                alt="About Us"
+                className="w-96 rounded-2xl shadow-lg"
               />
             </Motion.div>
-            
-            {/* Contenido de texto */}
+
             <div className="w-full md:w-1/2 space-y-6">
               <Motion.h1 className="text-4xl font-bold text-center md:text-left text-white"
               initial={{opacity:0,x:100}}
@@ -28,14 +26,14 @@ const About = () => {
             transition={{duration:0.9,ease:easeInOut, stiffness:60}}>
                 Acerca de nuestra Academia
               </Motion.h1>
-              
+
               <Motion.h2 className="text-3xl text-yellow-100 font-semibold"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}
             transition={{duration:1.1,ease:easeInOut, stiffness:60}}>
                 Formando profesionales desde 2022
               </Motion.h2>
-              
+
               <Motion.p className="text-white leading-relaxed text-2xl"
               initial={{opacity:0,x:100}}
             whileInView={{opacity:1,x:0}}

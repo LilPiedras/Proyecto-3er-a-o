@@ -77,11 +77,6 @@ from routers.perfil import perfil_router
 from routers.RouteMiModulo import mi_modulo_router
 from routers.dashboards_router import dashboard_router
 
-# Abajo donde agregas los app.include_router(...) añade:
-
-
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tarea_vencimientos = asyncio.create_task(revisar_vencimientos_diariamente())
@@ -93,7 +88,6 @@ async def lifespan(app: FastAPI):
             await tarea_vencimientos
         except asyncio.CancelledError:
             pass
-
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(estudiante_router)

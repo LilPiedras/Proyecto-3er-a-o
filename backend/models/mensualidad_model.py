@@ -12,11 +12,10 @@ class Mensualidad(Base):
     __tablename__ = "mensualidad"
 
     idmensualidad: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    
-    # Cambiados a Integer con ForeignKey
+
     metodopago: Mapped[int] = mapped_column(Integer, ForeignKey("metodopago.idmetodopago"), nullable=False)
     monedapago: Mapped[int] = mapped_column(Integer, ForeignKey("monedapago.idmoneda"), nullable=False)
-    
+
     monto: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     monto_carreras_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     monto_extra: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)

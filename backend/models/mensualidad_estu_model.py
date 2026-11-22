@@ -5,7 +5,6 @@ from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
-# Esto le enseña a Pylance qué es "Mensualidad" solo durante el análisis de código:
 if TYPE_CHECKING:
     from models.estudiante_model import Estudiante
     from models.mensualidad_model import Mensualidad

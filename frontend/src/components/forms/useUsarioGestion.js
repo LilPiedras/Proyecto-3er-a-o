@@ -2,7 +2,6 @@ import { useState } from "react"
 import api from "../../api"
 
 export function useUsuarioGestion() {
-  // Estados para el Registro del Usuario (Paso 1)
   const [name, setName] = useState("")
   const [lastname, setLastName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
@@ -15,7 +14,6 @@ export function useUsuarioGestion() {
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
-  // Estados para el Modal de Asignación de Rol Inicial (Paso 2)
   const [modalRolOpen, setModalRolOpen] = useState(false)
   const [cedulaRegistrada, setCedulaRegistrada] = useState("")
   const [rolesSeleccionados, setRolesSeleccionados] = useState([5])
@@ -24,7 +22,6 @@ export function useUsuarioGestion() {
   const [errorRol, setErrorRol] = useState("")
   const [successRol, setSuccessRol] = useState("")
 
-  // Estados para el Modal de Pregunta de Seguridad (Paso 3)
   const [modalPreguntaOpen, setModalPreguntaOpen] = useState(false)
   const [listaPreguntasCatalogo, setListaPreguntasCatalogo] = useState([])
   const [idPreguntaSeleccionada, setIdPreguntaSeleccionada] = useState(1)
@@ -33,7 +30,6 @@ export function useUsuarioGestion() {
   const [errorPregunta, setErrorPregunta] = useState("")
   const [successPregunta, setSuccessPregunta] = useState("")
 
-  // Estados para Modificar y Eliminar Usuarios
   const [modalModificar, setModalModificar] = useState(false)
   const [modalEliminar, setModalEliminar] = useState(false)
 
@@ -48,12 +44,10 @@ export function useUsuarioGestion() {
   const [accionLoading, setAccionLoading] = useState(false)
   const [modalMsg, setModalMsg] = useState({ tipo: "", texto: "" })
 
-  // Estados para la gestión de roles extra
   const [rolesActualesUsuario, setRolesActualesUsuario] = useState([])
   const [nuevoRolAAsignar, setNuevoRolAAsignar] = useState(5)
   const [loadingGestionRoles, setLoadingGestionRoles] = useState(false)
 
-  // --- GESTIÓN DE ROLES ---
   const cargarRolesUsuario = async (ciuser) => {
     setLoadingGestionRoles(true)
     try {
@@ -100,7 +94,6 @@ export function useUsuarioGestion() {
     }
   }
 
-  // --- REGISTRO (PASOS 1, 2 Y 3) ---
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
@@ -238,7 +231,6 @@ export function useUsuarioGestion() {
     }
   }
 
-  // --- BÚSQUEDA, EDICIÓN Y BAJA ---
   const handleBuscarUsuario = async () => {
     setModalMsg({ tipo: "", texto: "" })
     const cedulaLimpia = cedulaGestion.trim()

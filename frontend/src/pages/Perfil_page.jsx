@@ -46,7 +46,6 @@ const Perfil = () => {
     obtenerPerfil();
   }, []);
 
-  // Función para guardar el nuevo correo
   const handleActualizarCorreo = async (e) => {
     e.preventDefault();
     setMensajeCorreo({ tipo: "", texto: "" });
@@ -64,7 +63,6 @@ const Perfil = () => {
         }
       }
 
-      // Petición PATCH al backend usando la cédula (ciuser) del usuario actual[cite: 12, 14]
       await axios.patch(`/api/usuario/${encodeURIComponent(perfil.ciuser)}`, {
         correousuario: nuevoCorreo.trim()
       }, {
@@ -73,7 +71,6 @@ const Perfil = () => {
         }
       });
 
-      // Actualizar el estado localmente para reflejar el cambio de inmediato
       setPerfil({
         ...perfil,
         correo: nuevoCorreo.trim(),
@@ -125,8 +122,7 @@ const Perfil = () => {
   return (
     <div className="min-h-[80vh] w-full bg-[#1c180e] flex justify-center items-center py-12 px-4">
       <div className="w-full max-w-xl bg-[#11141d] border border-[#2b2518] rounded-3xl shadow-2xl overflow-hidden relative">
-        
-        {/* Cabecera sutil */}
+
         <div className="h-28 bg-[#181d28] border-b border-[#232936] relative flex items-end justify-center">
           <div className="absolute -bottom-8 w-20 h-20 rounded-2xl bg-[#0f121a] border-4 border-[#11141d] flex items-center justify-center shadow-lg">
             <span className="text-2xl font-black text-[#fbbf24] tracking-wider">
@@ -135,7 +131,6 @@ const Perfil = () => {
           </div>
         </div>
 
-        {/* Contenido de la tarjeta */}
         <div className="pt-12 pb-8 px-8 text-center">
           {loading ? (
             <div className="py-10">
@@ -176,22 +171,19 @@ const Perfil = () => {
                       )}
                     </div>
 
-                {/* Notificaciones flotantes de éxito o error al cambiar correo */}
                 {mensajeCorreo.texto && (
                   <p className={`text-xs p-2.5 rounded-xl border mb-4 font-medium ${mensajeCorreo.tipo === 'exito' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-900/50' : 'bg-red-950/30 text-red-400 border-red-900/50'}`}>
                     {mensajeCorreo.texto}
                   </p>
                 )}
 
-                {/* Lista de detalles */}
                 <div className="grid grid-cols-1 gap-2.5 text-left bg-[#161a25] border border-[#252c3d] rounded-2xl p-4">
-                  
+
                   <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-[#1c2230] transition-colors border-b border-[#202736]">
                     <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Cédula / ID</span>
                     <span className="text-gray-200 font-medium text-sm">{perfil.cedula || perfil.ciuser}</span>
                   </div>
 
-                  {/* Campo de Correo Electrónico (Con opción de edición) */}
                   <div className="py-2 px-3 rounded-xl hover:bg-[#1c2230] transition-colors border-b border-[#202736]">
                     <div className="flex items-center justify-between">
                       <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Correo Electrónico</span>

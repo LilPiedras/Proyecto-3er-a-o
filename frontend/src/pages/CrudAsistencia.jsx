@@ -42,7 +42,6 @@ const CrudAsistencia = () => {
         setSecciones(lista);
         if (!lista.length) return;
 
-        // Preferir la sección de la URL si existe en la lista
         const match = seccPreferida
           ? lista.find((s) => String(s.idsecc) === String(seccPreferida))
           : null;

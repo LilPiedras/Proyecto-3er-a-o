@@ -26,12 +26,10 @@ export default function PanelDocenteNotas() {
       try {
         setLoadingMaterias(true);
 
-        // Estudiantes solo de sus materias (endpoint corregido)
         const { data } = await api.get(`/Notas/docente/${ciDocente}/estudiantes`);
         const lista = Array.isArray(data) ? data : [];
         setTodosEstudiantes(lista);
 
-        // Materias únicas a partir de esos estudiantes
         const map = new Map();
         lista.forEach((e) => {
           if (e.idmateria && !map.has(e.idmateria)) {

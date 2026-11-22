@@ -106,20 +106,17 @@ def eliminar_usuario(ciuser: str, admin_id: str, db: Session):
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # 1. Desactivar usuario principal
     db_usuario.activo = False
-    
-    # 2. Desactivar roles asociados en UserLogin
+
     db_logins = db.query(UserLogin).filter(UserLogin.ciuser == ciuser, UserLogin.activo == True).all()
     for login in db_logins:
         login.activo = False
 
-    # 3. Desactivar pregunta de seguridad en Preguntas_Usuario (si aplica)
     db_preguntas = db.query(Preguntas_Usuario).filter(Preguntas_Usuario.ciuser == ciuser).all()
     for preg in db_preguntas:
         if hasattr(preg, "activo"):
             preg.activo = False
-        
+
     db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": admin_id})
     db.commit()
 
@@ -136,16 +133,13 @@ def restaurar_usuario(ciuser: str, admin_id: str, db: Session):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El usuario no existe en la papelera o ya se encuentra activo"
         )
-    
-    # 1. Restaurar usuario principal
+
     db_usuario.activo = True
-    
-    # 2. Restaurar todos los roles asociados en UserLogin
+
     db_logins = db.query(UserLogin).filter(UserLogin.ciuser == ciuser).all()
     for login in db_logins:
         login.activo = True
 
-    # 3. Restaurar pregunta de seguridad en Preguntas_Usuario (si aplica)
     db_preguntas = db.query(Preguntas_Usuario).filter(Preguntas_Usuario.ciuser == ciuser).all()
     for preg in db_preguntas:
         if hasattr(preg, "activo"):

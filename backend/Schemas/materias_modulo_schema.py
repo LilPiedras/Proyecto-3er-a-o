@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import date
 
 class MateriaModuloEntrada(BaseModel):
-    idmatemo: Optional[int] = None  # <-- Cambiado a opcional para evitar el error 422
+    idmatemo: Optional[int] = None
     idmateria: int
     idmodulo: int
 

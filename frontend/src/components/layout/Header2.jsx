@@ -14,12 +14,10 @@ const Header = () => {
   const [cargandoMensualidad, setCargandoMensualidad] = useState(false);
   const [errorMensualidad, setErrorMensualidad] = useState(false);
 
-  // Estados para controlar los menús desplegables en desktop
   const [dropdownPersonal, setDropdownPersonal] = useState(false);
   const [dropdownAcademica, setDropdownAcademica] = useState(false);
   const [dropdownGerencia, setDropdownGerencia] = useState(false);
 
-  // Estados para acordeones en mobile
   const [mobilePersonal, setMobilePersonal] = useState(false);
   const [mobileAcademica, setMobileAcademica] = useState(false);
   const [mobileGerencia, setMobileGerencia] = useState(false);
@@ -56,14 +54,12 @@ const Header = () => {
     setIsAuthenticated(!!token);
     setUserRole(role ? Number(role) : null);
 
-    // Cerrar dropdowns y menú móvil al cambiar de ruta
     setDropdownPersonal(false);
     setDropdownAcademica(false);
     setDropdownGerencia(false);
     setToggle(false);
   }, [location]);
 
-  // Cerrar menús al hacer click fuera en desktop
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownPersonalRef.current && !dropdownPersonalRef.current.contains(event.target)) {
@@ -198,7 +194,6 @@ const Header = () => {
           onClick={() => navigate(rutaLogo)}
         />
 
-        {/* Desktop Menu */}
         <ul className="hidden md:flex gap-6 text-[16px] items-center">
           {isAuthenticated ? (
             <>
@@ -278,11 +273,10 @@ const Header = () => {
                 </>
               )}
 
-              {/* VISTA ADMINISTRATIVA / DIRECTIVA (Roles 1, 2, 3) - Con Dropdowns */}
+              {/* VISTA ADMINISTRATIVA / DIRECTIVA (Roles 1, 2, 3) */}
               {esAdministrativo && (
                 <>
 
-                  {/* DROPDOWN ACADÉMICA */}
                   <div className="relative" ref={dropdownAcademicaRef}>
                     <button
                       type="button"
@@ -374,7 +368,6 @@ const Header = () => {
                     )}
                   </div>
 
-                  {/* DROPDOWN PERSONAL */}
                   <div className="relative" ref={dropdownPersonalRef}>
                     <button
                       type="button"
@@ -418,7 +411,6 @@ const Header = () => {
                     )}
                   </div>
 
-                  {/* DROPDOWN GERENCIA */}
                   <div className="relative" ref={dropdownGerenciaRef}>
                     <button
                       type="button"
@@ -465,14 +457,12 @@ const Header = () => {
                 </>
               )}
 
-              {/* PERFIL */}
               <li>
                 <RouterLink to="/perfil" className="cursor-pointer hover:text-yellow-400">
                   Perfil
                 </RouterLink>
               </li>
 
-              {/* BOTÓN CERRAR SESIÓN */}
               <li>
                 <button
                   type="button"
@@ -484,7 +474,7 @@ const Header = () => {
               </li>
             </>
           ) : (
-            /* Opciones NO LOGEADOS (Públicas) */
+            /* Opciones (Públicas) */
             <>
               <li>
                 <RouterLink to="/" className="cursor-pointer hover:text-yellow-400">
@@ -519,7 +509,6 @@ const Header = () => {
             </>
           )}
 
-          {/* Botón Switch Dark Mode Desktop */}
           <li className="flex flex-col justify-center ml-2">
             <input
               type="checkbox"
@@ -551,7 +540,7 @@ const Header = () => {
           </li>
         </ul>
 
-        {/* Mobile Hamburger & Toggle */}
+        {/* Mobile Hamburger*/}
         <div className="md:hidden z-50 flex items-center gap-3">
           <div className="flex flex-col justify-center">
             <input
@@ -590,7 +579,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {toggle && (
         <div className="fixed inset-0 bg-black/95 z-40 md:hidden overflow-y-auto pt-20 pb-10">
           <div className="flex flex-col items-center gap-5 text-xl text-white px-6">
@@ -644,7 +632,6 @@ const Header = () => {
                       Dashboard
                     </RouterLink>
 
-                    {/* ACADÉMICA MOBILE */}
                     <div className="w-full flex flex-col items-center">
                       <button
                         type="button"
@@ -698,7 +685,6 @@ const Header = () => {
                       )}
                     </div>
 
-                    {/* PERSONAL MOBILE */}
                     <div className="w-full flex flex-col items-center">
                       <button
                         type="button"
@@ -728,7 +714,6 @@ const Header = () => {
                       )}
                     </div>
 
-                    {/* GERENCIA MOBILE */}
                     <div className="w-full flex flex-col items-center">
                       <button
                         type="button"

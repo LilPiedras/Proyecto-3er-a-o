@@ -6,7 +6,6 @@ export const ROLES = {
     ESTUDIANTE: 5
 };
 
-// Si no hay usuario en localStorage, por defecto es ESTUDIANTE (5)
 export const getUserRole = () => {
     try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -26,7 +25,6 @@ export const getAuthHeaders = () => {
     };
 };
 
-// Función auxiliar para probar roles desde la consola del navegador
 export const setTestRole = (rolId) => {
     localStorage.setItem('user', JSON.stringify({ rol: rolId }));
     window.location.reload();

@@ -18,7 +18,6 @@ const InscripcionEstudiante = () => {
       setCargando(true);
       const cedulaEst = user?.ciestu || user?.cedula || user?.ci;
 
-      // Peticiones paralelas para obtener inscripciones, detalles, secciones y notas
       const [resIns, resDetalles, resSecciones, resNotas] = await Promise.all([
         api.get("/inscipcion/").catch(() => ({ data: [] })),
         api.get("/detalles-inscripcion/").catch(() => api.get("/detalle-inscripcion/").catch(() => ({ data: [] }))),
@@ -31,10 +30,8 @@ const InscripcionEstudiante = () => {
       const listaSecciones = Array.isArray(resSecciones.data) ? resSecciones.data : [];
       const listaNotas = Array.isArray(resNotas.data) ? resNotas.data : [];
 
-      // Filtrar inscripciones del estudiante
       const misIns = listaInscripciones.filter((ins) => String(ins.ciestu) === String(cedulaEst));
 
-      // Cada detalle representa una sección asociada a la inscripción del período.
       const consolidado = misIns.flatMap((ins) => {
         const detallesInscripcion = ins.detalles?.length
           ? ins.detalles
@@ -87,8 +84,7 @@ const InscripcionEstudiante = () => {
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24 space-y-8">
       <div className="container mx-auto max-w-3xl space-y-6">
-        
-        {/* ENCABEZADO DE BIENVENIDA */}
+
         <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <span className="text-xs text-yellow-400 font-bold uppercase tracking-widest">Portal del Estudiante</span>
@@ -100,7 +96,6 @@ const InscripcionEstudiante = () => {
           </div>
         </div>
 
-        {/* ESTADO DEL MÓDULO Y PASE AUTOMÁTICO */}
         {moduloActual ? (
           <div className={`p-6 rounded-2xl border shadow-2xl space-y-4 ${
             moduloActual.aprobado 

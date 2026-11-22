@@ -20,7 +20,6 @@ def get_db():
     finally:
         db.close()
 
-# Listar inactivos (Debe ir antes de /{ciempleado})
 @empleado_router.get("/inactivos", response_model=List[EmpleadoSalida], status_code=status.HTTP_200_OK)
 def listar_empleados_inactivos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.listar_empleados_inactivos(db)

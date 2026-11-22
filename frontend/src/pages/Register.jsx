@@ -1,6 +1,6 @@
-import Fromc from "./components/froms/LoginForm"; // <-- Cambiado a LoginForm
-import Fromt from "./components/RegisterForm"; // <-- Cambiado a RegisterForm
-import Footers from "./components/layout/Footer"; // <-- Cambiado a su carpeta real
+import Fromc from "./components/froms/LoginForm";
+import Fromt from "./components/RegisterForm";
+import Footers from "./components/layout/Footer";
 import { Routes, Route } from "react-router-dom";
 
 
@@ -8,10 +8,8 @@ function register() {
   return (
     <BrowserRouter>
           <div className="min-h-screen flex flex-col">
-            {/* Area de contenido principal */}
             <div className="flex-1 flex flex-col lg:flex-row">
               <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
-                {/* Usar Routes para definir qué se muestra según la URL */}
                 <Routes>
                   <Route path="/" element={<Fromc />} />
                   <Route path="/registro" element={<Fromt />} />
@@ -23,12 +21,11 @@ function register() {
             <div>
             </div>
           </div>
-          
+
         </div>
       </div>
 
-      {/* Footer */}
-      <Footers /> 
+      <Footers />
     </div>
     </BrowserRouter>
   )

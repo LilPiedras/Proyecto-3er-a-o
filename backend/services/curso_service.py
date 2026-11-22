@@ -18,7 +18,6 @@ def listar_curso(db: Session):
         return []
     return cursos
 
-# Nueva función: Listar cursos inactivos (Papelera)
 def listar_cursos_inactivos(db: Session):
     cursos = db.query(Curso).filter(Curso.activo == False).all()
     if not cursos:
@@ -104,11 +103,10 @@ def eliminar_curso(idcurso: int, db: Session):
     if not db_curso:
         raise HTTPException(status_code=404, detail="El curso no fue encontrado")
 
-    db_curso.activo = False 
+    db_curso.activo = False
     db.commit()
     return None
 
-# Nueva función: Restaurar curso inactivo
 def restaurar_curso(idcurso: int, db: Session):
     db_curso = db.query(Curso).filter(Curso.idcurso == idcurso, Curso.activo == False).first()
     if not db_curso:
@@ -116,7 +114,7 @@ def restaurar_curso(idcurso: int, db: Session):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El curso no existe en la papelera o ya se encuentra activo"
         )
-    
+
     db_curso.activo = True
     db.commit()
     db.refresh(db_curso)

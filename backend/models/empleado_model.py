@@ -21,6 +21,3 @@ class Empleado(Base):
         if _key == "correoempleado" and value is not None:
             return value.strip().lower()
         return value
-
-    #def __repr__(self) -> str:
-    #  return f"<Empleado id={self.idempleado} nombre={self.nombreempleado!r}>"

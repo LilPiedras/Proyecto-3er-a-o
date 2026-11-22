@@ -2,7 +2,7 @@ from models.estudiante_model import *
 from Schemas.estudiante_schema import EstuEntrada, EstudianteSalida, EstudianteActualizar
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
-from sqlalchemy import text # Agregado para el Trigger
+from sqlalchemy import text
 
 def obtener_estudiante_por_id(ciestu: str, db: Session):
     estudiante = db.query(Estudiante).filter(Estudiante.ciestu == ciestu, Estudiante.activo == True).first()
@@ -16,7 +16,6 @@ def listar_estudiantes(db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de estudiante vacia")
     return estudiante
 
-# Nueva función: Listar estudiantes inactivos (Papelera)
 def listar_estudiantes_inactivos(db: Session):
     estudiantes = db.query(Estudiante).filter(Estudiante.activo == False).all()
     return estudiantes

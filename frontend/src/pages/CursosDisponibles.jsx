@@ -51,19 +51,17 @@ const CursosDisponibles = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {cursos.map((curso) => {
-              // Mapeo exacto de los atributos definidos en el modelo de base de datos[cite: 12]
               const idCurso = curso.idcurso;
               const nombre = curso.nomcurso;
               const precio = curso.preciocurso;
               const nivel = curso.nivelcur;
 
               return (
-                <div 
+                <div
                   key={idCurso}
                   className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-xl hover:border-yellow-400 transition-all duration-300 flex flex-col justify-between group"
                 >
                   <div className="p-6">
-                    {/* Encabezado de la tarjeta con Nivel y Precio */}
                     <div className="flex justify-between items-center mb-4">
                       <span className="bg-yellow-400/10 text-yellow-400 text-xs font-bold px-3 py-1 rounded-full border border-yellow-400/20 uppercase tracking-wider">
                         {nivel}
@@ -76,7 +74,7 @@ const CursosDisponibles = () => {
                     <h3 className="text-2xl font-bold text-white group-hover:text-yellow-300 transition-colors mb-3">
                       {nombre}
                     </h3>
-                    
+
                     <p className="text-gray-400 text-sm mb-6">
                       Formación integral orientada a resultados prácticos con certificación oficial de la academia.
                     </p>

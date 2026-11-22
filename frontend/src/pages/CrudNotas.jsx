@@ -66,11 +66,12 @@ const CrudNotas = () => {
       const ci = localStorage.getItem("ciuser") || "";
 
       const promesas = [
-        api.get("/plan-evaluacion/").catch(() => ({ data: [] })),
+        esRolAdministrador
+          ? api.get("/plan-evaluacion/").catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
       ];
 
       if (esRolAdministrador) {
-        // El administrador ve todas las ofertas y todas las notas del sistema
         promesas.push(api.get("/Oferta/").catch(() => ({ data: [] })));
         promesas.push(api.get("/Notas/").catch(() => ({ data: [] })));
         if (ci) {
@@ -81,9 +82,8 @@ const CrudNotas = () => {
           promesas.push(Promise.resolve({ data: [] }));
         }
       } else {
-        // El docente exclusivo solo carga las ofertas y estudiantes vinculados estrictamente a su cédula
         promesas.push(
-          ci ? api.get(`/Oferta/docente/${ci}`).catch(() => api.get("/Oferta/")) : Promise.resolve({ data: [] })
+          ci ? api.get(`/Oferta/docente/${ci}`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
         );
         promesas.push(
           ci ? api.get(`/Notas/docente/${ci}/notas`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
@@ -91,6 +91,18 @@ const CrudNotas = () => {
         promesas.push(
           ci ? api.get(`/Notas/docente/${ci}/estudiantes`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
         );
+      }
+
+      if (!esRolAdministrador) {
+        const sinDatos =
+          (!Array.isArray(resOfertas.data) || resOfertas.data.length === 0) &&
+          (!resEstu?.data || resEstu.data.length === 0);
+        if (sinDatos) {
+          show_alert(
+            "No tienes materias/ofertas asignadas. Revisa Oferta / asignación de horario.",
+            "warning"
+          );
+        }
       }
 
       const resultados = await Promise.all(promesas);
@@ -109,9 +121,6 @@ const CrudNotas = () => {
         setNotasLista(resNotas && Array.isArray(resNotas.data) ? resNotas.data : []);
         
         let listaEstudiantes = resEstu && Array.isArray(resEstu.data) ? resEstu.data : [];
-        if (listaEstudiantes.length === 0 && ofertasData.length > 0) {
-          listaEstudiantes = ofertasData;
-        }
         setEstudiantes(listaEstudiantes);
       }
     } catch (error) {
@@ -186,7 +195,6 @@ const CrudNotas = () => {
         );
         const materia = normalizar(e.nombremateria);
         const secc = normalizar(e.nomsecc || e.seccion || e.idsecc);
-        // Prioriza cédula; también permite nombre/materia/sección
         return (
           ci.includes(q) ||
           nombre.includes(q) ||
@@ -245,7 +253,6 @@ const CrudNotas = () => {
       );
     }
 
-    // Debe haber elegido una oferta de la lista (no texto libre)
     if (!oferta) {
       return show_alert(
         "Debes buscar y seleccionar un estudiante de la lista (por cédula o nombre). No se acepta texto escrito a mano.",
@@ -263,7 +270,6 @@ const CrudNotas = () => {
       );
     }
 
-    // Si escribió algo distinto a lo seleccionado, invalidar
     if (
       busquedaOferta.trim() &&
       ofertaSeleccionadaLabel &&
@@ -292,7 +298,6 @@ const CrudNotas = () => {
       return show_alert("Indica la fecha de la nota.", "warning");
     }
 
-    // Opcional: no permitir fechas futuras
     const hoy = new Date().toISOString().slice(0, 10);
     if (fechanota > hoy) {
       return show_alert("La fecha no puede ser futura.", "warning");
@@ -337,7 +342,6 @@ const CrudNotas = () => {
           {esEstudiante ? "Mis Notas" : "Gestión de Notas"}
         </h2>
 
-        {/* ========== VISTA ESTUDIANTE ========== */}
         {esEstudiante && (
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
             <div className="overflow-x-auto">
@@ -385,10 +389,8 @@ const CrudNotas = () => {
           </div>
         )}
 
-        {/* ========== VISTA DOCENTE / ADMIN ========== */}
         {esDocenteOAdmin && (
           <>
-            {/* Formulario publicar */}
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-8 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-4">Publicar nota</h3>
               <form onSubmit={publicarNota}>
@@ -408,7 +410,6 @@ const CrudNotas = () => {
                           const v = e.target.value;
                           setBusquedaOferta(v);
                           setMostrarSugerencias(true);
-                          // Si borra o edita, invalidar selección previa
                           if (
                             oferta &&
                             normalizar(v) !== normalizar(ofertaSeleccionadaLabel)
@@ -420,7 +421,6 @@ const CrudNotas = () => {
                         }}
                         onFocus={() => setMostrarSugerencias(true)}
                         onBlur={() => {
-                          // Pequeño delay para permitir click en la lista
                           setTimeout(() => setMostrarSugerencias(false), 150);
                         }}
                       />
@@ -539,7 +539,6 @@ const CrudNotas = () => {
               </form>
             </div>
 
-            {/* Estudiantes asignados a tus materias */}
             {estudiantes.length > 0 && (
               <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-8 shadow-lg">
                 <h3 className="text-xl font-bold text-white mb-4">
@@ -576,7 +575,6 @@ const CrudNotas = () => {
               </div>
             )}
 
-            {/* Lista de notas registradas */}
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-4">Notas registradas</h3>
               <div className="overflow-x-auto">

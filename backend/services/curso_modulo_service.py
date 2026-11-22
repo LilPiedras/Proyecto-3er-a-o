@@ -54,7 +54,6 @@ def eliminar_curso_modulo(idcurso_modulo: int, db: Session):
     db_curmi = db.query(CursoModulo).filter(CursoModulo.idcurso_modulo == idcurso_modulo, CursoModulo.activo==True).first()
     if not db_curmi:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
-    # Aki en lugar de db.delete(db_cliente), hacemos que ese maldito cambie su estado civil a desaperecido
     db_curmi.activo = False
     db.commit()
     return None

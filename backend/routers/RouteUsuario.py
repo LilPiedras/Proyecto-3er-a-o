@@ -30,22 +30,18 @@ def listar_usuarios(db: Session = Depends(get_db), current_user: Usuario = Depen
 
 @usuario_router.post("/", response_model=UsuarioEntrada, status_code=status.HTTP_200_OK)
 def crear_usuario(usuario: UsuarioEntrada, db:Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1])) ):
-    # Se añade current_user.ciuser para la auditoría
     return usuario_service.registrar_usuario(usuario, current_user.ciuser, db)
 
 @usuario_router.put("/{ciuser}", response_model=UsuarioSalida)
 def update_usuario_completo(ciuser: str, usuario_updata: UsuarioUpdata, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    # Se añade current_user.ciuser para la auditoría
     return usuario_service.actualizar_usuario_completo(ciuser, usuario_updata, current_user.ciuser, db)
 
 @usuario_router.patch("/{ciuser}", response_model=UsuarioSalida)
 def update_usuario_parcial(ciuser: str, usuario_updata: UsuarioUpdata, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    # Se añade current_user.ciuser para la auditoría
     return usuario_service.actualizar_usuario_parcial(ciuser, usuario_updata, current_user.ciuser, db)
 
 @usuario_router.delete("/{ciuser}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_usuario_logico(ciuser: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
-    # Se añade current_user.ciuser para la auditoría
     return usuario_service.eliminar_usuario(ciuser, current_user.ciuser, db)
 
 @usuario_router.get("/inactivos", response_model=List[UsuarioSalida], status_code=status.HTTP_200_OK)

@@ -16,9 +16,8 @@ def crear_login(log: Login_UserEntrada, db: Session):
     if not rol:
         raise HTTPException(status_code=404, detail="El rol no existe o está inactivo")
 
-    # Buscar si ya existe el registro (incluso inactivo)
     existe_inactivo = db.query(UserLogin).filter(UserLogin.ciuser == log.ciuser, UserLogin.idrol == log.idrol).first()
-    
+
     if existe_inactivo:
         if not existe_inactivo.activo:
             existe_inactivo.activo = True

@@ -329,7 +329,6 @@ def eliminar_asistencia(idasis: int, usuario: Usuario, db: Session) -> None:
 def obtener_asistencias_estudiante_service(ci: str, idmateria: int, usuario: Usuario, db: Session):
     roles = getattr(usuario, "roles_activos", []) or []
 
-    # Si el usuario es estrictamente un estudiante (rol 5 sin roles administrativos/docentes)
     if 5 in roles and not any(r in roles for r in [1, 2, 3, 4]):
         ci_usuario = str(getattr(usuario, "ciuser", "") or "").strip()
         if ci_usuario and ci_usuario != ci.strip():

@@ -21,7 +21,6 @@ def get_db():
     finally:
         db.close()
 
-# Listar inactivos (Debe ir antes de /{ciestu}) - Solo Director(1) y Subdirector(2)
 @estudiante_router.get("/inactivos", response_model=List[EstudianteSalida], status_code=status.HTTP_200_OK)
 def listar_estudiantes_inactivos(
     db: Session = Depends(get_db),
@@ -29,7 +28,6 @@ def listar_estudiantes_inactivos(
 ):
     return estudiante_service.listar_estudiantes_inactivos(db)
 
-# Permitir lectura a Docentes(4), Coordinadores(3), Subdirectores(2) y Director(1)
 @estudiante_router.get("/{ciestu}", response_model=EstudianteSalida)
 def obtener_estudiante(
     ciestu: str, 
@@ -45,7 +43,6 @@ def listar_estudiantes(
 ):
     return estudiante_service.listar_estudiantes(db)
 
-# Permitir creación a Coordinadores(3), Subdirectores(2) y Director(1)
 @estudiante_router.post("/", response_model=EstuEntrada, status_code=status.HTTP_200_OK)
 def crear_estudiante(
     estudiante: EstuEntrada, 
@@ -54,7 +51,6 @@ def crear_estudiante(
 ):
     return estudiante_service.crear_estudiante(estudiante, current_user.ciuser, db)
 
-# Ediciones limitadas a Coordinadores(3), Subdirectores(2) y Director(1)
 @estudiante_router.put("/{ciestu}", response_model=EstudianteSalida)
 def update_estudiante_completo(
     ciestu: str, 

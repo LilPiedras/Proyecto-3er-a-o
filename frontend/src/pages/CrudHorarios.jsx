@@ -107,7 +107,6 @@ const CrudHorarios = () => {
     });
   }, [bloques, busquedaBloque]);
 
-  // ========== BLOQUES ==========
   const limpiarBloque = () => {
     setIdbloque('');
     setHorainicio('');
@@ -184,7 +183,6 @@ const CrudHorarios = () => {
     });
   };
 
-  // ========== HORARIOS ==========
   const limpiarHorario = () => {
     setIdhorario('');
     setBloque('');
@@ -285,7 +283,6 @@ const CrudHorarios = () => {
           Bloques de tiempo y asignación de días / salones
         </p>
 
-        {/* Pestañas */}
         <div className="flex justify-center gap-2 mb-6">
           <button
             type="button"
@@ -313,7 +310,6 @@ const CrudHorarios = () => {
           </button>
         </div>
 
-        {/* ===== TAB HORARIOS ===== */}
         {tab === 'horarios' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -439,7 +435,6 @@ const CrudHorarios = () => {
           </>
         )}
 
-        {/* ===== TAB BLOQUES ===== */}
         {tab === 'bloques' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -577,7 +572,7 @@ const CrudHorarios = () => {
         )}
       </div>
 
-      {/* Modal BLOQUE */}
+
       {modalBloque && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white shadow-2xl">
@@ -646,7 +641,6 @@ const CrudHorarios = () => {
         </div>
       )}
 
-      {/* Modal HORARIO */}
       {modalHorario && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white shadow-2xl">

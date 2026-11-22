@@ -9,7 +9,7 @@ const CrudDocentes = () => {
   const [docentes, setDocentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
-  const [vistaInactivos, setVistaInactivos] = useState(false); // Estado para alternar papelera
+  const [vistaInactivos, setVistaInactivos] = useState(false);
 
   const [nacionalidad, setNacionalidad] = useState('V');
   const [ciempleadoNum, setCiempleadoNum] = useState('');
@@ -24,7 +24,6 @@ const CrudDocentes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ciempleadoOriginal, setCiempleadoOriginal] = useState('');
 
-  // Roles 1 y 2 gestionan; rol 3 solo puede ver
   const idrol = Number(localStorage.getItem('idrol'));
   const puedeGestionar = [1, 2].includes(idrol);
   const puedeVer = [1, 2, 3].includes(idrol);
@@ -303,8 +302,7 @@ const CrudDocentes = () => {
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24">
       <div className="container mx-auto max-w-6xl">
-        
-        {/* Cabecera con Botón de Papelera */}
+
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
           {puedeGestionar ? (
             <button
@@ -337,7 +335,6 @@ const CrudDocentes = () => {
           </div>
         </div>
 
-        {/* Resumen */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
             <p className="text-xs uppercase text-gray-400 mb-1">
@@ -373,7 +370,6 @@ const CrudDocentes = () => {
           </div>
         </div>
 
-        {/* Buscador */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
           <label className="block text-sm font-bold mb-2 text-yellow-400">
             Buscar
@@ -390,7 +386,6 @@ const CrudDocentes = () => {
           </div>
         </div>
 
-        {/* Tabla / lista */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">
             {vistaInactivos && puedeGestionar ? 'Listado de inactivos' : 'Listado de docentes'}
@@ -466,7 +461,6 @@ const CrudDocentes = () => {
                                 </button>
                               ) : (
                                 <>
-                                  {/* Botón Editar (Amarillo con Lápiz) */}
                                   <button
                                     type="button"
                                     title="Editar"
@@ -486,7 +480,7 @@ const CrudDocentes = () => {
                                   >
                                     <Pencil size={16} />
                                   </button>
-                                  {/* Botón Eliminar (Rojo con Papelera) */}
+
                                   <button
                                     type="button"
                                     title="Eliminar"
@@ -520,7 +514,6 @@ const CrudDocentes = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && puedeGestionar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white relative max-h-[90vh] overflow-y-auto shadow-2xl">

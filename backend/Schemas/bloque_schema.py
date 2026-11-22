@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class BloqueEntrada(BaseModel):
-    horainicio: str = Field(..., min_length=4, max_length=8)  # ej "08:00"
+    horainicio: str = Field(..., min_length=4, max_length=8)
     horafin: str = Field(..., min_length=4, max_length=8)
 
 class BloqueSalida(BaseModel):

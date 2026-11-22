@@ -71,12 +71,12 @@ def crear_pdf_auditorias(registros: list) -> bytes:
 
     por_accion: dict[str, int] = {}
     por_usuario: dict[str, int] = {}
-    
+
     for reg in registros:
-        # Maneja tanto si viene como Diccionario o como Objeto SQLAlchemy
+
         accion = str(reg.get("accion") if isinstance(reg, dict) else getattr(reg, "accion", "Desconocida"))
         escritor = str(reg.get("usuario_escritor_id") if isinstance(reg, dict) else getattr(reg, "usuario_escritor_id", "Sistema"))
-        
+
         por_accion[accion] = por_accion.get(accion, 0) + 1
         por_usuario[escritor] = por_usuario.get(escritor, 0) + 1
 
@@ -90,7 +90,7 @@ def crear_pdf_auditorias(registros: list) -> bytes:
 
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 8, "Indicadores generales de auditoria", 0, 1)
-    
+
     indicadores = [
         ("Total Registros", str(total)),
         ("Acciones registradas", str(len(por_accion))),
@@ -107,16 +107,15 @@ def crear_pdf_auditorias(registros: list) -> bytes:
         pdf.cell(ancho_indicador, 10, valor, border=1, align="C")
     pdf.ln(12)
 
-    # Generación de gráficos en memoria
     grafico_acciones = _crear_grafico_barras(
         "Auditorias por tipo de accion",
-        list(por_accion.keys())[:5],  # Top 5 acciones
+        list(por_accion.keys())[:5],
         list(por_accion.values())[:5],
         (251, 191, 36),
     )
     grafico_usuarios = _crear_grafico_barras(
         "Actividad por usuario escritor",
-        list(por_usuario.keys())[:5],  # Top 5 usuarios
+        list(por_usuario.keys())[:5],
         list(por_usuario.values())[:5],
         (59, 130, 246),
     )
@@ -124,7 +123,6 @@ def crear_pdf_auditorias(registros: list) -> bytes:
     pdf.image(grafico_acciones, x=12, y=y_graficos, w=132)
     pdf.image(grafico_usuarios, x=151, y=y_graficos, w=132)
 
-    # Segunda página: Detalle tabular de auditorías
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Detalle de registros de auditoria", 0, 1)
@@ -157,7 +155,6 @@ def crear_pdf_auditorias(registros: list) -> bytes:
             pdf.add_page()
             escribir_encabezados()
 
-        # Soporta acceso tanto si es dict como si es objeto SQLAlchemy
         if isinstance(reg, dict):
             fec = str(reg.get("fecha") or "")
             hor = str(reg.get("hora") or "")[:8]

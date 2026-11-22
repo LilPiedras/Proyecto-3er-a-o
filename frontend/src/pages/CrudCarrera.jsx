@@ -194,7 +194,6 @@ const CrudCarrera = () => {
           Programas académicos disponibles en el sistema
         </p>
 
-        {/* Resumen */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
             <p className="text-xs uppercase text-gray-400 mb-1">
@@ -224,7 +223,6 @@ const CrudCarrera = () => {
           </div>
         </div>
 
-        {/* Buscador */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
           <label className="block text-sm font-bold mb-2 text-yellow-400">
             Buscar
@@ -241,7 +239,6 @@ const CrudCarrera = () => {
           </div>
         </div>
 
-        {/* Tabla */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">
             Listado de carreras
@@ -334,7 +331,6 @@ const CrudCarrera = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white relative max-h-[90vh] overflow-y-auto shadow-2xl">

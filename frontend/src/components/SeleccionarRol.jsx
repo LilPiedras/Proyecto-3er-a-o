@@ -5,7 +5,7 @@ const NOMBRES_ROL = {
   1: "Director",
   2: "Sub Director",
   3: "Coordinador",
-  4: "Empleado",
+  4: "Docente",
   5: "Estudiante",
 };
 

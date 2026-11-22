@@ -3,16 +3,16 @@ import React, { useMemo } from "react";
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const COLORES = [
-  "#F59E0B", // amber
-  "#3B82F6", // blue
-  "#10B981", // emerald
-  "#8B5CF6", // violet
-  "#EF4444", // red
-  "#EC4899", // pink
-  "#14B8A6", // teal
-  "#F97316", // orange
-  "#6366F1", // indigo
-  "#84CC16", // lime
+  "#F59E0B",
+  "#3B82F6",
+  "#10B981",
+  "#8B5CF6",
+  "#EF4444",
+  "#EC4899",
+  "#14B8A6",
+  "#F97316",
+  "#6366F1",
+  "#84CC16",
 ];
 
 function normalizarDia(dia) {
@@ -69,7 +69,6 @@ export default function HorarioVisual({ horarios = [] }) {
       });
     });
 
-    // Ordenar franjas por hora de inicio si se puede parsear
     const franjasOrd = Array.from(setFranjas).sort((a, b) => {
       const ha = a.split("-")[0].trim();
       const hb = b.split("-")[0].trim();
@@ -160,7 +159,6 @@ export default function HorarioVisual({ horarios = [] }) {
         </table>
       </div>
 
-      {/* Leyenda */}
       <div>
         <h3 className="text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wide">
           Leyenda

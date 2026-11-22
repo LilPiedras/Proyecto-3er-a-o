@@ -1,7 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-# Ajusta estos imports a tus modelos reales
 from models.estudiante_model import Estudiante
 from models.empleado_model import Empleado
 from models.modulo_model import Modulo
@@ -23,7 +22,6 @@ def _extraer_idrol(usuario_o_rol) -> int:
 
     logins = getattr(usuario_o_rol, "logins", None)
     if logins:
-        # Priorizar el login activo si existe
         login_activo = next((l for l in logins if getattr(l, "activo", True)), None)
         target_login = login_activo or logins[-1]
         if getattr(target_login, "idrol", None) is not None:

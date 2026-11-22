@@ -3,10 +3,10 @@ from typing import Optional
 from datetime import date
 
 class AsignacionDocenteEntrada(BaseModel):
-    empleado_id: str                    # cédula (String)
+    empleado_id: str
     materia_id: int
     seccion_id: int
-    fecha_asignacion: date               # o date, según cómo lo guardes
+    fecha_asignacion: date
     horario_id: Optional[int] = None
 
 AsigmentDocEntrada = AsignacionDocenteEntrada
@@ -36,8 +36,6 @@ class AsignacionDocenteSalida(BaseModel):
 
 AsigmentDocSalida = AsignacionDocenteSalida
 
-
-# Respuesta enriquecida para el panel del docente
 class AsignacionDocenteDetalle(BaseModel):
     id_asignacion_docente: int
     empleado_id: str

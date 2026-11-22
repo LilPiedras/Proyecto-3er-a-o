@@ -21,10 +21,8 @@ from tokensitos.auth_depencias import VerificarRoles
 
 asistencia_router = APIRouter(prefix="/asistencias", tags=["Asistencias"])
 
-# Roles administrativos y docentes (Permisos completos: GET, POST, PATCH, DELETE)
 roles_asistencia = VerificarRoles([1, 2, 3, 4])
 
-# Rol exclusivo para estudiantes (SOLO lectura de su propio historial)
 roles_estudiante_asistencia = VerificarRoles([5])
 
 
@@ -103,8 +101,6 @@ def eliminar_asistencia(
     asistencia_service.eliminar_asistencia(idasis, current_user, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-
-# Ruta protegida exclusivamente para el rol 5 (Estudiante)
 @asistencia_router.get("/estudiante/{ci}")
 def obtener_asistencias_estudiante_route(
     ci: str, 

@@ -12,7 +12,7 @@ class Notas(Base):
     idnota: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     oferta: Mapped[int] = mapped_column(Integer, ForeignKey("oferta_seccion.idseccmo", ondelete="CASCADE"), nullable=False)
     idevaluacion: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("plan_evaluacion.idevaluacion", ondelete="SET NULL"), nullable=True)
-    notas: Mapped[Decimal] = mapped_column(Numeric(4, 2), nullable=False) # Permite guardar con precisión decimal antes del redondeo
+    notas: Mapped[Decimal] = mapped_column(Numeric(4, 2), nullable=False)
     fechanota: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

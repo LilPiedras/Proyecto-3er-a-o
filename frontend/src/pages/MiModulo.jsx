@@ -54,7 +54,6 @@ const MiModulo = () => {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-black text-white space-y-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Cabecera */}
         <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">
@@ -70,7 +69,6 @@ const MiModulo = () => {
           </div>
         </div>
 
-        {/* Módulo / inscripción */}
         <section className="bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-3">
           <h2 className="text-lg font-bold text-yellow-400">Mi módulo</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -100,7 +98,6 @@ const MiModulo = () => {
           </div>
         </section>
 
-        {/* Materias */}
         <section className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
           <h2 className="text-lg font-bold text-yellow-400 mb-4">Materias que curso</h2>
           {materias?.length ? (
@@ -131,7 +128,6 @@ const MiModulo = () => {
           )}
         </section>
 
-        {/* Horario visual */}
         <section className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
           <h2 className="text-lg font-bold text-yellow-400 mb-4">Mi horario</h2>
           <HorarioVisual horarios={horarios || []} />

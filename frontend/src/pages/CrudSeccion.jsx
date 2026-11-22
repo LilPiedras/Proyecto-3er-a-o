@@ -104,7 +104,7 @@ const CrudSeccion = () => {
           ...oferta,
           nombreCompleto: estudiante
             ? `${estudiante.nombreestu ?? ''} ${estudiante.apelliestu ?? ''}`.trim()
-            : oferta.estudiante, // por si no está en el catálogo
+            : oferta.estudiante,
           estudianteData: estudiante ?? null,
         };
       });
@@ -336,7 +336,6 @@ const CrudSeccion = () => {
           Grupos académicos y asignación de estudiantes
         </p>
 
-        {/* Resumen */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg">
             <p className="text-xs uppercase text-gray-400 mb-1">
@@ -366,7 +365,6 @@ const CrudSeccion = () => {
           </div>
         </div>
 
-        {/* Buscador */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6 shadow-lg">
           <label className="block text-sm font-bold mb-2 text-yellow-400">
             Buscar
@@ -383,7 +381,6 @@ const CrudSeccion = () => {
           </div>
         </div>
 
-        {/* Tabla */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">
             Listado de secciones
@@ -430,7 +427,6 @@ const CrudSeccion = () => {
                         </td>
                         <td className="p-3">
                           <div className="flex justify-end gap-2">
-                            {/* Botón azul con icono de Ojo (Eye) */}
                             <button
                               type="button"
                               title="Ver Estudiantes"
@@ -439,7 +435,6 @@ const CrudSeccion = () => {
                             >
                               <Eye size={16} />
                             </button>
-                            {/* Botón amarillo con icono de Lápiz */}
                             <button
                               type="button"
                               title="Editar"
@@ -448,7 +443,6 @@ const CrudSeccion = () => {
                             >
                               <Pencil size={16} />
                             </button>
-                            {/* Botón rojo con icono de Papelera */}
                             <button
                               type="button"
                               title="Eliminar"
@@ -477,7 +471,6 @@ const CrudSeccion = () => {
         </div>
       </div>
 
-      {/* Modal sección */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 text-white shadow-2xl">
@@ -532,7 +525,6 @@ const CrudSeccion = () => {
         </div>
       )}
 
-      {/* Modal estudiantes */}
       {isStudentsModalOpen && selectedSection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-5xl p-6 text-white max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -555,7 +547,6 @@ const CrudSeccion = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Agregar */}
               <div className="bg-gray-800/80 rounded-lg p-5 border border-gray-700">
                 <h4 className="text-lg font-semibold mb-4 text-yellow-400">
                   Agregar estudiante
@@ -663,7 +654,6 @@ const CrudSeccion = () => {
                 </div>
               </div>
 
-              {/* Lista */}
               <div className="bg-gray-800/80 rounded-lg p-5 border border-gray-700">
                 <h4 className="text-lg font-semibold mb-4 text-yellow-400">
                   Lista de estudiantes

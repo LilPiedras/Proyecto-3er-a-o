@@ -15,8 +15,10 @@ export default function LoginForm() {
     setLoading(true)
 
     try {
+      const emailNormalizado = email.trim().toLowerCase()
+
       const body = new URLSearchParams()
-      body.append("username", email)
+      body.append("username", emailNormalizado)
       body.append("password", password)
 
       const res = await fetch("/api/auth/login", {
@@ -114,10 +116,9 @@ export default function LoginForm() {
             <input type="checkbox" id="remember-me" className="w-4 h-4 text-yellow-500 rounded focus:ring-yellow-500 border-gray-300" />
             <label htmlFor="remember-me" className="ml-2 font-medium text-base text-gray-200 cursor-pointer">Recuerdame</label>
           </div>
-          
-          {/* Botón corregido con la redirección a la ruta de recuperación */}
-          <button 
-            type="button" 
+
+          <button
+            type="button"
             onClick={() => navigate("/recuperar-password")}
             className="font-medium text-base text-yellow-300 hover:text-yellow-400 transition-colors cursor-pointer"
           >

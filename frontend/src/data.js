@@ -1,4 +1,3 @@
-// Al inicio del archivo
 import foto1 from "./assets/foto1.jpg";
 import foto4 from "./assets/foto4.jpg";
 import foto5 from "./assets/foto5.jpg";
@@ -7,7 +6,7 @@ const data = [
   {
     id: 1,
     name: "Adriana",
-    img: foto5,  // ← Usas la variable importada
+    img: foto5,
     age: "25",
     des: "Sueño con ser una diseñadora y gracias a la Academia puedo lograrlo debido a su buen contenido y los excelentes profesores que cuentan."
   },

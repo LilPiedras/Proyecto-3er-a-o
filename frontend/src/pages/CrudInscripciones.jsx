@@ -229,8 +229,7 @@ const CrudInscripciones = () => {
 
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24 space-y-10">
-      
-      {/* 1. PANEL DE CONSULTA RÁPIDA */}
+
       <div className="container mx-auto max-w-4xl bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl space-y-4">
         <div className="flex items-center gap-2 text-yellow-400">
           <MapPin size={22} />
@@ -291,7 +290,6 @@ const CrudInscripciones = () => {
         )}
       </div>
 
-      {/* 2. FORMULARIO DE INSCRIPCIÓN */}
       <div className="container mx-auto max-w-2xl bg-gray-900 border border-gray-700 p-8 rounded-2xl shadow-2xl space-y-6">
         <h2 className="text-3xl font-extrabold text-yellow-400 text-center">
           Inscripción de Estudiantes
@@ -301,8 +299,7 @@ const CrudInscripciones = () => {
         </p>
 
         <form onSubmit={handleInscribir} className="space-y-5">
-          
-          {/* SELECCIONAR ESTUDIANTE */}
+
           <div>
             <label className="block text-sm font-bold mb-2 text-yellow-400">
               Estudiante
@@ -328,7 +325,6 @@ const CrudInscripciones = () => {
             </select>
           </div>
 
-          {/* SELECCIONAR PERÍODO */}
           <div>
             <label className="block text-sm font-bold mb-2 text-yellow-400">
               Período Académico
@@ -348,7 +344,6 @@ const CrudInscripciones = () => {
             </select>
           </div>
 
-          {/* SELECCIONAR SECCIONES CON MÓDULO */}
           <div>
             <label className="block text-sm font-bold mb-2 text-yellow-400">
               Secciones y Módulos Disponibles
@@ -380,7 +375,6 @@ const CrudInscripciones = () => {
             </p>
           </div>
 
-          {/* ESTADO */}
           <div>
             <label className="block text-sm font-bold mb-2 text-yellow-400">
               Estado de la Inscripción
@@ -405,7 +399,6 @@ const CrudInscripciones = () => {
         </form>
       </div>
 
-      {/* 3. HISTORIAL GENERAL */}
       <div className="container mx-auto max-w-6xl bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl">
         <h3 className="text-xl font-bold text-yellow-400 mb-4">
           Historial General de Inscripciones

@@ -2,16 +2,14 @@ from datetime import date
 from typing import Optional
 from sqlalchemy import (Boolean, Date, ForeignKey,Integer, String, DateTime)
 from sqlalchemy.orm import (DeclarativeBase, Mapped, mapped_column, relationship,)
-from database.connection import engine #importacion directa de la connecion a postgres
+from database.connection import engine
 from datetime import datetime
 class Base(DeclarativeBase):
     pass
 
-#  Cliente
- 
 class Empleado(Base):
     __tablename__ = "empleado"
- 
+
     ciempleado: Mapped[str] = mapped_column(String, primary_key=True, unique=True)
     nombreempleado: Mapped[str] = mapped_column(String(100), nullable=False)
     apellidoempleado: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -21,10 +19,10 @@ class Empleado(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     def __repr__(self) -> str:
         return f"<Empleado id={self.idempleado} nombre={self.nombreempleado!r}>"
- 
+
 class Estudiante(Base):
     __tablename__ = "estudiante"
- 
+
     ciestu: Mapped[str] = mapped_column(String(30), primary_key=True, unique=True)
     nombreestu: Mapped[str] = mapped_column(String(100), nullable=False)
     apelliestu: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -35,10 +33,10 @@ class Estudiante(Base):
 
     def __repr__(self) -> str:
         return f"<Estudiante id={self.ciestu} nombre={self.nombreestu!r}>"
- 
+
 class Usuario(Base):
     __tablename__ = "usuario"
- 
+
     iduser: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
     nombreusuario: Mapped[str] = mapped_column(String(20), nullable=False)
     apellusuario: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -219,7 +217,7 @@ class Seccion(Base):
 
     def __repr__(self) -> str:
         return f"<Salon id={self.idsecc}>"
-    
+
 class Mensualidad(Base):
     __tablename__ = "mensualidad"
 
@@ -231,13 +229,11 @@ class Mensualidad(Base):
     monto : Mapped[int] = mapped_column(Integer, nullable=False)
     encargado : Mapped[int] = mapped_column(Integer, nullable=False)
     verificacion :Mapped[bool] = mapped_column(Boolean)
-    
-# Crear Tablas
+
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     print("¡Tablas creadas con éxito!")
 
-#tokemmss
 class RefreshToken(Base):
     __tablename__ = "refresh_token"
 

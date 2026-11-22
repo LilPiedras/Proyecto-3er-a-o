@@ -17,7 +17,7 @@ import {
   mostrarValor,
   traducirAccion,
   traducirCampo,
-} from ".components/helpers/auditoriaHelpers.jsx";
+} from "../components/helpers/auditoriaHelpers.jsx";
 import GraficaAuditorias, { ResumenGraficaContenido } from "./graficaAuditoria.jsx";
 
 const PanelDatos = ({ titulo, datos, color }) => {
@@ -64,7 +64,6 @@ const extraerDetalleErrorBlob = async (requestError, mensajePorDefecto) => {
       const json = JSON.parse(texto);
       if (typeof json?.detail === "string") return json.detail;
     } catch {
-      // Si no viene en JSON, se usa el mensaje por defecto
     }
   }
   if (typeof respuesta?.detail === "string") return respuesta.detail;

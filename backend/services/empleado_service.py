@@ -2,7 +2,7 @@ from models.empleado_model import *
 from Schemas.empleado_schema import *
 from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
-from sqlalchemy import text # Agregado para el Trigger
+from sqlalchemy import text
 
 def obtener_empleado_por_id(ciempleado:str, db:Session):
     empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado, Empleado.activo == True).first()
@@ -16,7 +16,6 @@ def listar_empleados(db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista de empleado vacia")
     return empleado
 
-# Nueva función: Listar empleados inactivos (Papelera)
 def listar_empleados_inactivos(db: Session):
     empleados = db.query(Empleado).filter(Empleado.activo == False).all()
     return empleados
@@ -68,14 +67,13 @@ def eliminar_empleado(ciempleado: str, escritor_id: str, db: Session):
     db_empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado, Empleado.activo==True).first()
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
-    
+
     db_empleado.activo = False
-    
+
     db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     return None
 
-# Nueva función: Restaurar empleado inactivo
 def restaurar_empleado(ciempleado: str, escritor_id: str, db: Session):
     db_empleado = db.query(Empleado).filter(Empleado.ciempleado == ciempleado, Empleado.activo == False).first()
     if not db_empleado:
@@ -83,9 +81,9 @@ def restaurar_empleado(ciempleado: str, escritor_id: str, db: Session):
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="El empleado no existe o ya se encuentra activo"
         )
-    
+
     db_empleado.activo = True
-    
+
     db.execute(text("SET LOCAL app.current_admin_id = :admin_id"), {"admin_id": escritor_id})
     db.commit()
     db.refresh(db_empleado)

@@ -115,8 +115,8 @@ def crear_pdf_mensualidades(registros: list[dict]) -> bytes:
         list(por_estado),
         list(por_estado.values()),
         (251, 191, 36),
-    ) 
-    #Grafica de veces que Candymar le pego a SMick: 100%
+    )
+
     grafico_periodos = _crear_grafico_barras(
         "Registros por periodo academico",
         list(por_periodo),
@@ -210,7 +210,6 @@ def crear_pdf_horario_docente(ci_docente: str, clases: list[dict]) -> bytes:
     pdf.cell(0, 6, f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1, "L")
     pdf.ln(4)
 
-    # Deduplicar
     vistos = set()
     unicos = []
     for c in clases:

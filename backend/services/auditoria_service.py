@@ -220,7 +220,6 @@ def crear_excel_auditorias(registros: list) -> bytes:
 
     wb = Workbook()
 
-    # --- HOJA 1: DETALLE DE REGISTROS ---
     ws_detalle = wb.active
     ws_detalle.title = "Detalle Auditorias"
     ws_detalle.views.sheetView[0].showGridLines = True
@@ -321,7 +320,6 @@ def crear_excel_auditorias(registros: list) -> bytes:
 
     ws_detalle.freeze_panes = f"A{fila_inicio_tabla + 1}"
 
-    # --- HOJA 2: RESUMEN Y GRÁFICO DE TORTA ---
     ws_resumen = wb.create_sheet(title="Resumen y Grafica")
     ws_resumen["A1"] = "Distribución de Auditorías por Acción"
     ws_resumen["A1"].font = Font(name="Calibri", size=13, bold=True, color="1F2937")

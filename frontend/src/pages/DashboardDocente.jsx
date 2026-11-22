@@ -44,7 +44,6 @@ const DashboardDocente = () => {
         return itemCi && itemCi === String(ci).trim();
       });
 
-      // Evitar duplicados: misma materia + sección + día + hora + salón
       const unicos = new Map();
       misClases.forEach((item) => {
         const key = [
@@ -78,7 +77,6 @@ const DashboardDocente = () => {
     }
   };
 
-  // Formato que espera HorarioVisual
   const horariosParaGrid = useMemo(
     () =>
       misAsignaciones.map((a) => ({
@@ -220,7 +218,6 @@ const DashboardDocente = () => {
   return (
     <div className="min-h-screen bg-black p-6 pt-28 text-white">
       <div className="mx-auto max-w-6xl space-y-8">
-        {/* Cabecera */}
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-3">
@@ -236,7 +233,6 @@ const DashboardDocente = () => {
           </div>
         </div>
 
-        {/* Horario visual */}
         <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -256,7 +252,6 @@ const DashboardDocente = () => {
           <HorarioVisual horarios={horariosParaGrid} />
         </section>
 
-        {/* Cards de materias */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Users className="text-yellow-400" size={20} /> Secciones y Aulas
@@ -327,7 +322,6 @@ const DashboardDocente = () => {
             )}
           </div>
 
-          {/* ===== NÓMINA DE ESTUDIANTES ===== */}
           <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Users className="text-yellow-400" size={20} />

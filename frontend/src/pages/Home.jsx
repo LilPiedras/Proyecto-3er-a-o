@@ -43,20 +43,18 @@ const Home = () => {
 
       </div>
 
-      {/* MODAL / CUADRO FLOTANTE INTERACTIVO */}
       {isOpenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="relative w-full max-w-2xl bg-[#11141d] border border-[#232936] rounded-3xl shadow-2xl p-6 md:p-8 text-white overflow-hidden">
-            
-            {/* Botón de cerrar */}
-            <button 
+
+            <button
               onClick={() => setIsOpenModal(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-yellow-400 transition-colors p-2 cursor-pointer"
             >
               <FaTimes className="text-xl" />
             </button>
 
-            {/* Cabecera del Modal */}
+
             <div className="text-center mb-6">
               <span className="px-3 py-1 bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-xs font-semibold rounded-full">
                 Academia Amada Fashion
@@ -66,7 +64,6 @@ const Home = () => {
               </h3>
             </div>
 
-            {/* Contenido Informativo */}
             <div className="space-y-4 text-gray-300 text-sm md:text-base font-Jost mb-8">
               <div className="flex items-start gap-3 bg-[#161a25] p-3.5 rounded-2xl border border-[#222938]">
                 <FaCut className="text-yellow-400 text-xl mt-1 shrink-0" />
@@ -84,7 +81,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Footer del Modal */}
             <div className="flex justify-center">
               <button
                 onClick={() => setIsOpenModal(false)}

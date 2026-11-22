@@ -13,7 +13,6 @@ const ResumenCalificaciones = () => {
 
   const ci = localStorage.getItem("ciuser") || "";
 
-  // Cargar materias del estudiante (desde mi-modulo)
   useEffect(() => {
     const init = async () => {
       try {
@@ -37,7 +36,6 @@ const ResumenCalificaciones = () => {
     init();
   }, []);
 
-  // Cuando cambia la materia seleccionada → cargar plan + notas
   useEffect(() => {
     if (!materiaSeleccionada || !ci) {
       setPlanes([]);
@@ -49,14 +47,12 @@ const ResumenCalificaciones = () => {
 
     const cargarDetalle = async () => {
       try {
-        // Info de la materia (nombre + docente)
         const mat = materias.find(
           (m) => String(m.idmateria) === String(materiaSeleccionada)
         );
         setNombreMateria(mat?.nombremateria || `Materia #${materiaSeleccionada}`);
         setProfesor(mat?.docente || "—");
 
-        // Plan de evaluación de esa materia
         const [resPlan, resNotas] = await Promise.all([
           api
             .get(`/plan-evaluacion/materia/${materiaSeleccionada}`)
@@ -80,7 +76,6 @@ const ResumenCalificaciones = () => {
     cargarDetalle();
   }, [materiaSeleccionada, ci, materias]);
 
-  // Combinar plan + nota y calcular % acumulado
   const filas = useMemo(() => {
     return planes.map((p) => {
       const notaObj = notas.find(
@@ -88,14 +83,13 @@ const ResumenCalificaciones = () => {
       );
       const nota = notaObj ? Number(notaObj.notas) : null;
       const ponderacion = Number(p.porcentaje) || 0;
-      // Misma lógica que SAREC: nota * (ponderacion / 100)
       const acumulado =
         nota !== null && !isNaN(nota) ? (nota * ponderacion) / 100 : null;
 
       return {
         idevaluacion: p.idevaluacion,
         evaluacion: p.titulo,
-        semana: "—", // el modelo actual no tiene semana
+        semana: "—",
         ponderacion,
         nota,
         acumulado,
@@ -118,14 +112,12 @@ const ResumenCalificaciones = () => {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-black text-white pt-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Título principal estilo SAREC */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-center">
           <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide text-yellow-400">
             Resumen de Calificaciones hasta la fecha
           </h1>
         </div>
 
-        {/* Selector de materias inscritas */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <label className="text-sm font-bold text-yellow-400 whitespace-nowrap">
@@ -153,7 +145,6 @@ const ResumenCalificaciones = () => {
           )}
         </div>
 
-        {/* Detalle de la materia seleccionada */}
         {materiaSeleccionada && (
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg space-y-5">
             <div className="space-y-1">
@@ -173,7 +164,6 @@ const ResumenCalificaciones = () => {
               Evaluaciones cargadas en el sistema hasta la fecha por el docente
             </p>
 
-            {/* Tabla estilo SAREC */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>

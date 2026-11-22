@@ -20,7 +20,7 @@ def obtener_oferta_detallada_estudiante(ciestu: str, db: Session):
         .filter(Oferta_seccion.estudiante == ciestu)
         .all()
     )
-    
+
     if not ofertas:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -69,24 +69,20 @@ def crear_oferta(seccmo: OfertaEntrada, db: Session):
             detail=f"Error de integridad: {str(e.orig)}"
         )
 
-
-# 3. FUNCIÓN EXCLUSIVA PARA EL ESTUDIANTE (Solo ve sus datos)
 def obtener_oferta_estudiante(cedula: str, db: Session):
     """
     Filtra la tabla de ofertas y retorna únicamente los registros
     donde el campo estudiante coincida con la cédula solicitada.
     """
     ofertas = db.query(Oferta_seccion).filter(Oferta_seccion.estudiante == cedula).all()
-    
+
     if not ofertas:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="No te encuentras inscrito en ninguna sección."
         )
     return ofertas
 
-
-# 4. ACTUALIZACIÓN 
 def actualizar_oferta_parcial(idseccmo: int, oferta_update: OfertaActualizar, db: Session):
     db_oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
     if not db_oferta:
@@ -107,14 +103,11 @@ def actualizar_oferta_parcial(idseccmo: int, oferta_update: OfertaActualizar, db
             detail="No se pudo actualizar la oferta por violación de restricciones"
         )
 
-
-# 5. ELIMINACIÓN CORREGIDA
 def eliminar_oferta(idseccmo: int, db: Session):
     db_oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
     if not db_oferta:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La oferta no fue encontrada")
 
-    # Eliminación física en BD ya que no tienes un campo 'activo' en tu modelo Oferta_seccion
     try:
         db.delete(db_oferta)
         db.commit()

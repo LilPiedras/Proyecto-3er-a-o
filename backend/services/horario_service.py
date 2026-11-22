@@ -30,7 +30,6 @@ def _existe_horario_duplicado(db: Session, dia: str, bloque: int, salon: str, ex
 
 
 def crear_horario(horario_data: HorarioEntrada, db: Session):
-    # Validar que no exista el mismo día + bloque + salón
     if _existe_horario_duplicado(db, horario_data.dia, horario_data.bloque, horario_data.salon):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -61,7 +60,6 @@ def actualizar_horario_completo(idhorario: int, clockmon: HorarioEntrada, db: Se
     if not db_horario:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Horario no encontrado")
 
-    # Validar duplicado (excluyendo el propio registro)
     if _existe_horario_duplicado(db, clockmon.dia, clockmon.bloque, clockmon.salon, excluir_id=idhorario):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

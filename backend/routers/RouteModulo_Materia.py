@@ -24,7 +24,6 @@ def get_db():
     finally:
         db.close()
 
-# Clase generadora del PDF para el reporte del Módulo
 class PDFModuloReport(FPDF):
     def header(self):
         self.set_font("Helvetica", "B", 14)

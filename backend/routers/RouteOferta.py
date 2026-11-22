@@ -8,7 +8,6 @@ from typing import List
 from models.usuario_model import Usuario
 from tokensitos.auth_depencias import VerificarRoles
 
-# CORREGIDO: Prefijo limpio, sin espacios, con guion
 oferta_router = APIRouter(
     prefix="/materias-modulo",
     tags=["Materias Modulo"]

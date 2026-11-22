@@ -16,6 +16,7 @@ const CrudPlanEvaluacion = () => {
   const [idsecc, setIdsecc] = useState("");
   const [titulo, setTitulo] = useState("");
   const [porcentaje, setPorcentaje] = useState("");
+  const [esAdmin, setEsAdmin] = useState(false);
 
   const cargarPlanes = async () => {
     try {
@@ -57,7 +58,6 @@ const CrudPlanEvaluacion = () => {
       let secs = [];
 
       if (ciDocente && !esAdmin) {
-        // Misma fuente que DashboardDocente
         const { data } = await api.get("/api/horarios-materias").catch(() => ({ data: [] }));
         const lista = Array.isArray(data) ? data : [];
 
@@ -66,7 +66,6 @@ const CrudPlanEvaluacion = () => {
           return String(item.ciempleado || "").trim() === ciDocente;
         });
 
-        // Materias únicas del docente
         const materiasMap = new Map();
         misClases.forEach((a) => {
           if (a.idmateria != null && !materiasMap.has(a.idmateria)) {
@@ -79,7 +78,6 @@ const CrudPlanEvaluacion = () => {
         });
         mats = Array.from(materiasMap.values());
 
-        // Secciones únicas del docente
         const seccionesMap = new Map();
         misClases.forEach((a) => {
           if (a.idsecc != null && !seccionesMap.has(a.idsecc)) {
@@ -92,7 +90,6 @@ const CrudPlanEvaluacion = () => {
         });
         secs = Array.from(seccionesMap.values());
 
-        // Fallback: si no hay en horarios, intentar asignacion_docente
         if (mats.length === 0) {
           try {
             const { data: asigs } = await api.get(
@@ -118,11 +115,11 @@ const CrudPlanEvaluacion = () => {
             mats = Array.from(materiasMap.values());
             secs = Array.from(seccionesMap.values());
           } catch (_) {
-            /* ignore */
+
           }
         }
       } else {
-        // Admin: todas las activas
+
         const [resMat, resSec] = await Promise.all([
           api.get("/materia/").catch(() => ({ data: [] })),
           api.get("/seccion/").catch(() => ({ data: [] })),
@@ -137,6 +134,7 @@ const CrudPlanEvaluacion = () => {
 
       setMaterias(mats);
       setSecciones(secs);
+      setEsAdmin(!!esAdmin);
 
       if (!esAdmin && mats.length === 0) {
         show_alert(
@@ -232,6 +230,14 @@ const CrudPlanEvaluacion = () => {
     return s ? s.nomsecc || s.nombreseccion || `#${id}` : `#${id}`;
   };
 
+  const planesVisibles = esAdmin
+    ? planes
+    : planes.filter((p) => {
+        const tieneMateria = materias.some((m) => m.idmateria === p.idmateria);
+        const tieneSeccion = secciones.some((s) => s.idsecc === p.idsecc);
+        return tieneMateria && tieneSeccion;
+      });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-black text-white">
@@ -247,7 +253,6 @@ const CrudPlanEvaluacion = () => {
           Plan de Evaluación
         </h2>
 
-        {/* Formulario */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-8 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">Nuevo plan</h3>
           <form onSubmit={guardar}>
@@ -333,7 +338,6 @@ const CrudPlanEvaluacion = () => {
           </form>
         </div>
 
-        {/* Tabla */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
           <h3 className="text-xl font-bold text-white mb-4">Planes registrados</h3>
           <div className="overflow-x-auto">
@@ -349,8 +353,8 @@ const CrudPlanEvaluacion = () => {
                 </tr>
               </thead>
               <tbody>
-                {planes.length > 0 ? (
-                  planes.map((p) => (
+                {planesVisibles.length > 0 ? (
+                  planesVisibles.map((p) => (
                     <tr key={p.idevaluacion} className="border-b border-gray-700 hover:bg-gray-800">
                       <td className="p-3 font-mono text-gray-400">#{p.idevaluacion}</td>
                       <td className="p-3 text-white font-medium">{p.titulo}</td>
@@ -371,8 +375,10 @@ const CrudPlanEvaluacion = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center p-6 text-gray-500">
-                      No hay planes de evaluación. Crea uno arriba.
+                    <td colSpan={6} className="p-6 text-center text-gray-500">
+                      {materias.length === 0
+                        ? "No tienes materias asignadas. No hay planes que mostrar."
+                        : "No hay planes de evaluación para tus materias."}
                     </td>
                   </tr>
                 )}

@@ -28,7 +28,6 @@ export default function RegisterForm() {
           <p className="text-gray-400 mt-2 text-sm">Panel administrativo para dar de alta cuentas en el sistema.</p>
         </div>
 
-        {/* Botones de gestión */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <button
             type="button"
@@ -46,7 +45,6 @@ export default function RegisterForm() {
           </button>
         </div>
 
-        {/* Formulario de Registro Principal */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
             <label htmlFor="name" className="text-sm font-semibold uppercase tracking-wider text-gray-400">Nombres</label>
@@ -165,7 +163,6 @@ export default function RegisterForm() {
         </form>
       </div>
 
-      {/* Modales separados */}
       <ModalesUsuario gestion={gestion} />
     </div>
   )

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaKey, FaArrowLeft } from "react-icons/fa";
-import api from "../api"; // Asegúrate de que esta sea la ruta correcta a tu instancia de Axios
+import api from "../api";
 
 export default function RecuperarPassword() {
   const navigate = useNavigate();
   
-  const [paso, setPaso] = useState(1); // Paso 1: Ingresar Cédula | Paso 2: Responder y cambiar contraseña
+  const [paso, setPaso] = useState(1);
   const [nationality, setNationality] = useState("V");
   const [dni, setDni] = useState("");
   const [ciuserFinal, setCiuserFinal] = useState("");
@@ -18,7 +18,6 @@ export default function RecuperarPassword() {
   const [error, setError] = useState("");
   const [mensajeExito, setMensajeExito] = useState("");
 
-  // PASO 1: Buscar la pregunta de seguridad por la cédula del usuario
   const handleBuscarPregunta = async (e) => {
     e.preventDefault();
     setError("");
@@ -27,12 +26,11 @@ export default function RecuperarPassword() {
     const formattedDni = `${nationality}-${dni.trim()}`;
 
     try {
-      // Petición al endpoint que configuramos en el backend
       const { data } = await api.get(`/PreguntasSeguridad/usuario/${encodeURIComponent(formattedDni)}`);
       
       setCiuserFinal(formattedDni);
-      setPreguntaTexto(data.preguntas); // Guardamos la pregunta para mostrarla
-      setPaso(2); // Avanzamos al siguiente paso del formulario
+      setPreguntaTexto(data.preguntas);
+      setPaso(2);
     } catch (err) {
       console.error(err);
       const detail = err.response?.data?.detail;
@@ -42,7 +40,6 @@ export default function RecuperarPassword() {
     }
   };
 
-  // PASO 2: Enviar la respuesta secreta y la nueva contraseña
   const handleCambiarPassword = async (e) => {
     e.preventDefault();
     setError("");
@@ -55,12 +52,9 @@ export default function RecuperarPassword() {
         nueva_password: nuevaPassword
       };
 
-      // Petición al endpoint de validación y restablecimiento
       const { data } = await api.post("/PreguntasSeguridad/recuperar-password", payload);
-      
+
       setMensajeExito(data.mensaje || "¡Contraseña restablecida exitosamente!");
-      
-      // Redirigir al login después de 2 segundos
       setTimeout(() => {
         navigate("/login");
       }, 2000);
@@ -77,8 +71,7 @@ export default function RecuperarPassword() {
   return (
     <div className="min-h-screen bg-[#1c180e] flex justify-center items-center p-4">
       <div className="w-full max-w-md bg-[#11141d] border border-[#2b2518] rounded-3xl p-8 shadow-2xl text-gray-200 relative">
-        
-        {/* Enlace para regresar al login */}
+
         <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-yellow-400 mb-6 transition">
           <FaArrowLeft size={12} /> Volver al Inicio de Sesión
         </Link>
@@ -97,7 +90,6 @@ export default function RecuperarPassword() {
         {mensajeExito && <p className="bg-emerald-950/40 border border-emerald-900 text-emerald-400 p-3 rounded-xl text-xs mb-4 font-medium">{mensajeExito}</p>}
 
         {paso === 1 ? (
-          /* FORMULARIO PASO 1: INGRESAR CÉDULA */
           <form onSubmit={handleBuscarPregunta} className="flex flex-col gap-4">
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">Número de Cédula</label>
@@ -130,7 +122,6 @@ export default function RecuperarPassword() {
             </button>
           </form>
         ) : (
-          /* FORMULARIO PASO 2: PREGUNTA Y NUEVA CONTRASEÑA */
           <form onSubmit={handleCambiarPassword} className="flex flex-col gap-4">
             <div className="bg-[#161a25] border border-[#252c3d] p-3.5 rounded-xl">
               <span className="text-[10px] uppercase font-bold text-yellow-400 tracking-wider">Pregunta de Seguridad Asignada:</span>

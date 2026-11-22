@@ -115,7 +115,6 @@ const CrudOferta = () => {
   useEffect(() => {
     if (rolUsuario === null) return;
     cargarDatos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rolUsuario]);
 
   const crearAsignacion = async (e) => {

@@ -20,7 +20,6 @@ def get_db():
     finally:
         db.close()
 
-# Listar inactivos (Debe ir antes de /{idcurso})
 @curso_route.get("/inactivos", response_model=List[CursoSalida], status_code=status.HTTP_200_OK)
 def listar_cursos_inactivos(
     db: Session = Depends(get_db),
@@ -52,7 +51,6 @@ def actualizar_curso_completo(
 ):
     return curso_service.actualizar_curso_completo(idcurso, cur_updata, db)
 
-# Restaurar curso lógico
 @curso_route.patch("/{idcurso}/restaurar", response_model=CursoSalida)
 def restaurar_curso_logico(
     idcurso: int,

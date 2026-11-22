@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from database.connection import get_db
 from models.token_model import RefreshToken
@@ -20,14 +21,13 @@ from tokensitos.tokesificador import (
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-# Schemas de Pydantic actualizados
 class UsuarioResponse(BaseModel):
     ciuser: str
     nombreusuario: str
     correousuario: str
     idrol: int
-    roles: list[int]          # 👈 Lista con todos los roles que tiene en usuario_login
-    requiere_puente: bool     # 👈 Bandera que indica si debe pasar por el puente (si tiene > 1 rol)
+    roles: list[int]
+    requiere_puente: bool
 
 class Token(BaseModel):
     access_token: str
@@ -53,12 +53,13 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    # 1. Buscar al usuario por correo
+
+    correo = form_data.username.strip().lower()
+
     usuario_datos = db.query(Usuario).filter(
-        Usuario.correousuario == form_data.username
+        func.lower(Usuario.correousuario) == correo
     ).first()
 
-    # Validar credenciales
     if not usuario_datos or not verificar_password(form_data.password, usuario_datos.contrase):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,7 +67,6 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 2. Consultar TODOS los registros activos en usuario_login para este ciuser
     user_bridges = db.query(UserLogin).filter(
         UserLogin.ciuser == usuario_datos.ciuser,
         UserLogin.activo == True
@@ -78,17 +78,14 @@ def login(
             detail="No tienes asignado roles activos"
         )
 
-    # Extraemos todos los idrol asociados a su cédula en una lista (ej: [4, 5])
     lista_roles = [bridge.idrol for bridge in user_bridges]
-    
-    # Validamos si tiene 2 o más roles registrados con el mismo ciuser
+
     tiene_multiples_roles = len(lista_roles) > 1
 
-    # 3. Generación de tokens
     correo_actual = usuario_datos.correousuario
     access_token = crear_access_token(data={"sub": correo_actual})
     refresh_token = crear_refresh_token(data={"sub": correo_actual})
-    
+
     db_refresh = RefreshToken(
         token=refresh_token,
         usuario_log=user_bridges[0].ciuser_log, 
@@ -106,9 +103,9 @@ def login(
             "ciuser": usuario_datos.ciuser,
             "nombreusuario": usuario_datos.nombreusuario,
             "correousuario": usuario_datos.correousuario,
-            "idrol": lista_roles[0],                # Rol por defecto
-            "roles": lista_roles,                   # Lista completa de roles
-            "requiere_puente": tiene_multiples_roles # 👈 El backend dictamina si va al puente
+            "idrol": lista_roles[0],
+            "roles": lista_roles,
+            "requiere_puente": tiene_multiples_roles
         }
     }
 
@@ -124,7 +121,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         nombreusuario=usuario.nombreusuario,
         apellusuario=usuario.apellusuario,
         contrase=hashear_password(usuario.contrase),
-        correousuario=usuario.correousuario,
+        correousuario=usuario.correousuario.strip().lower(),
         teleusuario=usuario.teleusuario,
     )
     db.add(nuevo_usuario)
@@ -176,11 +173,10 @@ def renovar_token(body: RefreshRequest, db: Session = Depends(get_db)):
         raise credentials_exception
 
     usuario_datos = db.query(Usuario).filter(Usuario.ciuser == user_bridge.ciuser).first()
-    
-    # Consultar todos sus roles actuales
+
     user_bridges = db.query(UserLogin).filter(UserLogin.ciuser == usuario_datos.ciuser, UserLogin.activo == True).all()
     lista_roles = [b.idrol for b in user_bridges]
-        
+
     db_token.activo = False
     db.commit()
 

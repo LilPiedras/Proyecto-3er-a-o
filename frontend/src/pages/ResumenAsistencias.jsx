@@ -12,7 +12,6 @@ const ResumenAsistencias = () => {
 
   const ci = localStorage.getItem("ciuser") || "";
 
-  // 1. Cargar materias del estudiante (igual que en ResumenCalificaciones)
   useEffect(() => {
     const init = async () => {
       try {
@@ -35,7 +34,6 @@ const ResumenAsistencias = () => {
     init();
   }, []);
 
-  // 2. Cuando cambia la materia seleccionada → cargar asistencias de esa materia
   useEffect(() => {
     if (!materiaSeleccionada || !ci) {
       setAsistencias([]);
@@ -52,7 +50,6 @@ const ResumenAsistencias = () => {
         setNombreMateria(mat?.nombremateria || `Materia #${materiaSeleccionada}`);
         setProfesor(mat?.docente || "—");
 
-        // Petición ajustada con el prefijo en minúsculas /asistencias/
         const { data } = await api.get(`/asistencias/estudiante/${ci}`, {
           params: { idmateria: materiaSeleccionada },
         }).catch(() => ({ data: [] }));
@@ -67,7 +64,6 @@ const ResumenAsistencias = () => {
     cargarAsistenciasMateria();
   }, [materiaSeleccionada, ci, materias]);
 
-  // Contadores estadísticos usando el campo booleano 'verificar'
   const estadisticas = useMemo(() => {
     const total = asistencias.length;
     if (total === 0) return { total: 0, presentes: 0, ausencias: 0, porcentaje: 0 };
@@ -90,14 +86,12 @@ const ResumenAsistencias = () => {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-black text-white pt-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Título principal estilo SAREC */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-center">
           <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide text-yellow-400">
             Control y Registro de Asistencias
           </h1>
         </div>
 
-        {/* Selector de materias inscritas */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <label className="text-sm font-bold text-yellow-400 whitespace-nowrap">
@@ -125,7 +119,6 @@ const ResumenAsistencias = () => {
           )}
         </div>
 
-        {/* Detalle de la materia seleccionada */}
         {materiaSeleccionada && (
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg space-y-5">
             <div className="space-y-1">
@@ -141,7 +134,6 @@ const ResumenAsistencias = () => {
               </p>
             </div>
 
-            {/* Tarjetas de Resumen de Asistencia */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 text-center">
                 <p className="text-xs text-gray-400 uppercase">Clases Registradas</p>
@@ -161,7 +153,6 @@ const ResumenAsistencias = () => {
               </div>
             </div>
 
-            {/* Tabla de Asistencias */}
             <div className="overflow-x-auto pt-2">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>

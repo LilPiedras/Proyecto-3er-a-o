@@ -109,7 +109,6 @@ const CrudPeriodo = () => {
           </button>
         </div>
 
-        {/* Formulario crear */}
         <form
           onSubmit={crear}
           className="bg-gray-900 border border-gray-800 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-4 gap-4"
@@ -141,7 +140,6 @@ const CrudPeriodo = () => {
           </button>
         </form>
 
-        {/* Lista */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-800 text-yellow-400 text-xs uppercase">

@@ -32,7 +32,6 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Faltan datos obligatorios.' })
     }
 
-    // Comprobar si existe por correo
     const existing = await pool.query(
       'SELECT ciuser FROM usuario WHERE correousuario = $1 OR ciuser = $2',
       [email, dni]

@@ -53,8 +53,7 @@ const Footer = () => {
         </div>
 
       </div>
-      
-      {/* Copyright */}
+
       <div className="mt-6 pt-4 border-t border-yellow-300 text-center text-sm text-white/70">
         <p>© {new Date().getFullYear()} Amada Fashion SC. Todos los derechos reservados.</p>
       </div>

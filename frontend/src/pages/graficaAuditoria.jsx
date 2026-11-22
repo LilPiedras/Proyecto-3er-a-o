@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import { PieChart, X } from "lucide-react";
-import { traducirAccion } from "./auditoriaHelpers.jsx";
+import { traducirAccion } from "../components/helpers/auditoriaHelpers.jsx";
 
 const COLORES_TORTA = [
-  "#f59e0b", // ámbar
-  "#3b82f6", // azul
-  "#10b981", // esmeralda
-  "#ef4444", // rojo
-  "#8b5cf6", // violeta
-  "#ec4899", // rosa
-  "#06b6d4", // cian
-  "#6b7280", // gris
+  "#f59e0b",
+  "#3b82f6",
+  "#10b981",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#6b7280",
 ];
 
 export const ResumenGraficaContenido = ({ auditorias }) => {

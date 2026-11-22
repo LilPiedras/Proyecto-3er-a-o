@@ -78,7 +78,6 @@ const Dashboard = () => {
   return (
     <div className="p-6 min-h-screen bg-black text-white pt-24">
       <div className="container mx-auto max-w-6xl">
-        {/* Encabezado */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
           <div>
             <h2 className="text-3xl font-bold text-yellow-400 mb-1">
@@ -101,7 +100,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Tarjetas KPI principales */}
         <div
           className={`grid grid-cols-1 sm:grid-cols-2 ${
             puedeVerMensualidades ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
@@ -150,13 +148,11 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Visualización de datos */}
         <div
           className={`grid grid-cols-1 ${
             puedeVerMensualidades ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
           } gap-6`}
         >
-          {/* Participación por módulo */}
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 size={20} className="text-yellow-400" />
@@ -194,7 +190,6 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Estado de mensualidades (solo roles 1 y 2) */}
           {puedeVerMensualidades && (
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-4">
