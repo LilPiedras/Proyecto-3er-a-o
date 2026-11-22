@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const NOMBRES_ROL = {
-  1: "Administrador",
-  2: "Docente",
-  3: "Director",
+  1: "Director",
+  2: "Sub Director",
+  3: "Coordinador",
   4: "Empleado",
   5: "Estudiante",
 };

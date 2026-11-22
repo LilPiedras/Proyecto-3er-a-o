@@ -41,11 +41,6 @@ function colorPorMateria(nombre, mapa) {
   return mapa[nombre];
 }
 
-/**
- * horarios: array de {
- *   dia, horainicio, horafin, salon, materia, docente
- * }
- */
 export default function HorarioVisual({ horarios = [] }) {
   const { franjas, grid, leyenda } = useMemo(() => {
     const colorMap = {};
@@ -92,7 +87,6 @@ export default function HorarioVisual({ horarios = [] }) {
     items.forEach((it) => {
       if (!grid[it.franja]) return;
       if (!DIAS.includes(it.dia)) return;
-      // si hay choque, dejamos el primero
       if (!grid[it.franja][it.dia]) {
         grid[it.franja][it.dia] = it;
       }

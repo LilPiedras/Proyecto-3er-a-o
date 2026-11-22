@@ -28,4 +28,4 @@ class UsuarioSalida(BaseModel):
     estudiante: Optional[str] = None
     empleado: Optional[str] = None
     correousuario: Optional[str] = None
-    # sin contrase
+    

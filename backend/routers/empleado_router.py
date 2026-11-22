@@ -22,33 +22,33 @@ def get_db():
 
 # Listar inactivos (Debe ir antes de /{ciempleado})
 @empleado_router.get("/inactivos", response_model=List[EmpleadoSalida], status_code=status.HTTP_200_OK)
-def listar_empleados_inactivos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_empleados_inactivos(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.listar_empleados_inactivos(db)
 
 @empleado_router.get("/{ciempleado}", response_model=EmpleadoSalida)
-def obtener_empleado(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def obtener_empleado(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     return empleado_service.obtener_empleado_por_id(ciempleado, db)
 
 @empleado_router.get("/", response_model=List[EmpleadoSalida], status_code=status.HTTP_200_OK)
-def listar_empleados(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def listar_empleados(db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2,3]))):
     return empleado_service.listar_empleados(db)
 
 @empleado_router.post("/", response_model=EmpleadoSalida, status_code=status.HTTP_200_OK)
-def crear_empleado(empleado: EmpleadoEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def crear_empleado(empleado: EmpleadoEntrada, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.crear_empleado(empleado, current_user.ciuser, db)
 
 @empleado_router.put("/{ciempleado}", response_model=EmpleadoSalida)
-def update_empleado_completo(ciempleado: str, emple_update: EmpleadoUpdate, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def update_empleado_completo(ciempleado: str, emple_update: EmpleadoUpdate, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.actualizar_empleado_completo(ciempleado, emple_update, current_user.ciuser, db)
 
 @empleado_router.patch("/{ciempleado}", response_model=EmpleadoSalida)
-def update_empleado_parcial(ciempleado: str, empleado_update: EmpleadoUpdate, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def update_empleado_parcial(ciempleado: str, empleado_update: EmpleadoUpdate, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.actualizar_empleado_parcial(ciempleado, empleado_update, current_user.ciuser, db)
 
 @empleado_router.patch("/{ciempleado}/restaurar", response_model=EmpleadoSalida)
-def restaurar_empleado_logico(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def restaurar_empleado_logico(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.restaurar_empleado(ciempleado, current_user.ciuser, db)
 
 @empleado_router.delete("/{ciempleado}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_empleado_logico(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1]))):
+def delete_empleado_logico(ciempleado: str, db: Session = Depends(get_db), current_user: Usuario = Depends(VerificarRoles([1,2]))):
     return empleado_service.eliminar_empleado(ciempleado, current_user.ciuser, db)

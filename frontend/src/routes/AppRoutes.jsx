@@ -30,6 +30,7 @@ import DashboardDocente from "../pages/DashboardDocente";
 import Auditorias from "../pages/Auditorias";
 import CrudAsistencia from "../pages/CrudAsistencia";
 import ResumenAsistencias from "../pages/ResumenAsistencias";
+import Dashboard from "../pages/Dashboard";
 import CrudPeriodo from "../pages/CrudPeriodo";
 
 const AppRoutes = () => {
@@ -62,12 +63,11 @@ const AppRoutes = () => {
         <Route path="/auditorias" element={<Auditorias />} />
         <Route path="/crudasistencia" element={<CrudAsistencia />} />
         <Route path="/resumenasistencias" element={<ResumenAsistencias/>} />
-        <Route path="/crudperiodo" element={<CrudPeriodo />} />
-
-        
+        <Route path="/dashboardgerencia" element={<Dashboard/>} />
+        <Route path="/periodos" element={<CrudPeriodo/>} />
+      
         <Route path="/perfil" element={<Perfil />} />
         
-        {/* Ruta alineada correctamente */}
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
 
         <Route path="/registro" element={<Fromt />} />

@@ -75,6 +75,7 @@ from routers.RouteDetalles import detalle_router
 from routers.periodo_router import periodo_router
 from routers.perfil import perfil_router
 from routers.RouteMiModulo import mi_modulo_router
+from routers.dashboards_router import dashboard_router
 
 # Abajo donde agregas los app.include_router(...) añade:
 
@@ -129,6 +130,7 @@ app.include_router(inscripcion_router)
 app.include_router(inscripcion_alias_router)
 app.include_router(perfil_router)
 app.include_router(mi_modulo_router)
+app.include_router(dashboard_router)
 
 @app.get("/")
 def index():

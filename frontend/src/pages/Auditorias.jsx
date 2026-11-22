@@ -17,7 +17,7 @@ import {
   mostrarValor,
   traducirAccion,
   traducirCampo,
-} from "./auditoriaHelpers.jsx";
+} from ".components/helpers/auditoriaHelpers.jsx";
 import GraficaAuditorias, { ResumenGraficaContenido } from "./graficaAuditoria.jsx";
 
 const PanelDatos = ({ titulo, datos, color }) => {

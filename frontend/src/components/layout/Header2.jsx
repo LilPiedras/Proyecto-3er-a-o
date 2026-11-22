@@ -27,7 +27,7 @@ const Header = () => {
   const dropdownPersonalRef = useRef(null);
   const dropdownAcademicaRef = useRef(null);
   const dropdownGerenciaRef = useRef(null);
-  
+
   const [isDark, setIsDark] = useState(() => {
     return (
       localStorage.getItem("dark-mode") === "true" ||
@@ -52,10 +52,11 @@ const Header = () => {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     const role = localStorage.getItem("idrol");
-    
+
     setIsAuthenticated(!!token);
     setUserRole(role ? Number(role) : null);
-    // Cerrar dropdowns al cambiar de ruta
+
+    // Cerrar dropdowns y menú móvil al cambiar de ruta
     setDropdownPersonal(false);
     setDropdownAcademica(false);
     setDropdownGerencia(false);
@@ -90,6 +91,7 @@ const Header = () => {
   const esEstudiante = userRole === 5;
   const esDocentePuro = userRole === 4;
   const esAdministrativo = [1, 2, 3].includes(userRole);
+  const puedeVerAuditorias = [1, 2].includes(userRole);
 
   useEffect(() => {
     let active = true;
@@ -105,7 +107,8 @@ const Header = () => {
 
     setCargandoMensualidad(true);
     setErrorMensualidad(false);
-    api.get("/mensualidad/mi-estado")
+    api
+      .get("/mensualidad/mi-estado")
       .then(({ data }) => {
         if (active) setEstadoMensualidad(data);
       })
@@ -150,12 +153,15 @@ const Header = () => {
     : errorMensualidad
       ? "No se pudo consultar tu mensualidad. Inténtalo de nuevo más tarde."
       : estadoMensualidad
-        ? ayudaEstadoMensualidad[estadoMensualidad.estado] || "Consulta en la sede el estado de tu mensualidad."
+        ? ayudaEstadoMensualidad[estadoMensualidad.estado] ||
+          "Consulta en la sede el estado de tu mensualidad."
         : "No tienes una mensualidad registrada. Acércate a la sede para recibir información.";
   const indicadorEstadoMensualidad = (
     <span
       title={mensajeAyudaMensualidad}
-      className={`rounded-full border px-3 py-1 text-sm ${clasesEstadoMensualidad[estadoMensualidad?.estado] || "border-gray-500 text-gray-300"}`}
+      className={`rounded-full border px-3 py-1 text-sm ${
+        clasesEstadoMensualidad[estadoMensualidad?.estado] || "border-gray-500 text-gray-300"
+      }`}
     >
       {textoEstadoMensualidad}
     </span>
@@ -172,14 +178,24 @@ const Header = () => {
     navigate("/login");
   };
 
+  const rutaLogo = isAuthenticated
+    ? esAdministrativo
+      ? "/dashboard"
+      : "/crudcursos"
+    : "/";
+
   return (
-    <header className="fixed w-full top-0 z-50 transition-all duration-500 bg-black border-b-5 border-white">
+    <header
+      className={`fixed w-full top-0 z-50 transition-all duration-500 bg-black border-b-5 border-white ${
+        scrolling ? "shadow-lg" : ""
+      }`}
+    >
       <div className="p-4 flex justify-between md:justify-around items-center text-white">
         <img
           src={Logo}
           alt="Logo"
           className="w-22 cursor-pointer"
-          onClick={() => navigate(isAuthenticated ? "/crudcursos" : "/")}
+          onClick={() => navigate(rutaLogo)}
         />
 
         {/* Desktop Menu */}
@@ -196,17 +212,26 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/resumen-calificaciones" className="cursor-pointer hover:text-yellow-400">
+                    <RouterLink
+                      to="/resumen-calificaciones"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
                       Resumen de Calificaciones
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/resumenasistencias" className="cursor-pointer hover:text-yellow-400">
-                        Resumen de Asistencias
+                    <RouterLink
+                      to="/resumenasistencias"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
+                      Resumen de Asistencias
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/cursosdisponibles" className="cursor-pointer hover:text-yellow-400">
+                    <RouterLink
+                      to="/cursosdisponibles"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
                       Cursos
                     </RouterLink>
                   </li>
@@ -222,23 +247,31 @@ const Header = () => {
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/crudplanevaluacion" className="cursor-pointer hover:text-yellow-400">
+                    <RouterLink
+                      to="/crudplanevaluacion"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
                       Plan Evaluacion
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/crudasistencia" className="cursor-pointer hover:text-yellow-400">
+                    <RouterLink
+                      to="/crudasistencia"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
                       Asistencias
                     </RouterLink>
                   </li>
-                  
                   <li>
                     <RouterLink to="/crudnotas" className="cursor-pointer hover:text-yellow-400">
                       Notas
                     </RouterLink>
                   </li>
                   <li>
-                    <RouterLink to="/dashboard-docente" className="cursor-pointer hover:text-yellow-400">
+                    <RouterLink
+                      to="/dashboard-docente"
+                      className="cursor-pointer hover:text-yellow-400"
+                    >
                       Dashboard Docente
                     </RouterLink>
                   </li>
@@ -248,49 +281,94 @@ const Header = () => {
               {/* VISTA ADMINISTRATIVA / DIRECTIVA (Roles 1, 2, 3) - Con Dropdowns */}
               {esAdministrativo && (
                 <>
+
                   {/* DROPDOWN ACADÉMICA */}
                   <div className="relative" ref={dropdownAcademicaRef}>
                     <button
+                      type="button"
                       onClick={() => {
                         setDropdownAcademica(!dropdownAcademica);
                         setDropdownPersonal(false);
+                        setDropdownGerencia(false);
                       }}
                       className="flex items-center gap-1.5 cursor-pointer hover:text-yellow-400 transition"
+                      aria-expanded={dropdownAcademica}
                     >
-                      Académica <FaChevronDown className={`text-xs transition-transform ${dropdownAcademica ? 'rotate-180' : ''}`} />
+                      Académica{" "}
+                      <FaChevronDown
+                        className={`text-xs transition-transform ${
+                          dropdownAcademica ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
 
                     {dropdownAcademica && (
                       <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
-                        <RouterLink to="/crudcursos" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudcursos"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Cursos
                         </RouterLink>
-                        <RouterLink to="/crudoferta" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudoferta"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Oferta Académica
                         </RouterLink>
-                        <RouterLink to="/crudcarrera" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudcarrera"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Carreras
                         </RouterLink>
-                        <RouterLink to="/crudcarreramodulo" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudcarreramodulo"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Carrera-Módulo
                         </RouterLink>
-                        <RouterLink to="/crudmodulomateria" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudmodulomateria"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Módulo Materia
                         </RouterLink>
-                        <RouterLink to="/crudhorarios" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudhorarios"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Horarios
                         </RouterLink>
-                        <RouterLink to="/crudseccion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudseccion"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Secciones
                         </RouterLink>
-                        <RouterLink to="/crudnotas" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudnotas"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Notas
                         </RouterLink>
-                        <RouterLink to="/crudplanevaluacion" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudplanevaluacion"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Plan de Evaluación
                         </RouterLink>
-                        <RouterLink to="/crudinscripciones" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudinscripciones"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Inscripciones
+                        </RouterLink>
+                        <RouterLink
+                          to="/periodos"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
+                          Periodos Academicos
                         </RouterLink>
                       </div>
                     )}
@@ -299,27 +377,43 @@ const Header = () => {
                   {/* DROPDOWN PERSONAL */}
                   <div className="relative" ref={dropdownPersonalRef}>
                     <button
+                      type="button"
                       onClick={() => {
                         setDropdownPersonal(!dropdownPersonal);
                         setDropdownAcademica(false);
+                        setDropdownGerencia(false);
                       }}
                       className="flex items-center gap-1.5 cursor-pointer hover:text-yellow-400 transition"
+                      aria-expanded={dropdownPersonal}
                     >
-                      Personal <FaChevronDown className={`text-xs transition-transform ${dropdownPersonal ? 'rotate-180' : ''}`} />
+                      Personal{" "}
+                      <FaChevronDown
+                        className={`text-xs transition-transform ${
+                          dropdownPersonal ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
 
                     {dropdownPersonal && (
                       <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
-                        <RouterLink to="/cruddocentes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/cruddocentes"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Docentes
                         </RouterLink>
-                        <RouterLink to="/crudestudiantes" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudestudiantes"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Estudiantes
                         </RouterLink>
-                        <RouterLink to="/registro" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/registro"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Registrar Usuarios
                         </RouterLink>
-                        
                       </div>
                     )}
                   </div>
@@ -327,6 +421,7 @@ const Header = () => {
                   {/* DROPDOWN GERENCIA */}
                   <div className="relative" ref={dropdownGerenciaRef}>
                     <button
+                      type="button"
                       onClick={() => {
                         setDropdownGerencia(!dropdownGerencia);
                         setDropdownAcademica(false);
@@ -335,18 +430,34 @@ const Header = () => {
                       className="flex items-center gap-1.5 cursor-pointer hover:text-yellow-400 transition"
                       aria-expanded={dropdownGerencia}
                     >
-                      Gerencia <FaChevronDown className={`text-xs transition-transform ${dropdownGerencia ? 'rotate-180' : ''}`} />
+                      Gerencia{" "}
+                      <FaChevronDown
+                        className={`text-xs transition-transform ${
+                          dropdownGerencia ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
                     {dropdownGerencia && (
                       <div className="absolute left-0 mt-3 w-48 bg-[#11141d] border border-[#232936] rounded-xl shadow-2xl py-2 flex flex-col z-50">
-                        <RouterLink to="/crudmensualidad" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
+                        <RouterLink
+                          to="/crudmensualidad"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
                           Mensualidades
                         </RouterLink>
-                        <RouterLink to="/auditorias" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
-                          Auditorías
-                        </RouterLink>
-                        <RouterLink to="/crudperiodo" className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition">
-                          Periodos
+                        {puedeVerAuditorias && (
+                          <RouterLink
+                            to="/auditorias"
+                            className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                          >
+                            Auditorías
+                          </RouterLink>
+                        )}
+                        <RouterLink
+                          to="/dashboardgerencia"
+                          className="px-4 py-2 text-sm text-gray-300 hover:bg-[#1c2230] hover:text-yellow-400 transition"
+                        >
+                          Dashboard Gerencia
                         </RouterLink>
                       </div>
                     )}
@@ -355,13 +466,16 @@ const Header = () => {
               )}
 
               {/* PERFIL */}
-              <RouterLink to="/perfil" className="cursor-pointer hover:text-yellow-400">
-                Perfil
-              </RouterLink>
+              <li>
+                <RouterLink to="/perfil" className="cursor-pointer hover:text-yellow-400">
+                  Perfil
+                </RouterLink>
+              </li>
 
               {/* BOTÓN CERRAR SESIÓN */}
               <li>
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="bg-yellow-400 text-black px-4 py-1 rounded-md font-semibold hover:bg-yellow-500 transition cursor-pointer"
                 >
@@ -372,12 +486,36 @@ const Header = () => {
           ) : (
             /* Opciones NO LOGEADOS (Públicas) */
             <>
-              <li><RouterLink to="/" className="cursor-pointer hover:text-yellow-400">Inicio</RouterLink></li>
-              <li><RouterLink to="/program" className="cursor-pointer hover:text-yellow-400 transition">Programas</RouterLink></li>
-              <li><RouterLink to="/about" className="cursor-pointer hover:text-yellow-400">Sobre Nosotros</RouterLink></li>
-              <li><RouterLink to="/testimonials" className="cursor-pointer hover:text-yellow-400">Testimonios</RouterLink></li>
-              <li><RouterLink to="/contact" className="cursor-pointer hover:text-yellow-400">Soporte</RouterLink></li>
-              <li><RouterLink to="/login" className="cursor-pointer hover:text-yellow-400">Inicio de Sesión</RouterLink></li>
+              <li>
+                <RouterLink to="/" className="cursor-pointer hover:text-yellow-400">
+                  Inicio
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/program" className="cursor-pointer hover:text-yellow-400 transition">
+                  Programas
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/about" className="cursor-pointer hover:text-yellow-400">
+                  Sobre Nosotros
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/testimonials" className="cursor-pointer hover:text-yellow-400">
+                  Testimonios
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/contact" className="cursor-pointer hover:text-yellow-400">
+                  Soporte
+                </RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/login" className="cursor-pointer hover:text-yellow-400">
+                  Inicio de Sesión
+                </RouterLink>
+              </li>
             </>
           )}
 
@@ -393,12 +531,21 @@ const Header = () => {
             />
             <label className="relative cursor-pointer p-2" htmlFor="light-switch-desktop">
               <svg className="dark:hidden" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                <path className="fill-slate-300" d="M7 0h2v2H7zM12.88 1.637l1.414 1.415-1.415 1.413-1.413-1.414zM14 7h2v2h-2zM12.95 14.433l-1.414-1.413 1.413-1.415 1.415 1.414zM7 14h2v2H7zM2.98 14.364l-1.413-1.415 1.414-1.414 1.414 1.415zM0 7h2v2H0zM3.05 1.706 4.463 3.12 3.05 4.535 1.636 3.12z"/>
-                <path className="fill-slate-400" d="M8 4C5.8 4 4 5.8 4 8s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Z"/>
+                <path
+                  className="fill-slate-300"
+                  d="M7 0h2v2H7zM12.88 1.637l1.414 1.415-1.415 1.413-1.413-1.414zM14 7h2v2h-2zM12.95 14.433l-1.414-1.413 1.413-1.415 1.415 1.414zM7 14h2v2H7zM2.98 14.364l-1.413-1.415 1.414-1.414 1.414 1.415zM0 7h2v2H0zM3.05 1.706 4.463 3.12 3.05 4.535 1.636 3.12z"
+                />
+                <path className="fill-slate-400" d="M8 4C5.8 4 4 5.8 4 8s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Z" />
               </svg>
               <svg className="hidden dark:block" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                <path className="fill-slate-400" d="M6.2 1C3.2 1.8 1 4.6 1 7.9 1 11.8 4.2 15 8.1 15c3.3 0 6-2.2 6.9-5.2C9.7 11.2 4.8 6.3 6.2 1Z"/>
-                <path className="fill-slate-500" d="M12.5 5a.625.625 0 0 1-.625-.625 1.252 1.252 0 0 0-1.25-1.25.625.625 0 1 1 0-1.25 1.252 1.252 0 0 0 1.25-1.25.625.625 0 1 1 1.25 0c.001.69.56 1.249 1.25 1.25a.625.625 0 1 1 0 1.25c-.69.001-1.249.56-1.25 1.25A.625.625 0 0 1 12.5 5Z"/>
+                <path
+                  className="fill-slate-400"
+                  d="M6.2 1C3.2 1.8 1 4.6 1 7.9 1 11.8 4.2 15 8.1 15c3.3 0 6-2.2 6.9-5.2C9.7 11.2 4.8 6.3 6.2 1Z"
+                />
+                <path
+                  className="fill-slate-500"
+                  d="M12.5 5a.625.625 0 0 1-.625-.625 1.252 1.252 0 0 0-1.25-1.25.625.625 0 1 1 0-1.25 1.252 1.252 0 0 0 1.25-1.25.625.625 0 1 1 1.25 0c.001.69.56 1.249 1.25 1.25a.625.625 0 1 1 0 1.25c-.69.001-1.249.56-1.25 1.25A.625.625 0 0 1 12.5 5Z"
+                />
               </svg>
             </label>
           </li>
@@ -417,12 +564,21 @@ const Header = () => {
             />
             <label className="relative cursor-pointer p-2" htmlFor="light-switch-mobile">
               <svg className="dark:hidden" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                <path className="fill-slate-300" d="M7 0h2v2H7zM12.88 1.637l1.414 1.415-1.415 1.413-1.413-1.414zM14 7h2v2h-2zM12.95 14.433l-1.414-1.413 1.413-1.415 1.415 1.414zM7 14h2v2H7zM2.98 14.364l-1.413-1.415 1.414-1.414 1.414 1.415zM0 7h2v2H0zM3.05 1.706 4.463 3.12 3.05 4.535 1.636 3.12z"/>
-                <path className="fill-slate-400" d="M8 4C5.8 4 4 5.8 4 8s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Z"/>
+                <path
+                  className="fill-slate-300"
+                  d="M7 0h2v2H7zM12.88 1.637l1.414 1.415-1.415 1.413-1.413-1.414zM14 7h2v2h-2zM12.95 14.433l-1.414-1.413 1.413-1.415 1.415 1.414zM7 14h2v2H7zM2.98 14.364l-1.413-1.415 1.414-1.414 1.414 1.415zM0 7h2v2H0zM3.05 1.706 4.463 3.12 3.05 4.535 1.636 3.12z"
+                />
+                <path className="fill-slate-400" d="M8 4C5.8 4 4 5.8 4 8s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Z" />
               </svg>
               <svg className="hidden dark:block" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                <path className="fill-slate-400" d="M6.2 1C3.2 1.8 1 4.6 1 7.9 1 11.8 4.2 15 8.1 15c3.3 0 6-2.2 6.9-5.2C9.7 11.2 4.8 6.3 6.2 1Z"/>
-                <path className="fill-slate-500" d="M12.5 5a.625.625 0 0 1-.625-.625 1.252 1.252 0 0 0-1.25-1.25.625.625 0 1 1 0-1.25 1.252 1.252 0 0 0 1.25-1.25.625.625 0 1 1 1.25 0c.001.69.56 1.249 1.25 1.25a.625.625 0 1 1 0 1.25c-.69.001-1.249.56-1.25 1.25A.625.625 0 0 1 12.5 5Z"/>
+                <path
+                  className="fill-slate-400"
+                  d="M6.2 1C3.2 1.8 1 4.6 1 7.9 1 11.8 4.2 15 8.1 15c3.3 0 6-2.2 6.9-5.2C9.7 11.2 4.8 6.3 6.2 1Z"
+                />
+                <path
+                  className="fill-slate-500"
+                  d="M12.5 5a.625.625 0 0 1-.625-.625 1.252 1.252 0 0 0-1.25-1.25.625.625 0 1 1 0-1.25 1.252 1.252 0 0 0 1.25-1.25.625.625 0 1 1 1.25 0c.001.69.56 1.249 1.25 1.25a.625.625 0 1 1 0 1.25c-.69.001-1.249.56-1.25 1.25A.625.625 0 0 1 12.5 5Z"
+                />
               </svg>
             </label>
           </div>
@@ -443,79 +599,175 @@ const Header = () => {
                 {esEstudiante && (
                   <>
                     {indicadorEstadoMensualidad}
-                    <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>Cursos</RouterLink>
-                    <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>Oferta Academica</RouterLink>
+                    <RouterLink to="/mi-modulo" onClick={() => setToggle(false)}>
+                      Mi módulo
+                    </RouterLink>
+                    <RouterLink to="/resumen-calificaciones" onClick={() => setToggle(false)}>
+                      Resumen de Calificaciones
+                    </RouterLink>
+                    <RouterLink to="/resumenasistencias" onClick={() => setToggle(false)}>
+                      Resumen de Asistencias
+                    </RouterLink>
+                    <RouterLink to="/cursosdisponibles" onClick={() => setToggle(false)}>
+                      Cursos
+                    </RouterLink>
                   </>
                 )}
 
                 {esDocentePuro && (
                   <>
-                    <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>Cursos</RouterLink>
-                    <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>Oferta Academica</RouterLink>
-                    <RouterLink to="/crudhorarios" onClick={() => setToggle(false)}>Horarios</RouterLink>
+                    <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>
+                      Cursos
+                    </RouterLink>
+                    <RouterLink to="/crudplanevaluacion" onClick={() => setToggle(false)}>
+                      Plan Evaluacion
+                    </RouterLink>
+                    <RouterLink to="/crudasistencia" onClick={() => setToggle(false)}>
+                      Asistencias
+                    </RouterLink>
+                    <RouterLink to="/crudnotas" onClick={() => setToggle(false)}>
+                      Notas
+                    </RouterLink>
+                    <RouterLink to="/dashboard-docente" onClick={() => setToggle(false)}>
+                      Dashboard Docente
+                    </RouterLink>
                   </>
                 )}
 
                 {esAdministrativo && (
                   <>
+                    <RouterLink
+                      to="/dashboard"
+                      className="text-yellow-400 font-semibold"
+                      onClick={() => setToggle(false)}
+                    >
+                      Dashboard
+                    </RouterLink>
+
                     {/* ACADÉMICA MOBILE */}
                     <div className="w-full flex flex-col items-center">
-                      <button 
+                      <button
+                        type="button"
                         onClick={() => setMobileAcademica(!mobileAcademica)}
                         className="flex items-center gap-2 text-yellow-400 font-semibold py-2"
+                        aria-expanded={mobileAcademica}
                       >
-                        Académica <FaChevronDown className={`text-sm transition-transform ${mobileAcademica ? 'rotate-180' : ''}`} />
+                        Académica{" "}
+                        <FaChevronDown
+                          className={`text-sm transition-transform ${
+                            mobileAcademica ? "rotate-180" : ""
+                          }`}
+                        />
                       </button>
                       {mobileAcademica && (
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
-                          <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>Cursos</RouterLink>
-                          <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>Oferta Académica</RouterLink>
-                          <RouterLink to="/crudcarrera" onClick={() => setToggle(false)}>Carreras</RouterLink>
-                          <RouterLink to="/crudmodulomateria" onClick={() => setToggle(false)}>Módulo Materia</RouterLink>
-                          <RouterLink to="/crudhorarios" onClick={() => setToggle(false)}>Horarios</RouterLink>
-                          <RouterLink to="/crudseccion" onClick={() => setToggle(false)}>Secciones</RouterLink>
+                          <RouterLink to="/crudcursos" onClick={() => setToggle(false)}>
+                            Cursos
+                          </RouterLink>
+                          <RouterLink to="/crudoferta" onClick={() => setToggle(false)}>
+                            Oferta Académica
+                          </RouterLink>
+                          <RouterLink to="/crudcarrera" onClick={() => setToggle(false)}>
+                            Carreras
+                          </RouterLink>
+                          <RouterLink to="/crudcarreramodulo" onClick={() => setToggle(false)}>
+                            Carrera-Módulo
+                          </RouterLink>
+                          <RouterLink to="/crudmodulomateria" onClick={() => setToggle(false)}>
+                            Módulo Materia
+                          </RouterLink>
+                          <RouterLink to="/crudhorarios" onClick={() => setToggle(false)}>
+                            Horarios
+                          </RouterLink>
+                          <RouterLink to="/crudseccion" onClick={() => setToggle(false)}>
+                            Secciones
+                          </RouterLink>
+                          <RouterLink to="/crudnotas" onClick={() => setToggle(false)}>
+                            Notas
+                          </RouterLink>
+                          <RouterLink to="/crudplanevaluacion" onClick={() => setToggle(false)}>
+                            Plan de Evaluación
+                          </RouterLink>
+                          <RouterLink to="/crudinscripciones" onClick={() => setToggle(false)}>
+                            Inscripciones
+                          </RouterLink>
+                          <RouterLink to="/periodos" onClick={() => setToggle(false)}>
+                            Periodos Academicos
+                          </RouterLink>
                         </div>
                       )}
                     </div>
 
                     {/* PERSONAL MOBILE */}
                     <div className="w-full flex flex-col items-center">
-                      <button 
+                      <button
+                        type="button"
                         onClick={() => setMobilePersonal(!mobilePersonal)}
                         className="flex items-center gap-2 text-yellow-400 font-semibold py-2"
+                        aria-expanded={mobilePersonal}
                       >
-                        Personal <FaChevronDown className={`text-sm transition-transform ${mobilePersonal ? 'rotate-180' : ''}`} />
+                        Personal{" "}
+                        <FaChevronDown
+                          className={`text-sm transition-transform ${
+                            mobilePersonal ? "rotate-180" : ""
+                          }`}
+                        />
                       </button>
                       {mobilePersonal && (
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
-                          <RouterLink to="/cruddocentes" onClick={() => setToggle(false)}>Docentes</RouterLink>
-                          <RouterLink to="/crudestudiantes" onClick={() => setToggle(false)}>Estudiantes</RouterLink>
+                          <RouterLink to="/cruddocentes" onClick={() => setToggle(false)}>
+                            Docentes
+                          </RouterLink>
+                          <RouterLink to="/crudestudiantes" onClick={() => setToggle(false)}>
+                            Estudiantes
+                          </RouterLink>
+                          <RouterLink to="/registro" onClick={() => setToggle(false)}>
+                            Registrar Usuarios
+                          </RouterLink>
                         </div>
                       )}
                     </div>
 
+                    {/* GERENCIA MOBILE */}
                     <div className="w-full flex flex-col items-center">
                       <button
+                        type="button"
                         onClick={() => setMobileGerencia(!mobileGerencia)}
                         className="flex items-center gap-2 text-yellow-400 font-semibold py-2"
                         aria-expanded={mobileGerencia}
                       >
-                        Gerencia <FaChevronDown className={`text-sm transition-transform ${mobileGerencia ? 'rotate-180' : ''}`} />
+                        Gerencia{" "}
+                        <FaChevronDown
+                          className={`text-sm transition-transform ${
+                            mobileGerencia ? "rotate-180" : ""
+                          }`}
+                        />
                       </button>
                       {mobileGerencia && (
                         <div className="flex flex-col items-center gap-3 bg-[#11141d] w-full py-3 rounded-xl border border-[#232936] text-base text-gray-300">
-                          <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>Mensualidades</RouterLink>
-                          <RouterLink to="/auditorias" onClick={() => setToggle(false)}>Auditorías</RouterLink>
-                          <RouterLink to="/crudperiodo" onClick={() => setToggle(false)}>Periodos</RouterLink>
+                          <RouterLink to="/crudmensualidad" onClick={() => setToggle(false)}>
+                            Mensualidades
+                          </RouterLink>
+                          {puedeVerAuditorias && (
+                            <RouterLink to="/auditorias" onClick={() => setToggle(false)}>
+                              Auditorías
+                            </RouterLink>
+                          )}
+                          <RouterLink to="/dashboardgerencia" onClick={() => setToggle(false)}>
+                            Dashboard Gerencia
+                          </RouterLink>
                         </div>
                       )}
                     </div>
                   </>
                 )}
 
-                <RouterLink to="/perfil" onClick={() => setToggle(false)}>Perfil</RouterLink>
+                <RouterLink to="/perfil" onClick={() => setToggle(false)}>
+                  Perfil
+                </RouterLink>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="text-yellow-400 font-bold border border-yellow-400 px-6 py-2 rounded-lg mt-2 cursor-pointer"
                 >
@@ -524,12 +776,24 @@ const Header = () => {
               </>
             ) : (
               <>
-                <RouterLink to="/" onClick={() => setToggle(false)}>Inicio</RouterLink>
-                <RouterLink to="/program" onClick={() => setToggle(false)}>Programas</RouterLink>
-                <RouterLink to="/about" onClick={() => setToggle(false)}>Sobre Nosotros</RouterLink>
-                <RouterLink to="/testimonials" onClick={() => setToggle(false)}>Testimonios</RouterLink>
-                <RouterLink to="/contact" onClick={() => setToggle(false)}>Soporte</RouterLink>
-                <RouterLink to="/login" onClick={() => setToggle(false)}>Inicio de Sesión</RouterLink>
+                <RouterLink to="/" onClick={() => setToggle(false)}>
+                  Inicio
+                </RouterLink>
+                <RouterLink to="/program" onClick={() => setToggle(false)}>
+                  Programas
+                </RouterLink>
+                <RouterLink to="/about" onClick={() => setToggle(false)}>
+                  Sobre Nosotros
+                </RouterLink>
+                <RouterLink to="/testimonials" onClick={() => setToggle(false)}>
+                  Testimonios
+                </RouterLink>
+                <RouterLink to="/contact" onClick={() => setToggle(false)}>
+                  Soporte
+                </RouterLink>
+                <RouterLink to="/login" onClick={() => setToggle(false)}>
+                  Inicio de Sesión
+                </RouterLink>
               </>
             )}
           </div>

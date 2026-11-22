@@ -4,10 +4,6 @@ from models.estudiante_model import Estudiante
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
-from models.carrera_model import Carrera
-from models.seccion_model import Seccion
-from models.horarios_model import Horario
-from analitics.oferta_excel import generar_excel_oferta
 
 def obtener_oferta_detallada_estudiante(ciestu: str, db: Session):
     """
@@ -188,34 +184,3 @@ def inscribir_estudiante_en_seccion(ciestu: str, idsecc: int, db: Session):
         oferta.estudiante = ciestu
     db.commit()
     return {"mensaje": "Estudiante inscrito en las materias de la sección exitosamente"}
-
-def exportar_oferta_excel(db: Session) -> bytes:
-    ofertas = (
-        db.query(Oferta_seccion)
-        .options(
-            joinedload(Oferta_seccion.seccion_rel),
-            joinedload(Oferta_seccion.horario_rel),
-        )
-        .all()
-    )
-    carreras = {c.idcarrera: c.nombrecarrera for c in db.query(Carrera).all()}
-    estudiantes = {
-        e.ciestu: f"{e.nombreestu or ''} {e.apelliestu or ''}".strip()
-        for e in db.query(Estudiante).all()
-    }
-
-    filas = []
-    for o in ofertas:
-        horario = o.horario_rel
-        filas.append({
-            "idseccmo": o.idseccmo,
-            "carrera": carreras.get(o.idcarrera, f"ID {o.idcarrera}"),
-            "seccion": getattr(o.seccion_rel, "nomsecc", None) or f"ID {o.idsecc}",
-            "estudiante_ci": o.estudiante,
-            "estudiante_nombre": estudiantes.get(o.estudiante) if o.estudiante else None,
-            "dia": getattr(horario, "dia", None) if horario else None,
-            "salon": getattr(horario, "salon", None) if horario else None,
-            "bloque": getattr(horario, "bloque", None) if horario else None,
-            "idcarremo": o.idcarremo,
-        })
-    return generar_excel_oferta(filas)
