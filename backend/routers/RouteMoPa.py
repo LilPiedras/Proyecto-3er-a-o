@@ -33,3 +33,11 @@ def crear_metodo(metodo: MetodoPagoEntrada, db:Session = Depends(get_db),  curre
 @metodo_route.patch("/metodo-pago/{idmetodopago}", response_model=MetodoPagoSalida)
 def updata_paginho(idmetodopago: int, metodinho: MetodoPagoActualizar, db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
     return metodo_pago_service.actualizar_metodos(idmetodopago, metodinho, db)
+
+@metodo_route.delete("/metodo-pago/{idmetodopago}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_metodo(
+    idmetodopago: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1])),
+):
+    metodo_pago_service.eliminar_metodo(idmetodopago, db)

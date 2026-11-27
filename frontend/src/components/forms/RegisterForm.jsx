@@ -1,4 +1,4 @@
-import { FaUserEdit, FaUserTimes } from "react-icons/fa"
+import { FaEye, FaEyeSlash, FaUserEdit, FaUserTimes } from "react-icons/fa"
 import { useUsuarioGestion } from "./useUsarioGestion.js"
 import ModalesUsuario from "./ModalesUsuario.jsx"
 
@@ -136,9 +136,11 @@ export default function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
-                className="absolute inset-y-0 right-4 font-semibold text-yellow-400 hover:text-yellow-300 text-sm"
+                aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-4 text-xl text-yellow-400 hover:text-yellow-300"
               >
-                {showPassword ? "Ocultar" : "Ver"}
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
           </div>

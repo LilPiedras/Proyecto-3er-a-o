@@ -1,15 +1,14 @@
 from models.oferta_seccion_model import Oferta_seccion
 from Schemas.oferta_seccion_schema import OfertaEntrada, OfertaActualizar
 from models.estudiante_model import Estudiante
+from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
+from analitics.oferta_excel import generar_excel_oferta
+
 
 def obtener_oferta_detallada_estudiante(ciestu: str, db: Session):
-    """
-    Trae la oferta del estudiante con todos los datos anidados
-    (Nombre de sección, Salón, Día, Bloque de horario y Carrera).
-    """
     ofertas = (
         db.query(Oferta_seccion)
         .options(
@@ -28,8 +27,10 @@ def obtener_oferta_detallada_estudiante(ciestu: str, db: Session):
         )
     return ofertas
 
+
 def listar_ofertas(db: Session):
     return db.query(Oferta_seccion).all()
+
 
 def crear_oferta(seccmo: OfertaEntrada, db: Session):
     try:
@@ -69,11 +70,8 @@ def crear_oferta(seccmo: OfertaEntrada, db: Session):
             detail=f"Error de integridad: {str(e.orig)}"
         )
 
+
 def obtener_oferta_estudiante(cedula: str, db: Session):
-    """
-    Filtra la tabla de ofertas y retorna únicamente los registros
-    donde el campo estudiante coincida con la cédula solicitada.
-    """
     ofertas = db.query(Oferta_seccion).filter(Oferta_seccion.estudiante == cedula).all()
 
     if not ofertas:
@@ -82,6 +80,7 @@ def obtener_oferta_estudiante(cedula: str, db: Session):
             detail="No te encuentras inscrito en ninguna sección."
         )
     return ofertas
+
 
 def actualizar_oferta_parcial(idseccmo: int, oferta_update: OfertaActualizar, db: Session):
     db_oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
@@ -103,6 +102,7 @@ def actualizar_oferta_parcial(idseccmo: int, oferta_update: OfertaActualizar, db
             detail="No se pudo actualizar la oferta por violación de restricciones"
         )
 
+
 def eliminar_oferta(idseccmo: int, db: Session):
     db_oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
     if not db_oferta:
@@ -115,6 +115,7 @@ def eliminar_oferta(idseccmo: int, db: Session):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="No se puede eliminar la oferta porque está en uso")
+
 
 def asignar_estudiante_a_oferta(idseccmo: int, ciestu: str, db: Session):
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
@@ -158,6 +159,7 @@ def asignar_estudiante_a_oferta(idseccmo: int, ciestu: str, db: Session):
     db.refresh(nueva)
     return nueva
 
+
 def desasignar_estudiante(idseccmo: int, db: Session):
     oferta = db.query(Oferta_seccion).filter(Oferta_seccion.idseccmo == idseccmo).first()
     if not oferta:
@@ -171,9 +173,45 @@ def desasignar_estudiante(idseccmo: int, db: Session):
     db.refresh(oferta)
     return oferta
 
+
 def inscribir_estudiante_en_seccion(ciestu: str, idsecc: int, db: Session):
     ofertas = db.query(Oferta_seccion).filter(Oferta_seccion.idsecc == idsecc).all()
     for oferta in ofertas:
         oferta.estudiante = ciestu
     db.commit()
     return {"mensaje": "Estudiante inscrito en las materias de la sección exitosamente"}
+
+
+def exportar_oferta_excel(db: Session) -> bytes:
+    query = text("""
+        SELECT
+            os.idseccmo,
+            COALESCE(c.nombrecarrera, 'Sin carrera') AS carrera,
+            COALESCE(s.nomsecc, 'Sin sección') AS seccion,
+            os.estudiante AS estudiante_ci,
+            NULLIF(TRIM(COALESCE(e.nombreestu, '') || ' ' || COALESCE(e.apelliestu, '')), '') AS estudiante_nombre,
+            COALESCE(h.dia, 'Por definir') AS dia,
+            COALESCE(h.salon, 'S/N') AS salon
+        FROM public.oferta_seccion os
+        LEFT JOIN public.carrera c ON c.idcarrera = os.idcarrera
+        LEFT JOIN public.seccion s ON s.idsecc = os.idsecc
+        LEFT JOIN public.estudiante e ON e.ciestu = os.estudiante
+        LEFT JOIN public.horario h ON h.idhorario = os.horario
+        ORDER BY os.idseccmo DESC
+    """)
+    resultado = db.execute(query).fetchall()
+
+    filas = [
+        {
+            "idseccmo": row[0],
+            "carrera": row[1],
+            "seccion": row[2],
+            "estudiante_ci": row[3],
+            "estudiante_nombre": row[4],
+            "dia": row[5],
+            "salon": row[6],
+        }
+        for row in resultado
+    ]
+
+    return generar_excel_oferta(filas)

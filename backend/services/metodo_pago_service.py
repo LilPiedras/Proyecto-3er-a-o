@@ -1,6 +1,8 @@
 from models.metodo_pago_model import *
+from models.mensualidad_model import Mensualidad
 from Schemas.metodo_pago_schema import *
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
 
 def listar_metodos(db: Session):
@@ -30,3 +32,28 @@ def actualizar_metodos(idmetodopago: int, moneda_up: MetodoPagoActualizar, db: S
     db.commit()
     db.refresh(db_mo)
     return db_mo
+
+
+def eliminar_metodo(idmetodopago: int, db: Session):
+    metodo = db.query(MetodoPago).filter(MetodoPago.idmetodopago == idmetodopago).first()
+    if not metodo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Método de pago inexistente")
+
+    mensualidad = db.query(Mensualidad.idmensualidad).filter(
+        Mensualidad.metodopago == idmetodopago
+    ).first()
+    if mensualidad:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar el método porque está asociado a una mensualidad",
+        )
+
+    try:
+        db.delete(metodo)
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar el método porque está asociado a una mensualidad",
+        ) from error

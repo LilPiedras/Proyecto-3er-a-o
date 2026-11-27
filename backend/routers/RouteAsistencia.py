@@ -6,16 +6,7 @@ from sqlalchemy.orm import Session
 
 from database.connection import get_db
 from models.usuario_model import Usuario
-from Schemas.asistencia_schema import (
-    AsistenciaActualizar,
-    AsistenciaEntrada,
-    AsistenciaEstudianteSalida,
-    AsistenciaLoteEntrada,
-    AsistenciaLoteSalida,
-    AsistenciaMateriaSalida,
-    AsistenciaSeccionSalida,
-    AsistenciaSalida,
-)
+from Schemas.asistencia_schema import *
 from services import asistencia_service
 from tokensitos.auth_depencias import VerificarRoles
 

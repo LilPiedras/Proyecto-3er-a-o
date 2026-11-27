@@ -1,6 +1,8 @@
 from models.moneda_pago_model import *
+from models.mensualidad_model import Mensualidad
 from Schemas.moneda_pago_schema import *
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import status, HTTPException
 
 def listar_judios(db: Session):
@@ -31,3 +33,28 @@ def actualizar_judios(idmoneda: int, moneda_up: MonedaPagoActualizar, db: Sessio
     db.commit()
     db.refresh(db_mo)
     return db_mo
+
+
+def eliminar_moneda(idmoneda: int, db: Session):
+    moneda = db.query(MonedaPago).filter(MonedaPago.idmoneda == idmoneda).first()
+    if not moneda:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Moneda de pago inexistente")
+
+    mensualidad = db.query(Mensualidad.idmensualidad).filter(
+        Mensualidad.monedapago == idmoneda
+    ).first()
+    if mensualidad:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar la moneda porque está asociada a una mensualidad",
+        )
+
+    try:
+        db.delete(moneda)
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar la moneda porque está asociada a una mensualidad",
+        ) from error

@@ -33,3 +33,11 @@ def crear_moneda(moneda: MonedaPagoEntrada, db:Session = Depends(get_db),  curre
 @monedas_route.patch("/moneda-pago/{idmoneda}", response_model=MonedaPagoSalida)
 def updata_moneditas(idmoneda: int, judio: MonedaPagoActualizar, db: Session = Depends(get_db),  current_user: Usuario = Depends(VerificarRoles([1]))):
     return moneda_pago_service.actualizar_judios(idmoneda, judio, db)
+
+@monedas_route.delete("/moneda-pago/{idmoneda}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_moneda(
+    idmoneda: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(VerificarRoles([1])),
+):
+    moneda_pago_service.eliminar_moneda(idmoneda, db)

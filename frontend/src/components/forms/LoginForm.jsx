@@ -1,70 +1,19 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { FaEye, FaEyeSlash } from "react-icons/fa"
+import { useLogin } from "./useLogin.js"
 
 export default function LoginForm() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    try {
-      const emailNormalizado = email.trim().toLowerCase()
-
-      const body = new URLSearchParams()
-      body.append("username", emailNormalizado)
-      body.append("password", password)
-
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Error al iniciar sesión")
-      }
-
-      localStorage.setItem("access_token", data.access_token)
-      localStorage.setItem("refresh_token", data.refresh_token)
-
-      if (data.usuario?.ciuser) {
-        localStorage.setItem("ciuser", data.usuario.ciuser);
-      }
-
-      const rolesUsuario = data.usuario?.roles || [data.usuario?.idrol || 5];
-      const requierePuente = data.usuario?.requiere_puente ?? (rolesUsuario.length > 1);
-      localStorage.setItem("user_roles", JSON.stringify(rolesUsuario));
-
-      if (requierePuente) {
-        navigate("/seleccionar-rol");
-      } else {
-        const rolUnico = rolesUsuario[0] || data.usuario?.idrol;
-        localStorage.setItem("idrol", rolUnico);
-        
-        if (rolUnico === 4) {
-          navigate("/crudcursos");
-        } else if (rolUnico === 5) {
-          navigate("/cursosdisponibles");
-        } else {
-          navigate("/crudestudiantes");
-        }
-      }
-
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    loading,
+    error,
+    handleSubmit,
+    irARecuperacion,
+  } = useLogin()
 
   return (
     <div className="w-full max-w-md mx-auto p-6">
@@ -104,9 +53,9 @@ export default function LoginForm() {
               onClick={() => setShowPassword((visible) => !visible)}
               aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
               aria-pressed={showPassword}
-              className="absolute inset-y-0 right-4 font-semibold text-yellow-300 hover:text-yellow-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+              className="absolute inset-y-0 right-4 text-xl text-yellow-300 hover:text-yellow-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
             >
-              {showPassword ? "Ocultar" : "Ver"}
+              {showPassword ? <FaEye /> : <FaEyeSlash />}
             </button>
           </div>
         </div>
@@ -119,7 +68,7 @@ export default function LoginForm() {
 
           <button
             type="button"
-            onClick={() => navigate("/recuperar-password")}
+            onClick={irARecuperacion}
             className="font-medium text-base text-yellow-300 hover:text-yellow-400 transition-colors cursor-pointer"
           >
             Olvido de Contraseña?

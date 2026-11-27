@@ -1,9 +1,8 @@
-import calendar
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
-from sqlalchemy import update
+from sqlalchemy import exists, or_, update
 from sqlalchemy.exc import IntegrityError
 from models.mensualidad_model import Mensualidad
 from models.mensualidad_estu_model import Mensualidad_estu
@@ -301,25 +300,43 @@ def eliminar_mensualidad(idmensualidad: int, db: Session):
 
 def marcar_pagos_vencidos(db: Session, hoy: date | None = None) -> int:
     hoy = hoy or date.today()
-    mes_anterior = hoy.month - 1 or 12
-    anio_mes_anterior = hoy.year - (1 if hoy.month == 1 else 0)
-    limite_vencimiento = date(
-        anio_mes_anterior,
-        mes_anterior,
-        min(hoy.day, calendar.monthrange(anio_mes_anterior, mes_anterior)[1]),
-    )
     resultado = db.execute(
         update(Mensualidad_estu)
         .where(
             Mensualidad_estu.estado == "pendiente",
-            Mensualidad_estu.fecha_vencimiento <= limite_vencimiento,
+            Mensualidad_estu.fecha_vencimiento < hoy,
             Mensualidad_estu.activo == True,
         )
         .values(estado="vencido")
     )
-    db.commit()
     if resultado.rowcount is None:
         raise RuntimeError("La base de datos no informó cuántos pagos se actualizaron")
+
+    asignaciones_vencidas = exists().where(
+        Mensualidad_estu.idmensualidad == Mensualidad.idmensualidad,
+        Mensualidad_estu.activo.is_(True),
+        Mensualidad_estu.estado == "vencido",
+        Mensualidad_estu.fecha_vencimiento < hoy,
+    )
+    asignaciones_no_vencidas = exists().where(
+        Mensualidad_estu.idmensualidad == Mensualidad.idmensualidad,
+        Mensualidad_estu.activo.is_(True),
+        or_(
+            Mensualidad_estu.estado != "vencido",
+            Mensualidad_estu.fecha_vencimiento >= hoy,
+        ),
+    )
+    db.execute(
+        update(Mensualidad)
+        .where(
+            Mensualidad.estado == "pendiente",
+            Mensualidad.activo.is_(True),
+            asignaciones_vencidas,
+            ~asignaciones_no_vencidas,
+        )
+        .values(estado="vencido")
+    )
+    db.commit()
     return resultado.rowcount
 
 def exportar_mensualidades_excel(db: Session) -> bytes:
